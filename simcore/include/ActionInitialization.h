@@ -1,5 +1,5 @@
-#ifndef simcore_ActionInitialization_h
-#define simcore_ActionInitialization_h 1
+#ifndef __simcore_ActionInitialization_h__
+#define __simcore_ActionInitialization_h__
 
 #include "G4VUserActionInitialization.hh"
 

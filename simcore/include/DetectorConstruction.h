@@ -1,5 +1,5 @@
-#ifndef simcore_DetectorConstruction_h
-#define simcore_DetectorConstruction_h 1
+#ifndef __simcore_DetectorConstruction_h__
+#define __simcore_DetectorConstruction_h__
 
 #include "G4VUserDetectorConstruction.hh"
 

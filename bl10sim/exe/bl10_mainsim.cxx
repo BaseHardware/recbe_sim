@@ -1,6 +1,6 @@
 #include "FTFP_BERT.hh"
-#include "bl10sim/DetectorConstruction.hh"
-#include "simcore/ActionInitialization.hh"
+#include "bl10sim/DetectorConstruction.h"
+#include "simcore/ActionInitialization.h"
 
 #include "G4RunManagerFactory.hh"
 #include "G4SteppingVerbose.hh"

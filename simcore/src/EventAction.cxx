@@ -1,4 +1,4 @@
-#include "EventAction.hh"
+#include "EventAction.h"
 
 #include "G4Event.hh"
 

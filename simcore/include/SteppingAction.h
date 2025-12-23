@@ -1,5 +1,5 @@
-#ifndef simcore_SteppingAction_h
-#define simcore_SteppingAction_h 1
+#ifndef __simcore_SteppingAction_h__
+#define __simcore_SteppingAction_h__
 
 #include "G4UserSteppingAction.hh"
 

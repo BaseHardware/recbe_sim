@@ -1,5 +1,5 @@
-#ifndef simcore_EventAction_h
-#define simcore_EventAction_h 1
+#ifndef __simcore_EventAction_h__
+#define __simcore_EventAction_h__
 
 #include "G4UserEventAction.hh"
 #include "globals.hh"

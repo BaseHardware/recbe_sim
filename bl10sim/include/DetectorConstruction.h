@@ -1,7 +1,7 @@
-#ifndef bl10sim_DetectorConstruction_h
-#define bl10sim_DetectorConstruction_h 1
+#ifndef __bl10sim_DetectorConstruction_h__
+#define __bl10sim_DetectorConstruction_h__
 
-#include "simcore/DetectorConstruction.hh"
+#include "simcore/DetectorConstruction.h"
 
 #include "G4VUserDetectorConstruction.hh"
 

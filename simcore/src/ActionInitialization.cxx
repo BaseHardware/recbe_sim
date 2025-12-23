@@ -1,9 +1,9 @@
-#include "ActionInitialization.hh"
+#include "ActionInitialization.h"
 
-#include "EventAction.hh"
-#include "PrimaryGeneratorAction.hh"
-#include "RunAction.hh"
-#include "SteppingAction.hh"
+#include "EventAction.h"
+#include "PrimaryGeneratorAction.h"
+#include "RunAction.h"
+#include "SteppingAction.h"
 
 namespace simcore {
     ActionInitialization::ActionInitialization(DetectorConstruction *detConstruction)

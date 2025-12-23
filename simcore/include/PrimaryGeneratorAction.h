@@ -1,5 +1,5 @@
-#ifndef simcore_PrimaryGeneratorAction_h
-#define simcore_PrimaryGeneratorAction_h 1
+#ifndef __simcore_PrimaryGeneratorAction_h__
+#define __simcore_PrimaryGeneratorAction_h__
 
 #include "G4VUserPrimaryGeneratorAction.hh"
 

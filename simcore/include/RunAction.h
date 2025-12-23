@@ -1,5 +1,5 @@
-#ifndef simcore_RunAction_h
-#define simcore_RunAction_h 1
+#ifndef __simcore_RunAction_h__
+#define __simcore_RunAction_h__
 
 #include "G4UserRunAction.hh"
 
