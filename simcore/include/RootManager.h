@@ -2,6 +2,7 @@
 #define __simcore_RootManager_h__
 
 #include <string>
+#include <map>
 
 #include "G4Threading.hh"
 
@@ -9,13 +10,21 @@
 class TClonesArray;
 class TTree;
 
+class G4Step;
+class G4Track;
+
 namespace simcore {
 
     struct TLSContainer {
         std::shared_ptr<ROOT::TBufferMergerFile> fFile;
         TTree *fTree;
-        TClonesArray *fTCAStep;
+
+        Int_t fNTrack;
+        std::map<int, size_t> fID2IdxTable;
         TClonesArray *fTCATrack;
+
+        Int_t fNStep;
+        TClonesArray *fTCAStep;
     };
 
     class RootManager {
@@ -36,6 +45,10 @@ namespace simcore {
         void SetTreename(const char *a) { fTreename = a; }
 
         void Fill() const;
+        void Clear() const;
+
+        bool StartTrack(const G4Track *track) const;
+        bool AppendStep(const G4Step *step) const;
 
         std::string GetFilename() const { return fFilename; }
         std::string GetTreename() const { return fTreename; }

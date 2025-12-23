@@ -5,7 +5,10 @@
 #include "G4Event.hh"
 
 namespace simcore {
-    void EventAction::BeginOfEventAction(const G4Event *event) {}
+    void EventAction::BeginOfEventAction(const G4Event *event) {
+        RootManager &instance = RootManager::GetInstance();
+        instance.Clear();
+    }
 
     void EventAction::EndOfEventAction(const G4Event *event) {
         RootManager &instance = RootManager::GetInstance();

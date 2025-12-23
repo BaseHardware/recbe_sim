@@ -4,6 +4,7 @@
 #include "PrimaryGeneratorAction.h"
 #include "RunAction.h"
 #include "SteppingAction.h"
+#include "TrackingAction.h"
 
 namespace simcore {
     ActionInitialization::ActionInitialization() {}
@@ -14,6 +15,7 @@ namespace simcore {
         SetUserAction(new PrimaryGeneratorAction);
         SetUserAction(new RunAction(false));
         SetUserAction(new EventAction);
+        SetUserAction(new TrackingAction);
         SetUserAction(new SteppingAction);
     }
 } // namespace simcore
