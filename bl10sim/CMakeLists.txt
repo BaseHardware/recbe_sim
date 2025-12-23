@@ -24,7 +24,7 @@ file(GLOB bl10sim_exec ${PROJECT_SOURCE_DIR}/exe/bl10_mainsim.cc)
 #
 add_library(bl10sim SHARED ${bl10sim_lib_sources})
 
-target_include_directories(bl10sim PRIVATE include/bl10sim)
+target_include_directories(bl10sim PRIVATE include)
 target_link_libraries(bl10sim PRIVATE ${Geant4_LIBRARIES})
 target_link_libraries(bl10sim PUBLIC simcore)
 
@@ -33,7 +33,6 @@ target_link_libraries(bl10sim PUBLIC simcore)
 #
 add_executable(bl10_mainsim ${bl10sim_exec})
 
-target_include_directories(bl10_mainsim PRIVATE include)
 target_link_libraries(bl10_mainsim PRIVATE ${Geant4_LIBRARIES})
 target_link_libraries(bl10_mainsim PUBLIC bl10sim)
 
