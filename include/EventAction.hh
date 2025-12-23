@@ -6,7 +6,7 @@
 
 class G4Event;
 
-namespace B4a {
+namespace recbesim {
     class EventAction : public G4UserEventAction {
       public:
         EventAction()           = default;
@@ -36,6 +36,5 @@ namespace B4a {
         fEnergyGap += de;
         fTrackLGap += dl;
     }
-
-} // namespace B4a
+} // namespace recbesim
 #endif

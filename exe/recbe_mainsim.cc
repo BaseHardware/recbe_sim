@@ -78,13 +78,13 @@ int main(int argc, char **argv) {
 
     // Set mandatory initialization classes
     //
-    auto detConstruction = new recbe_sim::DetectorConstruction();
+    auto detConstruction = new recbesim::DetectorConstruction();
     runManager->SetUserInitialization(detConstruction);
 
     auto physicsList = new FTFP_BERT;
     runManager->SetUserInitialization(physicsList);
 
-    auto actionInitialization = new recbe_sim::ActionInitialization(detConstruction);
+    auto actionInitialization = new recbesim::ActionInitialization(detConstruction);
     runManager->SetUserInitialization(actionInitialization);
 
     // Initialize visualization

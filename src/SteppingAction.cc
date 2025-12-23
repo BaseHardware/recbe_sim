@@ -6,9 +6,7 @@
 #include "G4Step.hh"
 #include "globals.hh"
 
-using namespace B4;
-
-namespace B4a {
+namespace recbesim {
     SteppingAction::SteppingAction(const DetectorConstruction *detConstruction,
                                    EventAction *eventAction)
         : fDetConstruction(detConstruction), fEventAction(eventAction) {}
@@ -36,4 +34,4 @@ namespace B4a {
             fEventAction->AddGap(edep, stepLength);
         }
     }
-} // namespace B4a
+} // namespace recbesim

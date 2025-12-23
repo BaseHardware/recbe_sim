@@ -13,7 +13,7 @@
 #include "G4SystemOfUnits.hh"
 #include "G4VisAttributes.hh"
 
-namespace B4 {
+namespace recbesim {
     G4ThreadLocal G4GlobalMagFieldMessenger *DetectorConstruction::fMagFieldMessenger = nullptr;
 
     G4VPhysicalVolume *DetectorConstruction::Construct() {
@@ -193,4 +193,4 @@ namespace B4 {
         // Register the field messenger for deleting
         G4AutoDelete::Register(fMagFieldMessenger);
     }
-} // namespace B4
+} // namespace recbesim

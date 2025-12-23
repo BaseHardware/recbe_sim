@@ -6,7 +6,7 @@
 class G4ParticleGun;
 class G4Event;
 
-namespace B4 {
+namespace recbesim {
     class PrimaryGeneratorAction : public G4VUserPrimaryGeneratorAction {
       public:
         PrimaryGeneratorAction();
@@ -17,6 +17,5 @@ namespace B4 {
       private:
         G4ParticleGun *fParticleGun = nullptr; // G4 particle gun
     };
-
-} // namespace B4
+} // namespace recbesim
 #endif

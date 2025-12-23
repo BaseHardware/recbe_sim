@@ -6,7 +6,7 @@
 #include "G4UnitsTable.hh"
 #include "globals.hh"
 
-namespace B4 {
+namespace recbesim {
     RunAction::RunAction() {
         // set printing event number per each event
         G4RunManager::GetRunManager()->SetPrintProgress(1);
@@ -90,4 +90,4 @@ namespace B4 {
         analysisManager->Write();
         analysisManager->CloseFile();
     }
-} // namespace B4
+} // namespace recbesim

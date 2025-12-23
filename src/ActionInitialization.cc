@@ -5,9 +5,7 @@
 #include "RunAction.hh"
 #include "SteppingAction.hh"
 
-using namespace B4;
-
-namespace B4a {
+namespace recbesim {
     ActionInitialization::ActionInitialization(DetectorConstruction *detConstruction)
         : fDetConstruction(detConstruction) {}
 
@@ -20,4 +18,4 @@ namespace B4a {
         SetUserAction(eventAction);
         SetUserAction(new SteppingAction(fDetConstruction, eventAction));
     }
-} // namespace B4a
+} // namespace recbesim

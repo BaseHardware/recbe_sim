@@ -7,7 +7,7 @@
 
 #include <iomanip>
 
-namespace B4a {
+namespace recbesim {
     void EventAction::BeginOfEventAction(const G4Event * /*event*/) {
         // initialisation per event
         fEnergyAbs = 0.;
@@ -50,4 +50,4 @@ namespace B4a {
             G4cout << "--> End of event " << eventID << "\n" << G4endl;
         }
     }
-} // namespace B4a
+} // namespace recbesim

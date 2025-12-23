@@ -5,7 +5,7 @@
 
 class G4Run;
 
-namespace B4 {
+namespace recbesim {
     class RunAction : public G4UserRunAction {
       public:
         RunAction();
@@ -14,6 +14,5 @@ namespace B4 {
         void BeginOfRunAction(const G4Run *) override;
         void EndOfRunAction(const G4Run *) override;
     };
-
-} // namespace B4
+} // namespace recbesim
 #endif

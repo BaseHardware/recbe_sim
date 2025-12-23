@@ -9,7 +9,7 @@
 class G4VPhysicalVolume;
 class G4GlobalMagFieldMessenger;
 
-namespace B4 {
+namespace recbesim {
     class DetectorConstruction : public G4VUserDetectorConstruction {
       public:
         DetectorConstruction()           = default;
@@ -48,6 +48,5 @@ namespace B4 {
     }
 
     inline const G4VPhysicalVolume *DetectorConstruction::GetGapPV() const { return fGapPV; }
-
-} // namespace B4
+} // namespace recbesim
 #endif

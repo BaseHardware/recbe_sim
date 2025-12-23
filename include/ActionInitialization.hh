@@ -3,25 +3,22 @@
 
 #include "G4VUserActionInitialization.hh"
 
-namespace B4 {
+namespace recbesim {
     class DetectorConstruction;
-}
-
-namespace B4a {
 
     /// Action initialization class.
 
     class ActionInitialization : public G4VUserActionInitialization {
       public:
-        ActionInitialization(B4::DetectorConstruction *);
+        ActionInitialization(DetectorConstruction *);
         ~ActionInitialization() override = default;
 
         void BuildForMaster() const override;
         void Build() const override;
 
       private:
-        B4::DetectorConstruction *fDetConstruction = nullptr;
+        DetectorConstruction *fDetConstruction = nullptr;
     };
 
-} // namespace B4a
+} // namespace recbesim
 #endif
