@@ -87,7 +87,6 @@ flags = [
 
     # For common setting
     '-I./include',
-    '-I./include/simcore',
 ]
 
 # Set this to the absolute path to the folder (NOT the file!) containing the
