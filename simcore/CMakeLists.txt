@@ -24,3 +24,4 @@ add_library(simcore SHARED ${simcore_lib_sources})
 
 target_include_directories(simcore PRIVATE include)
 target_link_libraries(simcore PRIVATE ${Geant4_LIBRARIES})
+target_link_libraries(simcore PRIVATE simobj)

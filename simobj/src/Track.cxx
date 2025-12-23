@@ -1,0 +1,52 @@
+#include <iostream>
+
+#include "Track.h"
+
+#include "TDatabasePDG.h"
+
+namespace simobj {
+    Track::Track() : fPDGCode(0), fTrackID(-1), fParentID(-1), fNStep(0), fStepIdxArray(0) {}
+
+    Track::Track(int pdgCode, int tID, int pID)
+        : fPDGCode(pdgCode), fTrackID(tID), fParentID(pID), fNStep(0), fStepIdxArray(0) {
+        using namespace std;
+        TDatabasePDG *pdb      = TDatabasePDG::Instance();
+        TParticlePDG *particle = pdb->GetParticle(pdgCode);
+
+        if (particle == nullptr) {
+            cerr << "The given PDG code " << pdgCode
+                 << " does not exist in TDatabasePDG. Naming lookup failed." << endl;
+            fName = "";
+        } else {
+            fName = particle->GetName();
+        }
+    }
+
+    Track::Track(int pdgCode, std::string pdgName, int tID, int pID)
+        : TNamed(pdgName.c_str(), ""), fPDGCode(pdgCode), fTrackID(tID), fParentID(pID), fNStep(0),
+          fStepIdxArray(0) {
+        using namespace std;
+        fName = pdgName;
+    }
+
+    Track::Track(const Track &orig)
+        : TNamed(orig), fPDGCode(orig.fPDGCode), fTrackID(orig.fTrackID), fParentID(orig.fParentID),
+          fNStep(orig.fNStep) {
+        for (size_t i = 0; i < fNStep; i++) {
+            fStepIdxArray[i] = orig.fStepIdxArray[i];
+        }
+    }
+
+    TObject *Track::Clone(const char *) const { return new Track(*this); }
+
+    size_t &Track::GetStepIndex(size_t idx) {
+        using namespace std;
+
+        if (fgcMaxStepSize >= idx || fNStep >= idx) {
+            cerr << "idx for the step index array is wrong: " << idx << endl;
+            throw;
+        }
+
+        return fStepIdxArray[idx];
+    }
+} // namespace simobj

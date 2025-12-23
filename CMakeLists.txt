@@ -5,5 +5,6 @@ include(cmake/add_sim_subdir.cmake)
 
 include_directories(include)
 
+add_sim_subdir(simobj)
 add_sim_subdir(simcore)
 add_sim_subdir(bl10sim)
