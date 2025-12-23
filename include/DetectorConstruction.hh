@@ -19,11 +19,6 @@ namespace recbesim {
         G4VPhysicalVolume *Construct() override;
         void ConstructSDandField() override;
 
-        // get methods
-        //
-        const G4VPhysicalVolume *GetAbsorberPV() const;
-        const G4VPhysicalVolume *GetGapPV() const;
-
       private:
         // methods
         //
@@ -35,18 +30,7 @@ namespace recbesim {
         static G4ThreadLocal G4GlobalMagFieldMessenger *fMagFieldMessenger;
         // magnetic field messenger
 
-        G4VPhysicalVolume *fAbsorberPV = nullptr; // the absorber physical volume
-        G4VPhysicalVolume *fGapPV      = nullptr; // the gap physical volume
-
         G4bool fCheckOverlaps = true; // option to activate checking of volumes overlaps
     };
-
-    // inline functions
-
-    inline const G4VPhysicalVolume *DetectorConstruction::GetAbsorberPV() const {
-        return fAbsorberPV;
-    }
-
-    inline const G4VPhysicalVolume *DetectorConstruction::GetGapPV() const { return fGapPV; }
 } // namespace recbesim
 #endif
