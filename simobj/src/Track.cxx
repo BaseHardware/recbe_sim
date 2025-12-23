@@ -5,10 +5,10 @@
 #include "TDatabasePDG.h"
 
 namespace simobj {
-    Track::Track() : fPDGCode(0), fTrackID(-1), fParentID(-1), fNStep(0), fStepIdxArray(0) {}
+    Track::Track() : fPDGCode(0), fTrackID(-1), fParentID(-1), fNStep(0), fStepIdxArray() {}
 
     Track::Track(int pdgCode, int tID, int pID)
-        : fPDGCode(pdgCode), fTrackID(tID), fParentID(pID), fNStep(0), fStepIdxArray(0) {
+        : fPDGCode(pdgCode), fTrackID(tID), fParentID(pID), fNStep(0), fStepIdxArray() {
         using namespace std;
         TDatabasePDG *pdb      = TDatabasePDG::Instance();
         TParticlePDG *particle = pdb->GetParticle(pdgCode);
@@ -24,7 +24,7 @@ namespace simobj {
 
     Track::Track(int pdgCode, std::string pdgName, int tID, int pID)
         : TNamed(pdgName.c_str(), ""), fPDGCode(pdgCode), fTrackID(tID), fParentID(pID), fNStep(0),
-          fStepIdxArray(0) {
+          fStepIdxArray() {
         using namespace std;
         fName = pdgName;
     }
