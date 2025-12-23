@@ -7,9 +7,7 @@
 #include "globals.hh"
 
 namespace simcore {
-    SteppingAction::SteppingAction(const DetectorConstruction *detConstruction,
-                                   EventAction *eventAction)
-        : fDetConstruction(detConstruction), fEventAction(eventAction) {}
+    SteppingAction::SteppingAction() {}
 
     void SteppingAction::UserSteppingAction(const G4Step *step) {}
 } // namespace simcore

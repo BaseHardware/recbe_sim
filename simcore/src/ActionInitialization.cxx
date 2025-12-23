@@ -6,16 +6,14 @@
 #include "SteppingAction.h"
 
 namespace simcore {
-    ActionInitialization::ActionInitialization(DetectorConstruction *detConstruction)
-        : fDetConstruction(detConstruction) {}
+    ActionInitialization::ActionInitialization() {}
 
     void ActionInitialization::BuildForMaster() const { SetUserAction(new RunAction(true)); }
 
     void ActionInitialization::Build() const {
         SetUserAction(new PrimaryGeneratorAction);
         SetUserAction(new RunAction(false));
-        auto eventAction = new EventAction;
-        SetUserAction(eventAction);
-        SetUserAction(new SteppingAction(fDetConstruction, eventAction));
+        SetUserAction(new EventAction);
+        SetUserAction(new SteppingAction);
     }
 } // namespace simcore

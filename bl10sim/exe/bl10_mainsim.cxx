@@ -84,7 +84,7 @@ int main(int argc, char **argv) {
     auto physicsList = new FTFP_BERT;
     runManager->SetUserInitialization(physicsList);
 
-    auto actionInitialization = new simcore::ActionInitialization(detConstruction);
+    auto actionInitialization = new simcore::ActionInitialization();
     runManager->SetUserInitialization(actionInitialization);
 
     // Initialize visualization

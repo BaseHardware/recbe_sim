@@ -10,14 +10,13 @@ namespace simcore {
 
     class ActionInitialization : public G4VUserActionInitialization {
       public:
-        ActionInitialization(DetectorConstruction *);
+        ActionInitialization();
         ~ActionInitialization() override = default;
 
         void BuildForMaster() const override;
         void Build() const override;
 
       private:
-        DetectorConstruction *fDetConstruction = nullptr;
     };
 
 } // namespace simcore
