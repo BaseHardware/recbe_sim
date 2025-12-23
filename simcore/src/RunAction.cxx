@@ -1,4 +1,5 @@
 #include "RunAction.h"
+#include "RootManager.h"
 
 #include "G4AnalysisManager.hh"
 #include "G4RunManager.hh"
@@ -7,15 +8,28 @@
 #include "globals.hh"
 
 namespace simcore {
-    RunAction::RunAction() {
+    RunAction::RunAction(bool m) : fMaster(m) {
         // set printing event number per each event
-        G4RunManager::GetRunManager()->SetPrintProgress(1);
+        G4RunManager::GetRunManager()->SetPrintProgress(1000);
     }
 
     void RunAction::BeginOfRunAction(const G4Run * /*run*/) {
-        // inform the runManager to save random number seed
-        // G4RunManager::GetRunManager()->SetRandomNumberStore(true);
+        RootManager &inst = RootManager::GetInstance();
+
+        if (fMaster) {
+            inst.StartRunMaster();
+        } else {
+            inst.StartRunSlave();
+        }
     }
 
-    void RunAction::EndOfRunAction(const G4Run * /*run*/) {}
+    void RunAction::EndOfRunAction(const G4Run * /*run*/) {
+        RootManager &inst = RootManager::GetInstance();
+
+        if (fMaster) {
+            inst.EndRunMaster();
+        } else {
+            inst.EndRunSlave();
+        }
+    }
 } // namespace simcore
