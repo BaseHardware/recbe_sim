@@ -13,7 +13,7 @@
 namespace {
     void PrintUsage() {
         G4cerr << " Usage: " << G4endl;
-        G4cerr << " recbesim [-m macro ] [-u UIsession] [-t nThreads] [-vDefault]" << G4endl;
+        G4cerr << " recbe_mainsim [-m macro ] [-u UIsession] [-t nThreads] [-vDefault]" << G4endl;
         G4cerr << "   note: -t option is available only for multi-threaded mode." << G4endl;
     }
 } // namespace
@@ -78,13 +78,13 @@ int main(int argc, char **argv) {
 
     // Set mandatory initialization classes
     //
-    auto detConstruction = new B4::DetectorConstruction();
+    auto detConstruction = new recbe_sim::DetectorConstruction();
     runManager->SetUserInitialization(detConstruction);
 
     auto physicsList = new FTFP_BERT;
     runManager->SetUserInitialization(physicsList);
 
-    auto actionInitialization = new B4a::ActionInitialization(detConstruction);
+    auto actionInitialization = new recbe_sim::ActionInitialization(detConstruction);
     runManager->SetUserInitialization(actionInitialization);
 
     // Initialize visualization
@@ -99,6 +99,7 @@ int main(int argc, char **argv) {
 
     // Process macro or start UI session
     //
+    UImanager->ApplyCommand("/control/macroPath macros");
     if (macro.size()) {
         // batch mode
         G4String command = "/control/execute ";
