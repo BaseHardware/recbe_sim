@@ -10,17 +10,13 @@
 #include "G4VisExecutive.hh"
 // #include "Randomize.hh"
 
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
-
 namespace {
     void PrintUsage() {
         G4cerr << " Usage: " << G4endl;
-        G4cerr << " exampleB4a [-m macro ] [-u UIsession] [-t nThreads] [-vDefault]" << G4endl;
+        G4cerr << " recbesim [-m macro ] [-u UIsession] [-t nThreads] [-vDefault]" << G4endl;
         G4cerr << "   note: -t option is available only for multi-threaded mode." << G4endl;
     }
 } // namespace
-
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
 int main(int argc, char **argv) {
     // Evaluate arguments
@@ -125,5 +121,3 @@ int main(int argc, char **argv) {
     delete visManager;
     delete runManager;
 }
-
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo.....
