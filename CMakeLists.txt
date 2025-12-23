@@ -24,7 +24,7 @@ file(GLOB recbesim_exec ${PROJECT_SOURCE_DIR}/exe/recbe_mainsim.cc)
 #
 add_library(recbesim SHARED ${recbesim_lib_sources})
 
-target_include_directories(recbesim PRIVATE include)
+target_include_directories(recbesim PRIVATE include/recbesim)
 target_link_libraries(recbesim PRIVATE ${Geant4_LIBRARIES})
 
 #----------------------------------------------------------------------------
