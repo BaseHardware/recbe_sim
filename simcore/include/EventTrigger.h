@@ -6,6 +6,9 @@
 namespace simcore {
     class EventTrigger {
       public:
+        EventTrigger() : fTriggered(false) {};
+        EventTrigger(const EventTrigger &orig) : fTriggered(orig.fTriggered) {};
+
         static EventTrigger &GetInstance() { return fgInstance; }
 
         void Reset() { fTriggered = false; }

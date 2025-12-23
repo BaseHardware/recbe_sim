@@ -9,6 +9,7 @@ project(simcore)
 # See the documentation for a guide on how to enable/disable specific components
 #
 find_package(Geant4 REQUIRED ui_all vis_all)
+find_package(ROOT CONFIG REQUIRED COMPONENTS RIO Tree)
 
 #----------------------------------------------------------------------------
 # Locate sources and headers for this project
@@ -25,3 +26,4 @@ add_library(simcore SHARED ${simcore_lib_sources})
 target_include_directories(simcore PRIVATE include)
 target_link_libraries(simcore PRIVATE ${Geant4_LIBRARIES})
 target_link_libraries(simcore PRIVATE simobj)
+target_link_libraries(simcore PRIVATE ${ROOT_LIBRARIES})
