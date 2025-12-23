@@ -1,5 +1,5 @@
-#include "recbesim/ActionInitialization.hh"
-#include "recbesim/DetectorConstruction.hh"
+#include "simcore/ActionInitialization.hh"
+#include "simcore/DetectorConstruction.hh"
 #include "FTFP_BERT.hh"
 
 #include "G4RunManagerFactory.hh"
