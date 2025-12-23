@@ -6,7 +6,7 @@
 #include "G4UnitsTable.hh"
 #include "globals.hh"
 
-namespace recbesim {
+namespace simcore {
     RunAction::RunAction() {
         // set printing event number per each event
         G4RunManager::GetRunManager()->SetPrintProgress(1);
@@ -18,4 +18,4 @@ namespace recbesim {
     }
 
     void RunAction::EndOfRunAction(const G4Run * /*run*/) {}
-} // namespace recbesim
+} // namespace simcore

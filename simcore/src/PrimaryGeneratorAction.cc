@@ -8,7 +8,7 @@
 #include "G4SystemOfUnits.hh"
 #include "globals.hh"
 
-namespace recbesim {
+namespace simcore {
     PrimaryGeneratorAction::PrimaryGeneratorAction() {
         G4int nofParticles = 1;
         fParticleGun       = new G4ParticleGun(nofParticles);
@@ -55,4 +55,4 @@ namespace recbesim {
 
         fParticleGun->GeneratePrimaryVertex(event);
     }
-} // namespace recbesim
+} // namespace simcore

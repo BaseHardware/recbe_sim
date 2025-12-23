@@ -1,9 +1,9 @@
-#ifndef ActionInitialization_h
-#define ActionInitialization_h 1
+#ifndef simcore_ActionInitialization_h
+#define simcore_ActionInitialization_h 1
 
 #include "G4VUserActionInitialization.hh"
 
-namespace recbesim {
+namespace simcore {
     class DetectorConstruction;
 
     /// Action initialization class.
@@ -20,5 +20,5 @@ namespace recbesim {
         DetectorConstruction *fDetConstruction = nullptr;
     };
 
-} // namespace recbesim
+} // namespace simcore
 #endif

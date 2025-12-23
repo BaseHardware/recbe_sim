@@ -14,27 +14,28 @@ find_package(Geant4 REQUIRED ui_all vis_all)
 # Locate sources and headers for this project
 # NB: headers are included so they will show up in IDEs
 #
-#file(GLOB recbesim_lib_sources ${PROJECT_SOURCE_DIR}/src/*.cc)
-#file(GLOB recbesim_lib_headers ${PROJECT_SOURCE_DIR}/include/*.hh)
+file(GLOB bl10sim_lib_sources ${PROJECT_SOURCE_DIR}/src/*.cc)
+file(GLOB bl10sim_lib_headers ${PROJECT_SOURCE_DIR}/include/*.hh)
 
 file(GLOB bl10sim_exec ${PROJECT_SOURCE_DIR}/exe/bl10_mainsim.cc)
 
 #----------------------------------------------------------------------------
 # Add a library with sources and the local headers and the Geant4 libraries
 #
-#add_library(recbesim SHARED ${recbesim_lib_sources})
+add_library(bl10sim SHARED ${bl10sim_lib_sources})
 
-#target_include_directories(recbesim PRIVATE include/recbesim)
-#target_link_libraries(recbesim PRIVATE ${Geant4_LIBRARIES})
+target_include_directories(bl10sim PRIVATE include/bl10sim)
+target_link_libraries(bl10sim PRIVATE ${Geant4_LIBRARIES})
+target_link_libraries(bl10sim PUBLIC simcore)
 
 #----------------------------------------------------------------------------
 # Add the executable, use our local headers, and link it to the Geant4 libraries
 #
 add_executable(bl10_mainsim ${bl10sim_exec})
 
-#target_include_directories(bl10_mainsim PRIVATE include)
+target_include_directories(bl10_mainsim PRIVATE include)
 target_link_libraries(bl10_mainsim PRIVATE ${Geant4_LIBRARIES})
-target_link_libraries(bl10_mainsim PUBLIC simcore)
+target_link_libraries(bl10_mainsim PUBLIC bl10sim)
 
 #----------------------------------------------------------------------------
 # Copy all scripts to the build directory, i.e. the directory in which we

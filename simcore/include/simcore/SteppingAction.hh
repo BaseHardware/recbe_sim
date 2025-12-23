@@ -1,11 +1,11 @@
-#ifndef SteppingAction_h
-#define SteppingAction_h 1
+#ifndef simcore_SteppingAction_h
+#define simcore_SteppingAction_h 1
 
 #include "G4UserSteppingAction.hh"
 
 class G4Step;
 
-namespace recbesim {
+namespace simcore {
     class DetectorConstruction;
     class EventAction;
 
@@ -20,5 +20,5 @@ namespace recbesim {
         const DetectorConstruction *fDetConstruction = nullptr;
         EventAction *fEventAction                    = nullptr;
     };
-} // namespace recbesim
+} // namespace simcore
 #endif

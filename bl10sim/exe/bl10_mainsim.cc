@@ -1,6 +1,6 @@
-#include "simcore/ActionInitialization.hh"
-#include "simcore/DetectorConstruction.hh"
 #include "FTFP_BERT.hh"
+#include "bl10sim/DetectorConstruction.hh"
+#include "simcore/ActionInitialization.hh"
 
 #include "G4RunManagerFactory.hh"
 #include "G4SteppingVerbose.hh"
@@ -13,7 +13,7 @@
 namespace {
     void PrintUsage() {
         G4cerr << " Usage: " << G4endl;
-        G4cerr << " recbe_mainsim [-m macro ] [-u UIsession] [-t nThreads] [-vDefault]" << G4endl;
+        G4cerr << " bl10_mainsim [-m macro ] [-u UIsession] [-t nThreads] [-vDefault]" << G4endl;
         G4cerr << "   note: -t option is available only for multi-threaded mode." << G4endl;
     }
 } // namespace
@@ -78,13 +78,13 @@ int main(int argc, char **argv) {
 
     // Set mandatory initialization classes
     //
-    auto detConstruction = new recbesim::DetectorConstruction();
+    auto detConstruction = new bl10sim::DetectorConstruction();
     runManager->SetUserInitialization(detConstruction);
 
     auto physicsList = new FTFP_BERT;
     runManager->SetUserInitialization(physicsList);
 
-    auto actionInitialization = new recbesim::ActionInitialization(detConstruction);
+    auto actionInitialization = new simcore::ActionInitialization(detConstruction);
     runManager->SetUserInitialization(actionInitialization);
 
     // Initialize visualization

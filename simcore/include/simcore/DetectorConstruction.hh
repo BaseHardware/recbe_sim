@@ -1,5 +1,5 @@
-#ifndef DetectorConstruction_h
-#define DetectorConstruction_h 1
+#ifndef simcore_DetectorConstruction_h
+#define simcore_DetectorConstruction_h 1
 
 #include "G4VUserDetectorConstruction.hh"
 
@@ -9,7 +9,7 @@
 class G4VPhysicalVolume;
 class G4GlobalMagFieldMessenger;
 
-namespace recbesim {
+namespace simcore {
     class DetectorConstruction : public G4VUserDetectorConstruction {
       public:
         DetectorConstruction()           = default;
@@ -23,14 +23,15 @@ namespace recbesim {
         // methods
         //
         void DefineMaterials();
-        G4VPhysicalVolume *DefineVolumes();
+        virtual G4VPhysicalVolume *DefineVolumes() = 0;
 
         // data members
         //
         static G4ThreadLocal G4GlobalMagFieldMessenger *fMagFieldMessenger;
         // magnetic field messenger
 
+      protected:
         G4bool fCheckOverlaps = true; // option to activate checking of volumes overlaps
     };
-} // namespace recbesim
+} // namespace simcore
 #endif

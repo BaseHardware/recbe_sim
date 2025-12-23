@@ -2,8 +2,8 @@
 
 #include "G4Event.hh"
 
-namespace recbesim {
+namespace simcore {
     void EventAction::BeginOfEventAction(const G4Event *event) {}
 
     void EventAction::EndOfEventAction(const G4Event *event) {}
-} // namespace recbesim
+} // namespace simcore

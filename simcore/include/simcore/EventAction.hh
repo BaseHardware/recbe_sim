@@ -1,12 +1,12 @@
-#ifndef EventAction_h
-#define EventAction_h 1
+#ifndef simcore_EventAction_h
+#define simcore_EventAction_h 1
 
 #include "G4UserEventAction.hh"
 #include "globals.hh"
 
 class G4Event;
 
-namespace recbesim {
+namespace simcore {
     class EventAction : public G4UserEventAction {
       public:
         EventAction()           = default;
@@ -17,5 +17,5 @@ namespace recbesim {
 
       private:
     };
-} // namespace recbesim
+} // namespace simcore
 #endif

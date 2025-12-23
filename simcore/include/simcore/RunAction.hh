@@ -1,11 +1,11 @@
-#ifndef RunAction_h
-#define RunAction_h 1
+#ifndef simcore_RunAction_h
+#define simcore_RunAction_h 1
 
 #include "G4UserRunAction.hh"
 
 class G4Run;
 
-namespace recbesim {
+namespace simcore {
     class RunAction : public G4UserRunAction {
       public:
         RunAction();
@@ -14,5 +14,5 @@ namespace recbesim {
         void BeginOfRunAction(const G4Run *) override;
         void EndOfRunAction(const G4Run *) override;
     };
-} // namespace recbesim
+} // namespace simcore
 #endif
