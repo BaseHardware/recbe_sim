@@ -12,7 +12,7 @@ namespace bl10sim {
         G4double worldSizeZ  = 4 * m;
 
         // Get materials
-        G4Material *defaultMaterial = G4Material::GetMaterial("Galactic");
+        G4Material *defaultMaterial = G4Material::GetMaterial("G4_AIR");
 
         //
         // World

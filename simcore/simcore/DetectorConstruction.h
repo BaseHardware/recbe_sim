@@ -12,18 +12,15 @@ namespace simcore {
         DetectorConstruction()           = default;
         ~DetectorConstruction() override = default;
 
-      public:
         G4VPhysicalVolume *Construct() override;
         void ConstructSDandField() override;
 
-      private:
-        // methods
-        //
+      protected:
         void DefineMaterials();
+
+      private:
         virtual G4VPhysicalVolume *DefineVolumes() = 0;
 
-        // data members
-        //
         static G4ThreadLocal G4GlobalMagFieldMessenger *fMagFieldMessenger;
         // magnetic field messenger
 
