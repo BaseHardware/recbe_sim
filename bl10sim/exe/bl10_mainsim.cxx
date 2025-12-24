@@ -1,6 +1,6 @@
 #include "FTFP_BERT.hh"
 #include "bl10sim/DetectorConstruction.h"
-#include "simcore/ActionInitialization.h"
+#include "bl10sim/ActionInitialization.h"
 
 #include "G4RunManagerFactory.hh"
 #include "G4SteppingVerbose.hh"
@@ -84,7 +84,7 @@ int main(int argc, char **argv) {
     auto physicsList = new FTFP_BERT;
     runManager->SetUserInitialization(physicsList);
 
-    auto actionInitialization = new simcore::ActionInitialization();
+    auto actionInitialization = new bl10sim::ActionInitialization();
     runManager->SetUserInitialization(actionInitialization);
 
     // Initialize visualization

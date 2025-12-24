@@ -1,12 +1,12 @@
-#ifndef __simcore_PrimaryGeneratorAction_h__
-#define __simcore_PrimaryGeneratorAction_h__
+#ifndef __bl10sim_PrimaryGeneratorAction_h__
+#define __bl10sim_PrimaryGeneratorAction_h__
 
 #include "G4VUserPrimaryGeneratorAction.hh"
 
 class G4ParticleGun;
 class G4Event;
 
-namespace simcore {
+namespace bl10sim {
     class PrimaryGeneratorAction : public G4VUserPrimaryGeneratorAction {
       public:
         PrimaryGeneratorAction();
@@ -17,5 +17,5 @@ namespace simcore {
       private:
         G4ParticleGun *fParticleGun = nullptr; // G4 particle gun
     };
-} // namespace simcore
+} // namespace bl10sim
 #endif

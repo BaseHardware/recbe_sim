@@ -1,12 +1,10 @@
-#ifndef __simcore_ActionInitialization_h__
-#define __simcore_ActionInitialization_h__
+#ifndef __bl10sim_ActionInitialization_h__
+#define __bl10sim_ActionInitialization_h__
 
 #include "G4VUserActionInitialization.hh"
 
-namespace simcore {
+namespace bl10sim {
     class DetectorConstruction;
-
-    /// Action initialization class.
 
     class ActionInitialization : public G4VUserActionInitialization {
       public:
@@ -19,5 +17,5 @@ namespace simcore {
       private:
     };
 
-} // namespace simcore
+} // namespace bl10sim
 #endif

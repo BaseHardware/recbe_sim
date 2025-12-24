@@ -7,7 +7,7 @@
 #include "G4ParticleTable.hh"
 #include "G4SystemOfUnits.hh"
 
-namespace simcore {
+namespace bl10sim {
     PrimaryGeneratorAction::PrimaryGeneratorAction() {
         G4int nofParticles = 1;
         fParticleGun       = new G4ParticleGun(nofParticles);
@@ -54,4 +54,4 @@ namespace simcore {
 
         fParticleGun->GeneratePrimaryVertex(event);
     }
-} // namespace simcore
+} // namespace bl10sim

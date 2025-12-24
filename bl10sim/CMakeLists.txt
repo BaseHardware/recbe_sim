@@ -15,7 +15,6 @@ find_package(Geant4 REQUIRED ui_all vis_all)
 # NB: headers are included so they will show up in IDEs
 #
 file(GLOB bl10sim_lib_sources ${PROJECT_SOURCE_DIR}/src/*.cxx)
-file(GLOB bl10sim_lib_headers ${PROJECT_SOURCE_DIR}/include/*.h)
 
 file(GLOB bl10sim_exec ${PROJECT_SOURCE_DIR}/exe/bl10_mainsim.cxx)
 
