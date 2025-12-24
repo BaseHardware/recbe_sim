@@ -6,6 +6,7 @@
 
 #include "G4Threading.hh"
 
+#include "RootManagerMessenger.h"
 
 namespace ROOT {
     class TBufferMerger;
@@ -34,7 +35,11 @@ namespace simcore {
     class RootManager {
       public:
         RootManager(const char *filename = "simout.root", const char *treename = "tree")
-            : fFilename(filename), fTreename(treename), fStarted(false), fMerger(nullptr) {};
+            : fMessenger(nullptr), fFilename(filename), fTreename(treename), fStarted(false),
+              fRecordStep(true), fRecordPrimary(true), fMerger(nullptr) {
+            fMessenger = new RootManagerMessenger(this);
+        };
+        virtual ~RootManager() { delete fMessenger; };
 
         static RootManager &GetInstance() {
             static RootManager fgInstance;
@@ -57,17 +62,32 @@ namespace simcore {
         bool StartTrack(const G4Track *track) const;
         bool AppendStep(const G4Step *step) const;
 
+        void RecordStep(bool a = true) { fRecordStep = a; }
+        bool DoesRecordStep() const { return fRecordStep; }
+
         void RecordPrimary(bool a = true) { fRecordPrimary = a; }
         bool DoesRecordPrimary() const { return fRecordPrimary; }
+
+        void SetMaxTrackNum(int a) { fgcMaxTrackNum = a; }
+        int GetMaxTrackNum() const { return fgcMaxTrackNum; }
+
+        void SetMaxStepNum(int a) { fgcMaxStepNum = a; }
+        int GetMaxStepNum() const { return fgcMaxStepNum; }
 
         std::string GetFilename() const { return fFilename; }
         std::string GetTreename() const { return fTreename; }
 
+      protected:
+        void MakeBranches() const;
+
       private:
+        RootManagerMessenger *fMessenger;
+
         std::string fFilename;
         std::string fTreename;
 
         bool fStarted;
+        bool fRecordStep;
         bool fRecordPrimary;
         ROOT::TBufferMerger *fMerger;
 

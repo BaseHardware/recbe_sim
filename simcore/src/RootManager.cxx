@@ -102,7 +102,7 @@ namespace simcore {
             return false;
         }
 
-        if (fgcMaxStepNum <= fgTLS->fNStep) {
+        if (fRecordStep && fgcMaxStepNum <= fgTLS->fNStep) {
             G4cerr << "WARNING: The number of steps exceeds the maximum number (" << fgcMaxTrackNum
                    << "). This track will not be added." << G4endl;
             return false;
@@ -113,16 +113,20 @@ namespace simcore {
         Track *newTrack = new ((*fgTLS->fTCATrack)[fgTLS->fNTrack++]) Track(
             track->GetDefinition()->GetPDGEncoding(), track->GetDefinition()->GetParticleName(),
             track->GetTrackID(), track->GetParentID());
-        newTrack->AppendStepIdx(fgTLS->fNStep);
 
-        Step *newStep = (new ((*fgTLS->fTCAStep)[fgTLS->fNStep++]) Step());
+        if (fRecordStep) {
+            newTrack->AppendStepIdx(fgTLS->fNStep);
+            Step *newStep = (new ((*fgTLS->fTCAStep)[fgTLS->fNStep++]) Step());
+            G4Track2SimStep(track, newStep);
+        }
 
-        G4Track2SimStep(track, newStep);
         return true;
     }
 
     bool RootManager::AppendStep(const G4Step *step) const {
         using namespace simobj;
+
+        if (!fRecordStep) return false;
 
         if (fgcMaxStepNum <= fgTLS->fNStep) {
             G4cerr << "WARNING: The number of steps exceeds the maximum number (" << fgcMaxTrackNum
@@ -158,24 +162,34 @@ namespace simcore {
         return true;
     }
 
+    void RootManager::MakeBranches() const {
+        fgTLS->fTCATrack = new TClonesArray("simobj::Track", fgcMaxTrackNum);
+        fgTLS->fNTrack   = 0;
+        fgTLS->fTree->Branch("Track", &fgTLS->fTCATrack);
+
+        fgTLS->fNStep = 0;
+        if (fRecordStep) {
+            fgTLS->fTCAStep = new TClonesArray("simobj::Step", fgcMaxStepNum);
+            fgTLS->fTree->Branch("Step", &fgTLS->fTCAStep);
+        } else {
+            fgTLS->fTCAStep = nullptr;
+        }
+    }
+
     bool RootManager::StartRunSlave() {
         G4AutoLock lock(&fgcStartMutex);
         if (!fStarted || fgTLS) return false;
 
-        auto file = fMerger->GetFile();
+        fgTLS = new TLSContainer;
 
-        TTree *tree = new TTree(fTreename.c_str(), "The output TTree instance");
-        if (tree == nullptr) return false;
-        tree->ResetBit(kMustCleanup);
-        tree->SetDirectory(file.get());
+        fgTLS->fFile = fMerger->GetFile();
 
-        TClonesArray *tca_step  = new TClonesArray("simobj::Step", fgcMaxStepNum);
-        TClonesArray *tca_track = new TClonesArray("simobj::Track", fgcMaxTrackNum);
+        fgTLS->fTree = new TTree(fTreename.c_str(), "The output TTree instance");
+        if (fgTLS->fTree == nullptr) return false;
+        fgTLS->fTree->ResetBit(kMustCleanup);
+        fgTLS->fTree->SetDirectory(fgTLS->fFile.get());
 
-        tree->Branch("Step", &tca_step);
-        tree->Branch("Track", &tca_track);
-
-        fgTLS = new TLSContainer{file, tree, 0, {}, tca_track, 0, tca_step};
+        MakeBranches();
 
         return true;
     }
@@ -187,8 +201,10 @@ namespace simcore {
         fgTLS->fFile->Write();
 
         delete fgTLS->fTree;
-        delete fgTLS->fTCAStep;
         delete fgTLS->fTCATrack;
+
+        if (fRecordStep) delete fgTLS->fTCAStep;
+
         delete fgTLS;
         fgTLS = nullptr;
 
