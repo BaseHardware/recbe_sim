@@ -1,0 +1,10 @@
+#!/bin/bash
+
+workdir="@PROJECT_BINARY_DIR@"
+
+
+if test "x$LD_LIBRARY_PATH" = "x" ; then
+  export LD_LIBRARY_PATH=${workdir}
+else
+  export LD_LIBRARY_PATH=${workdir}:${LD_LIBRARY_PATH}
+fi

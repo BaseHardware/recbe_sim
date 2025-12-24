@@ -39,3 +39,15 @@ ROOT_GENERATE_DICTIONARY(G__simobj
     MODULE simobj
     NO_CXXMODULE
 )
+
+#----------------------------------------------------------------------------
+# Create a bash source script for the MC libraries
+#
+configure_file(
+    ${PROJECT_SOURCE_DIR}/sourcethis.sh.in
+    ${PROJECT_BINARY_DIR}/sourcethis.sh
+    FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE
+                     GROUP_READ GROUP_EXECUTE
+                     WORLD_READ WORLD_EXECUTE
+    @ONLY
+)
