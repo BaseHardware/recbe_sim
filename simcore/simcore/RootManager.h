@@ -13,11 +13,16 @@ namespace ROOT {
     class TBufferMergerFile;
 } // namespace ROOT
 
+namespace simobj {
+    class Primary;
+}
+
 class TClonesArray;
 class TTree;
 
 class G4Step;
 class G4Track;
+class G4Event;
 
 namespace simcore {
     struct TLSContainer {
@@ -30,6 +35,8 @@ namespace simcore {
 
         int fNStep;
         TClonesArray *fTCAStep;
+
+        simobj::Primary *fPrimary;
     };
 
     class RootManager {
@@ -61,6 +68,7 @@ namespace simcore {
 
         bool StartTrack(const G4Track *track) const;
         bool AppendStep(const G4Step *step) const;
+        bool StorePrimary(const G4Event *event) const;
 
         void RecordStep(bool a = true) { fRecordStep = a; }
         bool DoesRecordStep() const { return fRecordStep; }

@@ -6,11 +6,14 @@
 #include "TTree.h"
 
 #include "G4AutoLock.hh"
+#include "G4Event.hh"
+#include "G4PrimaryVertex.hh"
 #include "G4Step.hh"
 #include "G4SystemOfUnits.hh"
 #include "G4Track.hh"
 #include "G4VProcess.hh"
 
+#include "simobj/Primary.h"
 #include "simobj/Step.h"
 #include "simobj/Track.h"
 
@@ -145,6 +148,54 @@ namespace simcore {
         return true;
     }
 
+    bool RootManager::StorePrimary(const G4Event *event) const {
+        using namespace simobj;
+
+        if (!fRecordPrimary) return false;
+
+        int partCnt = 0;
+        int nVert   = event->GetNumberOfPrimaryVertex();
+        for (int idxVert = 0; idxVert < nVert; idxVert++) {
+            const G4PrimaryVertex *nowVert = event->GetPrimaryVertex(idxVert);
+
+            Vertex *newVertex = new (fgTLS->fPrimary->GetVertexObjPtr(idxVert)) Vertex();
+            if (fgTLS->fPrimary->GetVertexSize() <= idxVert + 1) {
+                G4cerr << "WARNING: The number of primary vertices exceeds the maximum number."
+                          "This vertex will not be added."
+                       << G4endl;
+                return false;
+            }
+            newVertex->SetXYZT(nowVert->GetX0() / mm, nowVert->GetY0() / mm, nowVert->GetZ0() / mm,
+                               nowVert->GetT0() / ns);
+            newVertex->SetWeight(nowVert->GetWeight());
+
+            int nPart = nowVert->GetNumberOfParticle();
+            newVertex->SetNParticle(nPart);
+            for (int idxPart = 0; idxPart < nPart; idxPart++) {
+                G4PrimaryParticle *nowPart = nowVert->GetPrimary(idxPart);
+                if (fgTLS->fPrimary->GetPrimaryParticleSize() <= partCnt + 1) {
+                    G4cerr << "WARNING: The number of primary particles exceeds the maximum number."
+                              "This particle will not be added."
+                           << G4endl;
+                    break;
+                }
+
+                PrimaryParticle *newPP =
+                    new (fgTLS->fPrimary->GetPrimaryParticleObjPtr(partCnt++)) PrimaryParticle();
+                newPP->SetVertexIdx(idxVert);
+                newPP->SetPxPyPzE(nowPart->GetPx() / MeV, nowPart->GetPy() / MeV,
+                                  nowPart->GetPz() / MeV, nowPart->GetKineticEnergy() / MeV);
+                newPP->SetPolX(nowPart->GetPolX());
+                newPP->SetPolY(nowPart->GetPolY());
+                newPP->SetPolZ(nowPart->GetPolZ());
+                newPP->SetWeight(nowPart->GetWeight());
+                newPP->SetPDGCode(nowPart->GetPDGcode());
+            }
+        }
+
+        return true;
+    }
+
     bool RootManager::StartRunMaster() {
         if (fStarted) return false;
 
@@ -173,6 +224,13 @@ namespace simcore {
             fgTLS->fTree->Branch("Step", &fgTLS->fTCAStep);
         } else {
             fgTLS->fTCAStep = nullptr;
+        }
+
+        if (fRecordPrimary) {
+            fgTLS->fPrimary = new simobj::Primary;
+            fgTLS->fTree->Branch("Primary", &fgTLS->fPrimary);
+        } else {
+            fgTLS->fPrimary = nullptr;
         }
     }
 
@@ -204,6 +262,7 @@ namespace simcore {
         delete fgTLS->fTCATrack;
 
         if (fRecordStep) delete fgTLS->fTCAStep;
+        if (fRecordPrimary) delete fgTLS->fPrimary;
 
         delete fgTLS;
         fgTLS = nullptr;

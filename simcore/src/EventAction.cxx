@@ -11,6 +11,8 @@ namespace simcore {
     }
 
     void EventAction::EndOfEventAction(const G4Event *event) {
-        if (EventTrigger::GetInstance().IsTriggered()) RootManager::GetInstance().Fill();
+        RootManager &instance = RootManager::GetInstance();
+        instance.StorePrimary(event);
+        if (EventTrigger::GetInstance().IsTriggered()) instance.Fill();
     }
 } // namespace simcore

@@ -4,6 +4,8 @@
 #pragma link off all classes;
 #pragma link off all functions;
 
+#pragma link C++ class simobj::Vertex + ;
+#pragma link C++ class simobj::PrimaryParticle + ;
 #pragma link C++ class simobj::Primary + ;
 
 #endif
