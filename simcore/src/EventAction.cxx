@@ -6,13 +6,11 @@
 
 namespace simcore {
     void EventAction::BeginOfEventAction(const G4Event *event) {
-        RootManager &instance = RootManager::GetInstance();
-        instance.Clear();
+        RootManager::GetInstance().Clear();
+        EventTrigger::GetInstance().Reset();
     }
 
     void EventAction::EndOfEventAction(const G4Event *event) {
-        RootManager &instance = RootManager::GetInstance();
-        EventTrigger::GetInstance().Trigger();
-        instance.Fill();
+        if (EventTrigger::GetInstance().IsTriggered()) RootManager::GetInstance().Fill();
     }
 } // namespace simcore

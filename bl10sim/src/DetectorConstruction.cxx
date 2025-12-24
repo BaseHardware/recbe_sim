@@ -1,13 +1,9 @@
 #include "DetectorConstruction.h"
 
-#include "G4AutoDelete.hh"
 #include "G4Box.hh"
-#include "G4GlobalMagFieldMessenger.hh"
 #include "G4LogicalVolume.hh"
 #include "G4Material.hh"
-#include "G4NistManager.hh"
 #include "G4PVPlacement.hh"
-#include "G4PhysicalConstants.hh"
 #include "G4SystemOfUnits.hh"
 
 namespace bl10sim {

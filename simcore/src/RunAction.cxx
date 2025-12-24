@@ -1,11 +1,7 @@
 #include "RunAction.h"
 #include "RootManager.h"
 
-#include "G4AnalysisManager.hh"
 #include "G4RunManager.hh"
-#include "G4SystemOfUnits.hh"
-#include "G4UnitsTable.hh"
-#include "globals.hh"
 
 namespace simcore {
     RunAction::RunAction(bool m) : fMaster(m) {

@@ -1,12 +1,13 @@
 #ifndef __simcore_RootManager_h__
 #define __simcore_RootManager_h__
 
-#include <string>
 #include <map>
+#include <string>
 
 #include "G4Threading.hh"
 
 #include "ROOT/TBufferMerger.hxx"
+
 class TClonesArray;
 class TTree;
 

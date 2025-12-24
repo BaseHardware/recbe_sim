@@ -2,7 +2,6 @@
 #define __simcore_EventAction_h__
 
 #include "G4UserEventAction.hh"
-#include "globals.hh"
 
 class G4Event;
 
