@@ -141,7 +141,6 @@ namespace simcore {
     }
 
     bool RootManager::StartRunMaster() {
-        G4AutoLock lock(&fgcMasterMutex);
         if (fStarted) return false;
 
         fStarted = true;
@@ -150,8 +149,6 @@ namespace simcore {
         return true;
     }
     bool RootManager::EndRunMaster() {
-        G4AutoLock lock(&fgcMasterMutex);
-
         if (!fStarted) return false;
         delete fMerger;
 
@@ -161,7 +158,7 @@ namespace simcore {
     }
 
     bool RootManager::StartRunSlave() {
-        G4AutoLock lock(&fgcSlaveMutex);
+        G4AutoLock lock(&fgcStartMutex);
         if (!fStarted || fgTLS) return false;
 
         auto file = fMerger->GetFile();
@@ -183,7 +180,7 @@ namespace simcore {
     }
 
     bool RootManager::EndRunSlave() {
-        G4AutoLock lock(&fgcSlaveMutex);
+        G4AutoLock lock(&fgcStartMutex);
         if (!fStarted || !fgTLS) return false;
 
         fgTLS->fFile->Write();

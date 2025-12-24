@@ -15,7 +15,6 @@ class G4Step;
 class G4Track;
 
 namespace simcore {
-
     struct TLSContainer {
         std::shared_ptr<ROOT::TBufferMergerFile> fFile;
         TTree *fTree;
@@ -51,6 +50,9 @@ namespace simcore {
         bool StartTrack(const G4Track *track) const;
         bool AppendStep(const G4Step *step) const;
 
+        void RecordPrimary(bool a = true) { fRecordPrimary = a; }
+        bool DoesRecordPrimary() const { return fRecordPrimary; }
+
         std::string GetFilename() const { return fFilename; }
         std::string GetTreename() const { return fTreename; }
 
@@ -59,10 +61,10 @@ namespace simcore {
         std::string fTreename;
 
         bool fStarted;
+        bool fRecordPrimary;
         ROOT::TBufferMerger *fMerger;
 
-        inline static G4Mutex fgcMasterMutex = G4MUTEX_INITIALIZER;
-        inline static G4Mutex fgcSlaveMutex  = G4MUTEX_INITIALIZER;
+        inline static G4Mutex fgcStartMutex = G4MUTEX_INITIALIZER;
 
         inline static Int_t fgcMaxTrackNum = 20000;
         inline static Int_t fgcMaxStepNum  = 10000000;
