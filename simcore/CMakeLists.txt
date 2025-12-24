@@ -16,14 +16,13 @@ find_package(ROOT CONFIG REQUIRED COMPONENTS RIO Tree)
 # NB: headers are included so they will show up in IDEs
 #
 file(GLOB simcore_lib_sources ${PROJECT_SOURCE_DIR}/src/*.cxx)
-file(GLOB simcore_lib_headers ${PROJECT_SOURCE_DIR}/include/*.h)
 
 #----------------------------------------------------------------------------
 # Add a library with sources and the local headers and the Geant4 libraries
 #
 add_library(simcore SHARED ${simcore_lib_sources})
 
-target_include_directories(simcore PRIVATE include)
+target_include_directories(simcore PRIVATE simcore)
 target_link_libraries(simcore PRIVATE ${Geant4_LIBRARIES})
 target_link_libraries(simcore PRIVATE simobj)
 target_link_libraries(simcore PRIVATE ${ROOT_LIBRARIES})

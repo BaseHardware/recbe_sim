@@ -3,7 +3,7 @@ file(MAKE_DIRECTORY "${_LOCAL_INCLUDE_ROOT}")
 include_directories(${_LOCAL_INCLUDE_ROOT})
 
 function(add_sim_subdir subdir_name)
-    set(src_inc "${CMAKE_CURRENT_SOURCE_DIR}/${subdir_name}/include")
+    set(src_inc "${CMAKE_CURRENT_SOURCE_DIR}/${subdir_name}/${subdir_name}")
 
     if(NOT IS_DIRECTORY "${src_inc}")
         message(STATUS "[link_subdir_include] Skip '${subdir_name}': no include dir at ${src_inc}")
