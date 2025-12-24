@@ -28,7 +28,7 @@ static void G4Step2SimStep(const G4Step *src, simobj::Step *dest) {
 
     const G4VProcess *nowProcess = src->GetPostStepPoint()->GetProcessDefinedStep();
     if (nowProcess == nullptr) {
-        procName = "FirstStep";
+        procName = "initStep";
     } else {
         procName = nowProcess->GetProcessName();
     }
@@ -44,7 +44,7 @@ static void G4Step2SimStep(const G4Step *src, simobj::Step *dest) {
     dest->SetDepositedEnergy(edep / MeV);
     dest->SetProperTime(prop_t / ns);
     dest->SetXYZT(pos.x() / mm, pos.y() / mm, pos.z() / mm, glob_t / ns);
-    dest->SetPxPyPzE(mom.x() / mm, mom.y() / mm, mom.z() / mm, energy / MeV);
+    dest->SetPxPyPzE(mom.x() / MeV, mom.y() / MeV, mom.z() / MeV, energy / MeV);
     dest->SetProcessName(procName.c_str());
     dest->SetVolumeName(volName.c_str());
 }
@@ -63,7 +63,7 @@ static void G4Track2SimStep(const G4Track *src, simobj::Step *dest) {
 
     std::string procName, volName;
 
-    procName = "FirstStep";
+    procName = "initStep";
 
     volName = src->GetVolume()->GetName();
 

@@ -40,6 +40,8 @@ namespace simobj {
         int GetTrackID() const { return fTrackID; }
         int GetParentID() const { return fParentID; }
 
+        void Print(Option_t *option = "") const override;
+
         static const int fgcMaxStepSize = 10000;
 
       private:

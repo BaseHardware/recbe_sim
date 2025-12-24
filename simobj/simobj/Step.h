@@ -11,11 +11,14 @@ namespace simobj {
     class Step : public TObject {
       public:
         Step()
-            : fNDaughters(0), fEdep(0), fProperTime(0), f4Position(), f4Momentum(),
+            : fTrackID(0), fNDaughters(0), fEdep(0), fProperTime(0), f4Position(), f4Momentum(),
               fProcessName(""), fVolumeName("") {};
         Step(const Step &orig);
 
         TObject *Clone(const char *) const override;
+
+        void SetTrackID(int a) { fTrackID = a; }
+        int SetTrackID() const { return fTrackID; }
 
         void SetNDaughters(int a) { fNDaughters = a; }
         int GetNDaughters() const { return fNDaughters; }
@@ -43,18 +46,21 @@ namespace simobj {
         void SetPx(double a) { f4Momentum.SetPx(a); }
         void SetPy(double a) { f4Momentum.SetPy(a); }
         void SetPz(double a) { f4Momentum.SetPz(a); }
-        void SetE(double a) { f4Momentum.SetE(a); }
+        void SetKineticEnergy(double a) { f4Momentum.SetE(a); }
         double GetPx() const { return f4Momentum.Px(); }
         double GetPy() const { return f4Momentum.Py(); }
         double GetPz() const { return f4Momentum.Pz(); }
-        double GetE() const { return f4Momentum.E(); }
+        double GetKineticEnergy() const { return f4Momentum.E(); }
 
         void SetProcessName(const char *a) { fProcessName = a; }
         void SetVolumeName(const char *a) { fVolumeName = a; }
         TString GetProcessName() const { return fProcessName; }
         TString GetVolumeName() const { return fVolumeName; }
 
+        void Print(Option_t *option = "") const override;
+
       private:
+        int fTrackID;
         int fNDaughters;
         double fEdep;
         double fProperTime;

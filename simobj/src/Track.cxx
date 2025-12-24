@@ -49,4 +49,18 @@ namespace simobj {
 
         return fStepIdxArray[idx];
     }
+
+    void Track::Print(Option_t *option) const {
+        using namespace std;
+        cout << "Track ID: " << fTrackID << endl;
+        cout << "Parent Track ID: " << fParentID << endl;
+        cout << "PDG Code: " << fPDGCode << endl;
+        cout << "Particle name" << fName << endl;
+        cout << "Number of step: " << fNStep << " [max: " << fgcMaxStepSize << "]" << endl;
+        cout << "Step indexes: ";
+        for (size_t i = 0; i < fNStep; i++) {
+            cout << fStepIdxArray[i] << " ";
+        }
+        cout << endl;
+    }
 } // namespace simobj
