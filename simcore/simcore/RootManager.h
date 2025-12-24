@@ -41,17 +41,15 @@ namespace simcore {
 
     class RootManager {
       public:
-        RootManager(const char *filename = "simout.root", const char *treename = "tree")
-            : fMessenger(nullptr), fFilename(filename), fTreename(treename), fStarted(false),
-              fRecordStep(true), fRecordPrimary(true), fMerger(nullptr) {
-            fMessenger = new RootManagerMessenger(this);
-        };
-        virtual ~RootManager() { delete fMessenger; };
-
         static RootManager &GetInstance() {
             static RootManager fgInstance;
             return fgInstance;
         }
+
+        RootManager(const RootManager &)            = delete;
+        RootManager &operator=(const RootManager &) = delete;
+        RootManager(RootManager &&)                 = delete;
+        RootManager &operator=(RootManager &&)      = delete;
 
         bool StartRunMaster();
         bool EndRunMaster();
@@ -89,6 +87,13 @@ namespace simcore {
         void MakeBranches() const;
 
       private:
+        RootManager(const char *filename = "simout.root", const char *treename = "tree")
+            : fMessenger(nullptr), fFilename(filename), fTreename(treename), fStarted(false),
+              fRecordStep(true), fRecordPrimary(true), fMerger(nullptr) {
+            fMessenger = new RootManagerMessenger(this);
+        };
+        virtual ~RootManager() { delete fMessenger; };
+
         RootManagerMessenger *fMessenger;
 
         std::string fFilename;
