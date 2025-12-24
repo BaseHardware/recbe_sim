@@ -1,0 +1,39 @@
+# Macro file for the initialization of example B2
+# in interactive session
+#
+# Set some default verbose
+/control/verbose 2
+/control/saveHistory
+/run/verbose 2
+#
+# Change the default number of threads (in multi-threaded mode)
+#/run/numberOfThreads 4
+
+# pe_blocks: original geometry with PE blocks
+# hemisphere_det: a simple geometry only with hemisphere detector and primary source
+# sphere_det: a simple geometry only with sphere detector and primary source
+/kobetdsim/det/geom_type pe_blocks
+
+# true: use realistic beampipe geometry
+# false: use simplified geometry
+/kobetdsim/det/beampipe true
+
+# true: use Borated PE for the shielding blocks
+/kobetdsim/det/useBPE true
+
+# external_sequential: loads the vertex in the input file sequentially
+#                      (if it reaches to the end, it will not generate events)
+# external_neutron_sampling: samples the "neutron" vertex from the input file ramdomly.
+# neutron: neutron generation mode on the target surface
+# deuteron: deuteron generation mode in the ceramic cavity
+/kobetdsim/primary/mode neutron
+
+# the filename for the inputs for the primary vertex generation.
+# this is required only in external_sequential and external_neutron_sampling
+/kobetdsim/primary/filename primary.dat
+
+# Initialize kernel
+/run/initialize
+#
+# Visualization setting
+/control/execute vis.mac

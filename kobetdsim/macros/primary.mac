@@ -1,0 +1,27 @@
+# a macro file for primary vertex generation from the d(Be, n) reaction
+# those commands must be come before /run/initialize comand
+
+# number of threads
+/run/numberOfThreads 25
+
+# true: use Borated PE for the shielding blocks
+/kobetdsim/det/useBPE true
+
+# pe_blocks: original geometry with PE blocks
+# hemisphere_det: a simple geometry only with hemisphere detector and primary source
+# sphere_det: a simple geometry only with sphere detector and primary source
+/kobetdsim/det/geom_type sphere_det
+
+# true: use realistic beampipe geometry
+# false: use simplified geometry
+/kobetdsim/det/beampipe true
+
+# deuteron: deuteron generation mode in the ceramic cavity
+/kobetdsim/primary/mode deuteron
+
+/run/initialize
+
+# name of the output file
+/kobetdsim/ntuples/filename primary.root
+
+/run/beamOn 100000000

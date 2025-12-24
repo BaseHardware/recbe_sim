@@ -1,0 +1,8 @@
+# Macro file for neutron oven simulation
+# 
+# To be run preferably in batch, without graphics:
+# % neutron_oven[a,b] run2.mac
+#
+#/run/numberOfThreads 4
+/run/initialize
+/run/beamOn 500
