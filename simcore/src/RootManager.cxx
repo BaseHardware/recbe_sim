@@ -1,5 +1,7 @@
 #include "RootManager.h"
 
+#include "ROOT/TBufferMerger.hxx"
+
 #include "TClonesArray.h"
 #include "TTree.h"
 
@@ -77,7 +79,6 @@ static void G4Track2SimStep(const G4Track *src, simobj::Step *dest) {
 }
 
 namespace simcore {
-    RootManager RootManager::fgInstance;
     G4ThreadLocal TLSContainer *RootManager::fgTLS = nullptr;
 
     void RootManager::Fill() const { fgTLS->fTree->Fill(); }

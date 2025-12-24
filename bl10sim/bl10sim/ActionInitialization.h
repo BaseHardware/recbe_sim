@@ -1,12 +1,12 @@
 #ifndef __bl10sim_ActionInitialization_h__
 #define __bl10sim_ActionInitialization_h__
 
-#include "G4VUserActionInitialization.hh"
+#include "simcore/ActionInitialization.h"
 
 namespace bl10sim {
     class DetectorConstruction;
 
-    class ActionInitialization : public G4VUserActionInitialization {
+    class ActionInitialization : public simcore::ActionInitialization {
       public:
         ActionInitialization();
         ~ActionInitialization() override = default;

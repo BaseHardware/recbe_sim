@@ -6,7 +6,11 @@
 
 #include "G4Threading.hh"
 
-#include "ROOT/TBufferMerger.hxx"
+
+namespace ROOT {
+    class TBufferMerger;
+    class TBufferMergerFile;
+} // namespace ROOT
 
 class TClonesArray;
 class TTree;
@@ -19,11 +23,11 @@ namespace simcore {
         std::shared_ptr<ROOT::TBufferMergerFile> fFile;
         TTree *fTree;
 
-        Int_t fNTrack;
+        int fNTrack;
         std::map<int, size_t> fID2IdxTable;
         TClonesArray *fTCATrack;
 
-        Int_t fNStep;
+        int fNStep;
         TClonesArray *fTCAStep;
     };
 
@@ -32,7 +36,10 @@ namespace simcore {
         RootManager(const char *filename = "simout.root", const char *treename = "tree")
             : fFilename(filename), fTreename(treename), fStarted(false), fMerger(nullptr) {};
 
-        static RootManager &GetInstance() { return fgInstance; }
+        static RootManager &GetInstance() {
+            static RootManager fgInstance;
+            return fgInstance;
+        }
 
         bool StartRunMaster();
         bool EndRunMaster();
@@ -66,10 +73,9 @@ namespace simcore {
 
         inline static G4Mutex fgcStartMutex = G4MUTEX_INITIALIZER;
 
-        inline static Int_t fgcMaxTrackNum = 20000;
-        inline static Int_t fgcMaxStepNum  = 10000000;
+        inline static int fgcMaxTrackNum = 20000;
+        inline static int fgcMaxStepNum  = 10000000;
 
-        static RootManager fgInstance;
         static G4ThreadLocal TLSContainer *fgTLS;
     };
 }; // namespace simcore
