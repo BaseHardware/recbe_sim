@@ -1,6 +1,5 @@
-#include "SteppingAction.h"
-
-#include "RootManager.h"
+#include "simcore/SteppingAction.h"
+#include "simcore/RootManager.h"
 
 #include "G4Step.hh"
 

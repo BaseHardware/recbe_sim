@@ -1,5 +1,5 @@
-#include "RunAction.h"
-#include "RootManager.h"
+#include "simcore/RunAction.h"
+#include "simcore/RootManager.h"
 
 #include "G4RunManager.hh"
 

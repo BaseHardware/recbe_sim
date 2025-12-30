@@ -1,5 +1,5 @@
-#include "ActionInitMessenger.h"
-#include "ActionInitialization.h"
+#include "kobetdsim/ActionInitMessenger.h"
+#include "kobetdsim/ActionInitialization.h"
 
 #include "G4UIcmdWithABool.hh"
 #include "G4UIcmdWithAString.hh"

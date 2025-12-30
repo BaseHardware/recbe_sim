@@ -1,6 +1,6 @@
-#include "EventAction.h"
-#include "EventTrigger.h"
-#include "RootManager.h"
+#include "simcore/EventAction.h"
+#include "simcore/EventTrigger.h"
+#include "simcore/RootManager.h"
 
 #include "G4Event.hh"
 

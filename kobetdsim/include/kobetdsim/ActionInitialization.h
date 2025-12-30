@@ -1,7 +1,7 @@
 #ifndef __kobetdsim_ActionInitialization_h__
 #define __kobetdsim_ActionInitialization_h__
 
-#include "ActionInitMessenger.h"
+#include "kobetdsim/ActionInitMessenger.h"
 
 #include "G4String.hh"
 #include "G4VUserActionInitialization.hh"

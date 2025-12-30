@@ -1,7 +1,7 @@
 #ifndef __simcore_ActionInitialization_h__
 #define __simcore_ActionInitialization_h__
 
-#include "RootManager.h"
+#include "simcore/RootManager.h"
 
 #include "G4VUserActionInitialization.hh"
 

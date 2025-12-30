@@ -1,4 +1,4 @@
-#include "PrimaryGeneratorAction.h"
+#include "bl10sim/PrimaryGeneratorAction.h"
 
 #include "G4Box.hh"
 #include "G4LogicalVolume.hh"

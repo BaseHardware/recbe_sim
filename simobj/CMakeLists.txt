@@ -16,7 +16,7 @@ include(${ROOT_USE_FILE})
 # NB: headers are included so they will show up in IDEs
 #
 file(GLOB simobj_lib_sources ${PROJECT_SOURCE_DIR}/src/*.cxx)
-file(GLOB simobj_lib_headers ${PROJECT_SOURCE_DIR}/simobj/*.h)
+file(GLOB simobj_lib_headers ${PROJECT_SOURCE_DIR}/include/simobj/*.h)
 
 file(GLOB simobj_dict ${PROJECT_SOURCE_DIR}/dict/simobj_linkdef.h)
 
@@ -26,7 +26,7 @@ file(GLOB simobj_dict ${PROJECT_SOURCE_DIR}/dict/simobj_linkdef.h)
 add_library(simobj SHARED ${simobj_lib_sources})
 
 target_include_directories(simobj PUBLIC ${ROOT_INCLUDE_DIRS})
-target_include_directories(simobj PRIVATE simobj)
+target_include_directories(simobj PUBLIC include)
 
 target_link_libraries(simobj PRIVATE ${ROOT_LIBRARIES})
 

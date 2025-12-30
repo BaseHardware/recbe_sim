@@ -1,4 +1,4 @@
-#include "DetectorConstruction.h"
+#include "simcore/DetectorConstruction.h"
 
 #include "G4AutoDelete.hh"
 #include "G4GlobalMagFieldMessenger.hh"

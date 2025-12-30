@@ -22,7 +22,8 @@ file(GLOB simcore_lib_sources ${PROJECT_SOURCE_DIR}/src/*.cxx)
 #
 add_library(simcore SHARED ${simcore_lib_sources})
 
-target_include_directories(simcore PRIVATE simcore)
+target_include_directories(simcore PUBLIC include)
+
 target_link_libraries(simcore PRIVATE ${Geant4_LIBRARIES})
 target_link_libraries(simcore PRIVATE simobj)
 target_link_libraries(simcore PRIVATE ${ROOT_LIBRARIES})

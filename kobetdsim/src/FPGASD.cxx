@@ -1,4 +1,4 @@
-#include "FPGASD.h"
+#include "kobetdsim/FPGASD.h"
 
 #include "simcore/EventTrigger.h"
 

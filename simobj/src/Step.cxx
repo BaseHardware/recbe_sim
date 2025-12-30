@@ -1,6 +1,6 @@
 #include <iostream>
 
-#include "Step.h"
+#include "simobj/Step.h"
 
 namespace simobj {
     Step::Step(const Step &orig)

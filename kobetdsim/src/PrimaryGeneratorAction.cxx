@@ -1,7 +1,7 @@
 #include <cstdint>
 #include <fstream>
 
-#include "PrimaryGeneratorAction.h"
+#include "kobetdsim/PrimaryGeneratorAction.h"
 
 #include "G4Event.hh"
 #include "G4LogicalVolume.hh"

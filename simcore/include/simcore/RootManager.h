@@ -6,7 +6,7 @@
 
 #include "G4Threading.hh"
 
-#include "RootManagerMessenger.h"
+#include "simcore/RootManagerMessenger.h"
 
 namespace ROOT {
     class TBufferMerger;

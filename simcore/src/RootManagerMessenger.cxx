@@ -1,5 +1,5 @@
-#include "RootManagerMessenger.h"
-#include "RootManager.h"
+#include "simcore/RootManagerMessenger.h"
+#include "simcore/RootManager.h"
 
 #include "G4UIcmdWithABool.hh"
 #include "G4UIcmdWithAString.hh"

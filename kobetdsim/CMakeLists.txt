@@ -23,7 +23,7 @@ file(GLOB kobetdsim_exec ${PROJECT_SOURCE_DIR}/exe/kobetd_mainsim.cxx)
 #
 add_library(kobetdsim SHARED ${kobetdsim_lib_sources})
 
-target_include_directories(kobetdsim PRIVATE kobetdsim)
+target_include_directories(kobetdsim PUBLIC include)
 target_link_libraries(kobetdsim PRIVATE ${Geant4_LIBRARIES})
 target_link_libraries(kobetdsim PUBLIC simcore)
 

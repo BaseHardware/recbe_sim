@@ -1,6 +1,6 @@
 #include "FTFP_BERT.hh"
-#include "bl10sim/DetectorConstruction.h"
 #include "bl10sim/ActionInitialization.h"
+#include "bl10sim/BL10DetectorConstruction.h"
 
 #include "G4RunManagerFactory.hh"
 #include "G4SteppingVerbose.hh"
@@ -78,7 +78,7 @@ int main(int argc, char **argv) {
 
     // Set mandatory initialization classes
     //
-    auto detConstruction = new bl10sim::DetectorConstruction();
+    auto detConstruction = new bl10sim::BL10DetectorConstruction();
     runManager->SetUserInitialization(detConstruction);
 
     auto physicsList = new FTFP_BERT;

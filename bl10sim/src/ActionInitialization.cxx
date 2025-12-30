@@ -1,11 +1,11 @@
-#include "ActionInitialization.h"
+#include "bl10sim/ActionInitialization.h"
+#include "bl10sim/PrimaryGeneratorAction.h"
 
 #include "simcore/EventAction.h"
 #include "simcore/RunAction.h"
 #include "simcore/SteppingAction.h"
 #include "simcore/TrackingAction.h"
 
-#include "PrimaryGeneratorAction.h"
 
 namespace bl10sim {
     ActionInitialization::ActionInitialization() {}

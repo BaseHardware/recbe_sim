@@ -1,5 +1,5 @@
-#include "DetectorMessenger.h"
-#include "DetectorConstruction.h"
+#include "kobetdsim/DetectorMessenger.h"
+#include "kobetdsim/DetectorConstruction.h"
 
 #include "G4UIcmdWithABool.hh"
 #include "G4UIcmdWithAString.hh"

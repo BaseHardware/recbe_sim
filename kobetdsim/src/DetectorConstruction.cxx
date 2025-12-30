@@ -1,10 +1,8 @@
 #include <string>
 
-#include "DetectorConstruction.h"
-
-#include "DetectorMessenger.h"
-
-#include "FPGASD.h"
+#include "kobetdsim/DetectorConstruction.h"
+#include "kobetdsim/DetectorMessenger.h"
+#include "kobetdsim/FPGASD.h"
 
 #include "G4AutoDelete.hh"
 #include "G4Box.hh"

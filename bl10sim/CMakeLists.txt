@@ -23,7 +23,7 @@ file(GLOB bl10sim_exec ${PROJECT_SOURCE_DIR}/exe/bl10_mainsim.cxx)
 #
 add_library(bl10sim SHARED ${bl10sim_lib_sources})
 
-target_include_directories(bl10sim PRIVATE bl10sim)
+target_include_directories(bl10sim PUBLIC include)
 target_link_libraries(bl10sim PRIVATE ${Geant4_LIBRARIES})
 target_link_libraries(bl10sim PUBLIC simcore)
 
@@ -33,7 +33,7 @@ target_link_libraries(bl10sim PUBLIC simcore)
 add_executable(bl10_mainsim ${bl10sim_exec})
 
 target_link_libraries(bl10_mainsim PRIVATE ${Geant4_LIBRARIES})
-target_link_libraries(bl10_mainsim PUBLIC bl10sim)
+target_link_libraries(bl10_mainsim PRIVATE bl10sim)
 
 #----------------------------------------------------------------------------
 # Copy all scripts to the build directory, i.e. the directory in which we

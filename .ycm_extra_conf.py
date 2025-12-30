@@ -86,8 +86,10 @@ flags = [
     '-isystem', '/storage/software/Geant4/11.3.2/x86_64/fc42-gcc15.1.1/include/Geant4',
 
     # For common setting
-    '-I./',
-    '-I./kobetdsim',
+    '-I./simobj/include',
+    '-I./simcore/include',
+    '-I./bl10sim/include',
+    '-I./kobetdsim/include',
 ]
 
 # Set this to the absolute path to the folder (NOT the file!) containing the

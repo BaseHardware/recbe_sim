@@ -1,10 +1,9 @@
-#include "ActionInitialization.h"
+#include "kobetdsim/ActionInitialization.h"
+#include "kobetdsim/PrimaryGeneratorAction.h"
 
 #include "simcore/EventAction.h"
 #include "simcore/RunAction.h"
 #include "simcore/TrackingAction.h"
-
-#include "PrimaryGeneratorAction.h"
 
 namespace kobetdsim {
     void ActionInitialization::BuildForMaster() const {

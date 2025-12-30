@@ -1,4 +1,4 @@
-#include "DuctDetectorConstruction.h"
+#include "bl10sim/DuctDetectorConstruction.h"
 
 #include "G4Box.hh"
 #include "G4LogicalVolume.hh"

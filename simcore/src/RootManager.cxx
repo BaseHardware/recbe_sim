@@ -1,4 +1,4 @@
-#include "RootManager.h"
+#include "simcore/RootManager.h"
 
 #include "ROOT/TBufferMerger.hxx"
 

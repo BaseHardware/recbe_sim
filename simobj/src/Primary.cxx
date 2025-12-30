@@ -2,7 +2,7 @@
 
 #include "TClonesArray.h"
 
-#include "Primary.h"
+#include "simobj/Primary.h"
 
 namespace simobj {
     Vertex::Vertex(const Vertex &orig)
