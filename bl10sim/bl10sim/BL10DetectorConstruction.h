@@ -1,5 +1,5 @@
-#ifndef __bl10sim_DetectorConstruction_h__
-#define __bl10sim_DetectorConstruction_h__
+#ifndef __bl10sim_BL10DetectorConstruction_h__
+#define __bl10sim_BL10DetectorConstruction_h__
 
 #include "simcore/DetectorConstruction.h"
 
@@ -9,10 +9,10 @@ class G4VPhysicalVolume;
 class G4GlobalMagFieldMessenger;
 
 namespace bl10sim {
-    class DetectorConstruction : public simcore::DetectorConstruction {
+    class BL10DetectorConstruction : public simcore::DetectorConstruction {
       public:
-        DetectorConstruction()           = default;
-        ~DetectorConstruction() override = default;
+        BL10DetectorConstruction()           = default;
+        ~BL10DetectorConstruction() override = default;
 
       public:
         void ConstructSDandField() override;

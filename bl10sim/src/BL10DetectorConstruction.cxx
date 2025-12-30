@@ -1,4 +1,4 @@
-#include "DetectorConstruction.h"
+#include "BL10DetectorConstruction.h"
 
 #include "G4Box.hh"
 #include "G4LogicalVolume.hh"
@@ -7,7 +7,7 @@
 #include "G4SystemOfUnits.hh"
 
 namespace bl10sim {
-    G4VPhysicalVolume *DetectorConstruction::DefineVolumes() {
+    G4VPhysicalVolume *BL10DetectorConstruction::DefineVolumes() {
         G4double worldSizeXY = 4 * m;
         G4double worldSizeZ  = 4 * m;
 
@@ -39,5 +39,5 @@ namespace bl10sim {
         return worldPV;
     }
 
-    void DetectorConstruction::ConstructSDandField() {}
+    void BL10DetectorConstruction::ConstructSDandField() {}
 } // namespace bl10sim
