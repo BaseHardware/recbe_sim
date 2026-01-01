@@ -17,6 +17,9 @@ namespace bl10sim {
       public:
         void ConstructSDandField() override;
 
+      protected:
+        void DefineMaterials() override;
+
       private:
         G4VPhysicalVolume *DefineVolumes() override;
     };
