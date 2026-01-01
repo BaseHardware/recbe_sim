@@ -13,7 +13,7 @@ namespace simcore {
         TouchTriggerSD(const G4String &name);
         ~TouchTriggerSD() override = default;
 
-        void RequireNonzeroEdep(G4bool a = true) { fRequireEdep = a; }
+        void SetRequireNonzeroEdep(G4bool a = true) { fRequireEdep = a; }
         G4bool GetRequireNonzeroEdep() const { return fRequireEdep; }
 
         G4bool ProcessHits(G4Step *step, G4TouchableHistory *history) override;
