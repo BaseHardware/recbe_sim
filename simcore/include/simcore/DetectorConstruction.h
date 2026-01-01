@@ -16,7 +16,7 @@ namespace simcore {
         void ConstructSDandField() override;
 
       protected:
-        void DefineMaterials();
+        virtual void DefineMaterials();
 
       private:
         virtual G4VPhysicalVolume *DefineVolumes() = 0;

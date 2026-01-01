@@ -2,7 +2,7 @@
 
 #include "kobetdsim/DetectorConstruction.h"
 #include "kobetdsim/DetectorMessenger.h"
-#include "kobetdsim/FPGASD.h"
+#include "simcore/TouchTriggerSD.h"
 
 #include "G4AutoDelete.hh"
 #include "G4Box.hh"
@@ -814,7 +814,8 @@ namespace kobetdsim {
     void DetectorConstruction::ConstructSDandField() {
         G4String fpgaChamberSDname = "/FPGASD";
 
-        FPGASD *fpgaSD = new FPGASD(fpgaChamberSDname);
+        simcore::TouchTriggerSD *fpgaSD = new simcore::TouchTriggerSD(fpgaChamberSDname);
+        fpgaSD->SetRequireNonzeroEdep();
 
         G4SDManager::GetSDMpointer()->AddNewDetector(fpgaSD);
         SetSensitiveDetector("Target_LV", fpgaSD, true);
