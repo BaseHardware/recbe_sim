@@ -1,3 +1,5 @@
+#include "simcore/SafeTermination.h"
+
 #include "FTFP_BERT_HP.hh"
 #include "bl10sim/ActionInitialization.h"
 #include "bl10sim/DuctDetectorConstruction.h"
@@ -20,6 +22,7 @@ namespace {
 } // namespace
 
 int main(int argc, char **argv) {
+    simcore::SafeTermination::RegisterSignalHandler();
     // Evaluate arguments
     //
     if (argc > 7) {
