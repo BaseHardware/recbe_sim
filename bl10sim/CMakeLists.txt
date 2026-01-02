@@ -62,3 +62,13 @@ foreach(_script ${BL10SIM_USERDATA})
         COPYONLY
     )
 endforeach()
+
+set(anlys_script_dir anlys_scripts)
+
+execute_process(
+    COMMAND "${CMAKE_COMMAND}" -E create_symlink "${PROJECT_SOURCE_DIR}/${anlys_script_dir}" "${PROJECT_BINARY_DIR}/${anlys_script_dir}"
+    RESULT_VARIABLE rv
+)
+if(NOT rv EQUAL 0)
+    message(FATAL_ERROR "Failed to create symlink for the analysis script directory")
+endif()
