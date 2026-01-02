@@ -16,12 +16,8 @@ namespace bl10sim {
         G4int nofParticles = 1;
         fParticleGun       = new G4ParticleGun(nofParticles);
 
-        // default particle kinematic
-        //
         auto particleDefinition = G4ParticleTable::GetParticleTable()->FindParticle("neutron");
         fParticleGun->SetParticleDefinition(particleDefinition);
-        fParticleGun->SetParticleMomentumDirection(G4ThreeVector(0., 0., 1.));
-        fParticleGun->SetParticleEnergy(300. * MeV);
 
         fEGenerator = new LethargyEnergyGenerator();
         fEGenerator->SetInputFilename("./data/port10_inp.txt");
@@ -29,7 +25,10 @@ namespace bl10sim {
         fEGenerator->Initialize();
     }
 
-    PrimaryGeneratorAction::~PrimaryGeneratorAction() { delete fParticleGun; }
+    PrimaryGeneratorAction::~PrimaryGeneratorAction() {
+        delete fParticleGun;
+        delete fEGenerator;
+    }
 
     void PrimaryGeneratorAction::GeneratePrimaries(G4Event *event) {
         G4double worldZHalfLength = 0.;
@@ -53,8 +52,17 @@ namespace bl10sim {
         }
 
         // Set gun position
-        fParticleGun->SetParticlePosition(G4ThreeVector(0., 0., -worldZHalfLength));
+        G4ThreeVector position(0, 0, -worldZHalfLength);
+        position.setX(G4UniformRand() * 10 * cm - 5 * cm);
+        position.setY(G4UniformRand() * 10 * cm - 5 * cm);
+        fParticleGun->SetParticlePosition(position);
+
         fParticleGun->SetParticleEnergy(fEGenerator->Generate());
+
+        G4ThreeVector pDir(0, 0, 1);
+        pDir.setTheta(0.0218 * G4UniformRand());
+        pDir.setPhi(2 * M_PI * G4UniformRand());
+        fParticleGun->SetParticleMomentumDirection(pDir);
 
         fParticleGun->GeneratePrimaryVertex(event);
     }
@@ -108,6 +116,7 @@ namespace bl10sim {
                                 FatalException, msg);
                     goto cleanup_and_exit;
                 }
+                e *= MeV;
                 prev_e = e;
                 fBoundaries.push_back(e);
 

@@ -27,27 +27,28 @@ namespace bl10sim {
     }
 
     G4VPhysicalVolume *DuctDetectorConstruction::DefineVolumes() {
-        G4double worldSizeXY = 1 * m;
-        G4double worldSizeZ  = 40 * m;
+        G4double dl1 = 230 * cm;
+        G4double dl2 = 3600 * cm;
+
+        G4double srcDuctDistance = dl1;
 
         G4double ductThick    = 3 * cm;
-        G4double ductLength   = 36 * m;
+        G4double ductLength   = (dl2 - dl1);
         G4double ductWindowXY = 10 * cm;
 
         G4double neutDetectorThick = 1 * cm;
 
         G4double filterWindowThick = 0.5 * mm;
 
+        G4double worldSizeXY = ductWindowXY + ductThick * 2.;
+        G4double worldSizeZ  = ductLength + srcDuctDistance;
+
         // Get materials
         G4Material *airMaterial    = G4Material::GetMaterial("G4_AIR");
         G4Material *ductMaterial   = G4Material::GetMaterial("G4_CONCRETE");
         G4Material *filterMaterial = G4Material::GetMaterial("GADOLINIUM_OXIDE");
 
-        //
-        // World
-        //
-        G4Box *worldS = new G4Box("World",                                           // its name
-                                  worldSizeXY / 2, worldSizeXY / 2, worldSizeZ / 2); // its size
+        G4Box *worldS = new G4Box("World", worldSizeXY / 2., worldSizeXY / 2., worldSizeZ / 2);
 
         G4LogicalVolume *worldLV = new G4LogicalVolume(worldS,      // its solid
                                                        airMaterial, // its material
@@ -72,8 +73,8 @@ namespace bl10sim {
         G4LogicalVolume *ductInnerLV =
             new G4LogicalVolume(ductInnerBox, airMaterial, "DuctInnerLV");
 
-        new G4PVPlacement(nullptr, {0, 0, 0}, ductOuterLV, "DuctOuterPV", worldLV, false, 0,
-                          fCheckOverlaps);
+        new G4PVPlacement(nullptr, {0, 0, srcDuctDistance / 2.}, ductOuterLV, "DuctOuterPV",
+                          worldLV, false, 0, fCheckOverlaps);
         new G4PVPlacement(nullptr, {0, 0, 0}, ductInnerLV, "DuctInnerPV", ductOuterLV, false, 0,
                           fCheckOverlaps);
 

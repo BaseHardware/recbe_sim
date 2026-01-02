@@ -1,9 +1,10 @@
-#include "FTFP_BERT.hh"
+#include "FTFP_BERT_HP.hh"
 #include "bl10sim/ActionInitialization.h"
 #include "bl10sim/DuctDetectorConstruction.h"
 
 #include "G4RunManagerFactory.hh"
 #include "G4SteppingVerbose.hh"
+#include "G4ThermalNeutrons.hh"
 #include "G4UIExecutive.hh"
 #include "G4UIcommand.hh"
 #include "G4UImanager.hh"
@@ -81,7 +82,8 @@ int main(int argc, char **argv) {
     auto detConstruction = new bl10sim::DuctDetectorConstruction();
     runManager->SetUserInitialization(detConstruction);
 
-    auto physicsList = new FTFP_BERT;
+    auto physicsList = new FTFP_BERT_HP;
+    physicsList->RegisterPhysics(new G4ThermalNeutrons());
     runManager->SetUserInitialization(physicsList);
 
     auto actionInitialization = new bl10sim::ActionInitialization();
