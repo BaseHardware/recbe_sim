@@ -42,7 +42,7 @@ namespace simobj {
     size_t &Track::GetStepIndex(size_t idx) {
         using namespace std;
 
-        if (fgcMaxStepSize >= idx || fNStep >= idx) {
+        if (fgcMaxStepSize <= idx || fNStep <= idx) {
             cerr << "idx for the step index array is wrong: " << idx << endl;
             throw;
         }
