@@ -60,7 +60,7 @@ namespace bl10sim {
         fParticleGun->SetParticleEnergy(fEGenerator->Generate());
 
         G4ThreeVector pDir(0, 0, 1);
-        pDir.setTheta(0.0218 * G4UniformRand());
+        pDir.setTheta(0.065 * G4UniformRand());
         pDir.setPhi(2 * M_PI * G4UniformRand());
         fParticleGun->SetParticleMomentumDirection(pDir);
 
