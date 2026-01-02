@@ -19,3 +19,12 @@ configure_file(
                      WORLD_READ WORLD_EXECUTE
     @ONLY
 )
+
+#----------------------------------------------------------------------------
+# Create a setting file for YCM
+#
+configure_file(
+    ${PROJECT_SOURCE_DIR}/.ycm_extra_conf.py
+    ${PROJECT_BINARY_DIR}/.ycm_extra_conf.py
+    @ONLY
+)

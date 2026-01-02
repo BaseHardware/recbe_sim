@@ -84,13 +84,18 @@ flags = [
 
     '-isystem', '/storage/software/root/6.36.04/x86_64/fc42-gcc15.2.1/include',
     '-isystem', '/storage/software/Geant4/11.3.2/x86_64/fc42-gcc15.1.1/include/Geant4',
-
-    # For common setting
-    '-I./simobj/include',
-    '-I./simcore/include',
-    '-I./bl10sim/include',
-    '-I./kobetdsim/include',
 ]
+
+nowdir="@PROJECT_SOURCE_DIR@"
+
+if nowdir[0]=='@':
+    nowdir='.'
+
+flags.append(f'-I{nowdir}/simobj/include')
+flags.append(f'-I{nowdir}/simcore/include')
+flags.append(f'-I{nowdir}/bl10sim/include')
+flags.append(f'-I{nowdir}/kobetdsim/include')
+
 
 # Set this to the absolute path to the folder (NOT the file!) containing the
 # compile_commands.json file to use that instead of 'flags'. See here for
