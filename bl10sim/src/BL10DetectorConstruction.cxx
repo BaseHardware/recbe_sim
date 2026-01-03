@@ -1,6 +1,7 @@
 #include "bl10sim/BL10DetectorConstruction.h"
 
 #include "G4Box.hh"
+#include "G4DisplacedSolid.hh"
 #include "G4LogicalVolume.hh"
 #include "G4Material.hh"
 #include "G4NistManager.hh"
@@ -8,7 +9,6 @@
 #include "G4SubtractionSolid.hh"
 #include "G4SystemOfUnits.hh"
 #include "G4Trd.hh"
-#include "G4UnionSolid.hh"
 
 static const G4double booleanSolidTolerance = 100 * um;
 
@@ -54,8 +54,9 @@ namespace bl10sim {
         fExitwallDistance  = 60 * cm;
         fExitwallThickness = 50 * cm;
         fExitwallWidth     = 1 * m;
+        fExitwallBRDepth   = 10 * cm;
 
-        fExitwallBRDepth = 10 * cm;
+        fExitpathWidth = 60 * cm;
 
         ftLabWidthSlope = (fLabWidthDumpside - fLabWidthBeamside) / fLabZLength;
     }
@@ -105,16 +106,21 @@ namespace bl10sim {
         // (assuming beamside < dumpside)
         G4double boronResinWidthAtLabBeamBoundary = fLabWidthBeamside + 2 * fBoronResinThickness;
         G4double boronResinWidthAtLabDumpBoundary = fLabWidthDumpside + 2 * fBoronResinThickness;
-        G4double boronResinWidthBeamside =
+        G4double boronResinWidthAtOrigBeamBoundary =
             boronResinWidthAtLabBeamBoundary - ftLabWidthSlope * fBoronResinThickness;
+        G4double boronResinWidthAtOrigDumpBoundary =
+            boronResinWidthAtLabDumpBoundary + ftLabWidthSlope * fBoronResinThickness;
+        G4double boronResinWidthBeamside = boronResinWidthAtOrigBeamBoundary;
         G4double boronResinWidthDumpside =
-            boronResinWidthAtLabDumpBoundary +
-            ftLabWidthSlope * (fBoronResinThickness + fIronThickness);
+            boronResinWidthAtOrigDumpBoundary + ftLabWidthSlope * fIronThickness;
 
         // Build the Boron-Resin case (simple version)
         G4Trd *boronResinTrd = new G4Trd("BoronResinCaseTrd", boronResinWidthBeamside / 2.,
                                          boronResinWidthDumpside / 2., boronResinHeight / 2.,
                                          boronResinHeight / 2., boronResinZLength / 2.);
+
+        G4DisplacedSolid *displacedBRTrd = new G4DisplacedSolid(
+            "BoronResinCaseDisplacedTrd", boronResinTrd, nullptr, {0, 0, fIronThickness / 2.});
 
         if (simple) return boronResinTrd;
 
@@ -128,6 +134,10 @@ namespace bl10sim {
 
         // Tlanslation for the carver
         G4ThreeVector ewCarverTlate = {0, 0, 0};
+        // Apply a bias of the center of G4Trd
+        // -z length: fLabZLength/2+fBoronResinThickness
+        // +z length: fLabZLength/2+fBoronResinThickness + fIronThickness
+        ewCarverTlate += {0, 0, fIronThickness / 2.};
         // Move the carver center to the +z end
         ewCarverTlate += {0, 0, boronResinZLength / 2.};
         // Compenstae the thickness of the iron
@@ -148,15 +158,41 @@ namespace bl10sim {
         ewCarverTlate += {0, -fBoronResinThickness / 2. - booleanSolidTolerance / 2., 0};
 
         G4SubtractionSolid *carvedBRCase =
-            new G4SubtractionSolid("BoronResinCaseWExitwallSSolid", boronResinTrd,
+            new G4SubtractionSolid("BoronResinCaseWExitwallSSolid", displacedBRTrd,
                                    exitwallCarverBox, nullptr, ewCarverTlate);
 
-        return carvedBRCase;
+        G4double exitpathCarverHeight  = boronResinHeight + 2 * booleanSolidTolerance;
+        G4double exitpathCarverZLength = fIronThickness + booleanSolidTolerance;
+        G4double exitpathCarverMZWidth = boronResinWidthAtOrigDumpBoundary - fExitpathWidth -
+                                         2 * fBoronResinThickness + booleanSolidTolerance;
+        G4double exitpathCarverPZWidth =
+            boronResinWidthDumpside - fExitpathWidth - 2 * fBoronResinThickness +
+            ftLabWidthSlope * booleanSolidTolerance + booleanSolidTolerance;
+
+        G4Trd *exitpathCarver = new G4Trd("BRCaseExitCarverTrd", exitpathCarverMZWidth / 2.,
+                                          exitpathCarverPZWidth / 2., exitpathCarverHeight / 2.,
+                                          exitpathCarverHeight / 2., exitpathCarverZLength / 2.);
+
+        G4SubtractionSolid *brCaseWithExit = new G4SubtractionSolid(
+            "BoronResinCaseSolid", carvedBRCase, exitpathCarver, nullptr,
+            {fExitpathWidth / 2. + fBoronResinThickness + booleanSolidTolerance / 2., 0,
+             fIronThickness / 2. + boronResinZLength / 2. - exitpathCarverZLength / 2. +
+                 booleanSolidTolerance / 2.});
+
+        return brCaseWithExit;
     }
 
     G4VSolid *BL10DetectorConstruction::BuildLabSolid(G4bool simple) const {
-        G4Trd *labTrd = new G4Trd("LabTrd", fLabWidthBeamside / 2., fLabWidthDumpside / 2.,
-                                  fLabHeight / 2., fLabHeight / 2., fLabZLength / 2.);
+        G4double labTrdZLength = fLabZLength + fBoronResinThickness + fIronThickness;
+        G4double labTrdWidthDumpside =
+            fLabWidthDumpside + ftLabWidthSlope * (fBoronResinThickness + fIronThickness);
+        G4Trd *labTrd = new G4Trd("LabTrd", fLabWidthBeamside / 2., labTrdWidthDumpside / 2.,
+                                  fLabHeight / 2., fLabHeight / 2., labTrdZLength / 2.);
+
+        G4DisplacedSolid *labDisplacedTrd =
+            new G4DisplacedSolid("LabDisplacedTrd", labTrd, nullptr,
+                                 {0, 0, (fBoronResinThickness + fIronThickness) / 2.});
+
         if (simple) return labTrd;
 
         G4Box *exitwallCarverBox =
@@ -177,9 +213,27 @@ namespace bl10sim {
         ewCarverTlate += {0, 0, -fExitwallThickness / 2.};
 
         G4SubtractionSolid *carvedLab = new G4SubtractionSolid(
-            "LabWExitwallSSolid", labTrd, exitwallCarverBox, nullptr, ewCarverTlate);
+            "LabWExitwallSSolid", labDisplacedTrd, exitwallCarverBox, nullptr, ewCarverTlate);
 
-        return carvedLab;
+        G4double exitpathCarverHeight = fLabHeight + 2 * booleanSolidTolerance;
+        G4double exitpathCarverZLength =
+            fBoronResinThickness + fIronThickness + booleanSolidTolerance;
+        G4double exitpathCarverMZWidth = fLabWidthDumpside - fExitpathWidth + booleanSolidTolerance;
+        G4double exitpathCarverPZWidth = fLabWidthDumpside - fExitpathWidth +
+                                         ftLabWidthSlope * exitpathCarverZLength +
+                                         booleanSolidTolerance;
+
+        G4Trd *exitpathCarver = new G4Trd("LabExitCarverTrd", exitpathCarverMZWidth / 2.,
+                                          exitpathCarverPZWidth / 2., exitpathCarverHeight / 2.,
+                                          exitpathCarverHeight / 2., exitpathCarverZLength / 2.);
+
+        G4SubtractionSolid *labWithExit = new G4SubtractionSolid(
+            "labSolid", carvedLab, exitpathCarver, nullptr,
+            {fExitpathWidth / 2. + booleanSolidTolerance / 2., 0,
+             (fBoronResinThickness + fIronThickness) / 2. + labTrdZLength / 2. -
+                 exitpathCarverZLength / 2. + booleanSolidTolerance / 2.});
+
+        return labWithExit;
     }
 
     void BL10DetectorConstruction::FillIroncase(G4LogicalVolume *lv) const {
@@ -189,14 +243,14 @@ namespace bl10sim {
             BuildBoronResincaseSolid(fSimpleGeometry), matB4C, "BoronResinCaseLV");
 
         G4ThreeVector boronResinTlate = {
-            0, -(fFloorThickness + fIronThickness) / 2. + fFloorThickness, fIronThickness / 2.};
+            0, -(fFloorThickness + fIronThickness) / 2. + fFloorThickness, 0};
         new G4PVPlacement(nullptr, boronResinTlate, boronResinLV, "BoronResinCasePV", lv, false, 0,
                           fCheckOverlaps);
 
         G4LogicalVolume *labLV =
             new G4LogicalVolume(BuildLabSolid(fSimpleGeometry), matAir, "LabLV");
 
-        G4ThreeVector labTlate = {0, -fBoronResinThickness / 2., -fIronThickness / 2.};
+        G4ThreeVector labTlate = {0, -fBoronResinThickness / 2., 0};
         new G4PVPlacement(nullptr, labTlate, labLV, "LabPV", boronResinLV, false, 0,
                           fCheckOverlaps);
     }

@@ -28,8 +28,8 @@ namespace bl10sim {
         G4LogicalVolume *BuildIroncase(G4bool floor) const;
         void FillIroncase(G4LogicalVolume *) const;
 
-        G4VSolid* BuildBoronResincaseSolid(G4bool) const;
-        G4VSolid* BuildLabSolid(G4bool) const;
+        G4VSolid *BuildBoronResincaseSolid(G4bool) const;
+        G4VSolid *BuildLabSolid(G4bool) const;
 
         G4VPhysicalVolume *DefineVolumes() override;
 
@@ -50,6 +50,8 @@ namespace bl10sim {
         G4double fExitwallThickness;
         G4double fExitwallWidth;
         G4double fExitwallBRDepth;
+
+        G4double fExitpathWidth;
 
         G4ThreeVector fGlobalTlate;
     };
