@@ -55,15 +55,14 @@ namespace bl10sim {
         G4ThreeVector position(0, 0, -worldZHalfLength);
         position.setX(G4UniformRand() * 10 * cm - 5 * cm);
         position.setY(G4UniformRand() * 10 * cm - 5 * cm);
-        // fParticleGun->SetParticlePosition(position);
-        fParticleGun->SetParticlePosition({});
+        fParticleGun->SetParticlePosition(position);
 
         fParticleGun->SetParticleEnergy(fEGenerator->Generate());
 
         G4ThreeVector pDir(0, 0, 1);
         pDir.setTheta(0.065 * G4UniformRand());
         pDir.setPhi(2 * M_PI * G4UniformRand());
-        //fParticleGun->SetParticleMomentumDirection(pDir);
+        fParticleGun->SetParticleMomentumDirection(pDir);
 
         fParticleGun->GeneratePrimaryVertex(event);
     }
