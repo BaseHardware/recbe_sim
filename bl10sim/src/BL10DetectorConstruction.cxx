@@ -56,6 +56,8 @@ namespace bl10sim {
         fExitwallWidth     = 1 * m;
 
         fExitwallBRDepth = 10 * cm;
+
+        ftLabWidthSlope = (fLabWidthDumpside - fLabWidthBeamside) / fLabZLength;
     }
 
     G4LogicalVolume *BL10DetectorConstruction::BuildIroncase(G4bool floor) const {
@@ -67,15 +69,14 @@ namespace bl10sim {
 
         // Calculating the width of the iron case at the beam/dump side
         // (assuming beamside < dumpside)
-        G4double labWidthSlope = (fLabWidthDumpside - fLabWidthBeamside) / fLabZLength;
         G4double worldWidthAtLabBeamBoundary =
             fLabWidthBeamside + 2 * (fBoronResinThickness + fIronThickness);
         G4double worldWidthAtLabDumpBoundary =
             fLabWidthDumpside + 2 * (fBoronResinThickness + fIronThickness);
         G4double worldWidthBeamside =
-            worldWidthAtLabBeamBoundary - labWidthSlope * (fBoronResinThickness + fIronThickness);
+            worldWidthAtLabBeamBoundary - ftLabWidthSlope * (fBoronResinThickness + fIronThickness);
         G4double worldWidthDumpside =
-            worldWidthAtLabDumpBoundary + labWidthSlope * (fBoronResinThickness + fIronThickness);
+            worldWidthAtLabDumpBoundary + ftLabWidthSlope * (fBoronResinThickness + fIronThickness);
 
         G4Trd *worldTrd = new G4Trd("IroncaseTrd", worldWidthBeamside / 2., worldWidthDumpside / 2.,
                                     worldHeight / 2., worldHeight / 2., worldZLength / 2.);
@@ -97,18 +98,18 @@ namespace bl10sim {
     }
 
     G4VSolid *BL10DetectorConstruction::BuildBoronResincaseSolid(G4bool simple) const {
-        G4double boronResinZLength = fLabZLength + 2 * fBoronResinThickness;
+        G4double boronResinZLength = fLabZLength + 2 * fBoronResinThickness + fIronThickness;
         G4double boronResinHeight  = fLabHeight + fBoronResinThickness;
 
         // Calculating the width of the boron-resin case at the beam/dump side
         // (assuming beamside < dumpside)
-        G4double labWidthSlope = (fLabWidthDumpside - fLabWidthBeamside) / fLabZLength;
         G4double boronResinWidthAtLabBeamBoundary = fLabWidthBeamside + 2 * fBoronResinThickness;
         G4double boronResinWidthAtLabDumpBoundary = fLabWidthDumpside + 2 * fBoronResinThickness;
         G4double boronResinWidthBeamside =
-            boronResinWidthAtLabBeamBoundary - labWidthSlope * fBoronResinThickness;
+            boronResinWidthAtLabBeamBoundary - ftLabWidthSlope * fBoronResinThickness;
         G4double boronResinWidthDumpside =
-            boronResinWidthAtLabDumpBoundary + labWidthSlope * fBoronResinThickness;
+            boronResinWidthAtLabDumpBoundary +
+            ftLabWidthSlope * (fBoronResinThickness + fIronThickness);
 
         // Build the Boron-Resin case (simple version)
         G4Trd *boronResinTrd = new G4Trd("BoronResinCaseTrd", boronResinWidthBeamside / 2.,
@@ -117,24 +118,30 @@ namespace bl10sim {
 
         if (simple) return boronResinTrd;
 
-        G4Box *exitwallCarverBox = new G4Box(
-            "ExitwallCarverBox", fExitwallWidth / 2. - fExitwallBRDepth + booleanSolidTolerance,
-            fLabHeight / 2. + booleanSolidTolerance / 2.,
-            fExitwallThickness / 2. - fExitwallBRDepth);
+        G4double carverBoxWidth =
+            fExitwallWidth - fExitwallBRDepth + fBoronResinThickness + booleanSolidTolerance * 2;
+        G4double carverBoxHeight    = fLabHeight + booleanSolidTolerance;
+        G4double carverBoxThickness = fExitwallThickness - 2 * fExitwallBRDepth;
+
+        G4Box *exitwallCarverBox = new G4Box("BoronResinCaseExitwallCarverBox", carverBoxWidth / 2.,
+                                             carverBoxHeight / 2., carverBoxThickness / 2.);
 
         // Tlanslation for the carver
         G4ThreeVector ewCarverTlate = {0, 0, 0};
         // Move the carver center to the +z end
         ewCarverTlate += {0, 0, boronResinZLength / 2.};
-        // Move the center to the +z edge of exitwall Boron-resin shield
+        // Compenstae the thickness of the iron
+        ewCarverTlate += {0, 0, -fIronThickness};
+        // Move the center to the +z edge of exitwall iron shield (inside the boron-resin shield)
         ewCarverTlate += {0, 0, -fExitwallDistance - fExitwallBRDepth - fBoronResinThickness};
         // Move the center to the x-border of exitwall
         ewCarverTlate +=
             {-boronResinWidthDumpside / 2. +
-                 labWidthSlope * (fExitwallDistance + fExitwallBRDepth + fBoronResinThickness) / 2.,
+                 ftLabWidthSlope * (fExitwallDistance + fExitwallBRDepth + fBoronResinThickness) /
+                     2.,
              0, 0};
         // Put the carver box to the innerside of room with consideration of tolerance.
-        ewCarverTlate += {fExitwallWidth / 2. - fExitwallBRDepth - booleanSolidTolerance, 0, 0};
+        ewCarverTlate += {carverBoxWidth / 2. - booleanSolidTolerance, 0, 0};
         // Move the box to the center of exitwall
         ewCarverTlate += {0, 0, -fExitwallThickness / 2. + fExitwallBRDepth};
         // Make the carver cling to the bottom
@@ -152,7 +159,27 @@ namespace bl10sim {
                                   fLabHeight / 2., fLabHeight / 2., fLabZLength / 2.);
         if (simple) return labTrd;
 
-        return labTrd;
+        G4Box *exitwallCarverBox =
+            new G4Box("LabExitwallCarverBox", fExitwallWidth / 2. + booleanSolidTolerance,
+                      fLabHeight / 2. + booleanSolidTolerance, fExitwallThickness / 2.);
+
+        // Tlanslation for the carver
+        G4ThreeVector ewCarverTlate = {0, 0, 0};
+        // Move the carver center to the +z end
+        ewCarverTlate += {0, 0, fLabZLength / 2.};
+        // Move the center to the +z edge of exitwall Boron-resin shield
+        ewCarverTlate += {0, 0, -fExitwallDistance};
+        // Move the center to the x-border of exitwall
+        ewCarverTlate += {-fLabWidthDumpside / 2. + ftLabWidthSlope * fExitwallDistance / 2., 0, 0};
+        // Put the carver box to the innerside of room with consideration of tolerance.
+        ewCarverTlate += {fExitwallWidth / 2. - booleanSolidTolerance, 0, 0};
+        // Move the box to the center of exitwall
+        ewCarverTlate += {0, 0, -fExitwallThickness / 2.};
+
+        G4SubtractionSolid *carvedLab = new G4SubtractionSolid(
+            "LabWExitwallSSolid", labTrd, exitwallCarverBox, nullptr, ewCarverTlate);
+
+        return carvedLab;
     }
 
     void BL10DetectorConstruction::FillIroncase(G4LogicalVolume *lv) const {
@@ -162,14 +189,14 @@ namespace bl10sim {
             BuildBoronResincaseSolid(fSimpleGeometry), matB4C, "BoronResinCaseLV");
 
         G4ThreeVector boronResinTlate = {
-            0, -(fFloorThickness + fIronThickness) / 2. + fFloorThickness, 0};
+            0, -(fFloorThickness + fIronThickness) / 2. + fFloorThickness, fIronThickness / 2.};
         new G4PVPlacement(nullptr, boronResinTlate, boronResinLV, "BoronResinCasePV", lv, false, 0,
                           fCheckOverlaps);
 
         G4LogicalVolume *labLV =
             new G4LogicalVolume(BuildLabSolid(fSimpleGeometry), matAir, "LabLV");
 
-        G4ThreeVector labTlate = {0, -fBoronResinThickness / 2., 0};
+        G4ThreeVector labTlate = {0, -fBoronResinThickness / 2., -fIronThickness / 2.};
         new G4PVPlacement(nullptr, labTlate, labLV, "LabPV", boronResinLV, false, 0,
                           fCheckOverlaps);
     }
