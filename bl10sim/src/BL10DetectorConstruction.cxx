@@ -196,11 +196,14 @@ namespace bl10sim {
     }
 
     G4VSolid *BL10DetectorConstruction::BuildLabSolid(G4bool simple) const {
-        G4double labTrdZLength = fLabZLength + fBoronResinThickness + fIronThickness;
+        G4double labTrdZLength       = fLabZLength + fBoronResinThickness + fIronThickness;
+        G4double labTrdHeight        = fLabHeight - booleanSolidTolerance;
+        G4double labTrdWidthBeamside = fLabWidthBeamside;
         G4double labTrdWidthDumpside =
             fLabWidthDumpside + ftLabWidthSlope * (fBoronResinThickness + fIronThickness);
-        G4Trd *labTrd = new G4Trd("LabTrd", fLabWidthBeamside / 2., labTrdWidthDumpside / 2.,
-                                  fLabHeight / 2., fLabHeight / 2., labTrdZLength / 2.);
+
+        G4Trd *labTrd = new G4Trd("LabTrd", labTrdWidthBeamside / 2., labTrdWidthDumpside / 2.,
+                                  labTrdHeight / 2., labTrdHeight / 2., labTrdZLength / 2.);
 
         // Copied from BuildBoronResincaseSolid()
         // (assuming beamside < dumpside)
@@ -216,12 +219,14 @@ namespace bl10sim {
         G4double boronResinWidthDumpside =
             boronResinWidthAtOrigDumpBoundary + ftLabWidthSlope * fIronThickness;
 
+        G4DisplacedSolid *displacedLabTrd = new G4DisplacedSolid(
+            "DisplacedLabTrd", labTrd, nullptr, {0, booleanSolidTolerance / 2., 0});
+
         G4Trd *labFloorTrd =
             new G4Trd("LabFloorTrd", boronResinWidthBeamside / 2., boronResinWidthDumpside / 2.,
                       fLabFloorSpacing / 2., fLabFloorSpacing / 2., boronResinZLength / 2.);
 
         G4ThreeVector floorSpacingTlate = {0, 0, 0};
-
         // Moving the center of floor spaing to the bottom of lab
         floorSpacingTlate += {0, -fLabHeight / 2., 0};
         // Insert the floor spacing to the lab
@@ -229,8 +234,8 @@ namespace bl10sim {
 
         G4UnionSolid *labTrdWithFloor;
         if (simple) {
-            labTrdWithFloor =
-                new G4UnionSolid("LabFloorSolid", labTrd, labFloorTrd, nullptr, floorSpacingTlate);
+            labTrdWithFloor = new G4UnionSolid("LabFloorSolid", displacedLabTrd, labFloorTrd,
+                                               nullptr, floorSpacingTlate);
             return labTrdWithFloor;
         } else {
             // Compensating a tlanslation for the the iron case
@@ -262,12 +267,12 @@ namespace bl10sim {
         // Move the box to the center of exitwall
         ewCarverTlate += {0, 0, -fExitwallThickness / 2.};
 
-        G4DisplacedSolid *labDisplacedTrd =
-            new G4DisplacedSolid("LabDisplacedTrd", labTrdWithFloor, nullptr,
+        G4DisplacedSolid *displacedLTWF =
+            new G4DisplacedSolid("DisplacedLabFloorSolid", labTrdWithFloor, nullptr,
                                  {0, 0, (fBoronResinThickness + fIronThickness) / 2.});
 
         G4SubtractionSolid *carvedLab = new G4SubtractionSolid(
-            "LabWExitwallSSolid", labDisplacedTrd, exitwallCarverBox, nullptr, ewCarverTlate);
+            "LabWExitwallSSolid", displacedLTWF, exitwallCarverBox, nullptr, ewCarverTlate);
 
         G4double exitpathCarverHeight = fLabHeight + 2 * booleanSolidTolerance;
         G4double exitpathCarverZLength =
@@ -283,7 +288,7 @@ namespace bl10sim {
                                           exitpathCarverHeight / 2., exitpathCarverZLength / 2.);
 
         G4ThreeVector eCarverTlate = {0, 0, 0};
-        // Compensate the displacement of G4DisplacedSolid
+        // Compensate the displacement of the previous instances of G4DisplacedSolid
         eCarverTlate += {0, 0, (fBoronResinThickness + fIronThickness) / 2.};
         // Move +z to the +z-end of the labTrd solid with consideration of boolean tolerance
         eCarverTlate += {0, 0, labTrdZLength / 2. + booleanSolidTolerance / 2.};
