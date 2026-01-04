@@ -43,6 +43,7 @@ namespace bl10sim {
         G4double fLabZLength;
         G4double fLabWidthBeamside;
         G4double fLabWidthDumpside;
+        G4double fLabFloorSpacing;
 
         G4double ftLabWidthSlope;
 
