@@ -51,7 +51,8 @@ namespace bl10sim {
     }
 
     void BL10DetectorConstruction::SetGeometryParameters() {
-        fBeamXDistanceFromWall = 75 * cm;
+        fBeamYDistanceFromFloor = 180 * cm;
+        fBeamXDistanceFromWall  = 75 * cm;
 
         fBoronResinThickness = 20 * cm;
         fIronThickness       = 10 * cm;
@@ -112,6 +113,9 @@ namespace bl10sim {
         fWBZDistanceFromWall = 10 * cm;
 
         fSampleZPosFromWBCenter = 300 * mm;
+
+        fBeamWindowWidth  = 2 * cm;
+        fBeamWindowHeight = 10 * cm;
     }
 
     void BL10DetectorConstruction::CalculateGeometrySubparameters() {
@@ -130,48 +134,48 @@ namespace bl10sim {
         G4double hbYSize     = fWorkbenchSupportHeight;
         G4double hbThickness = fWorkbenchSupportThickness;
 
-        fHBeamPoints.clear();
+        ftHBeamPoints.clear();
 
         nowHBeamPoint = {-hbThickness / 2., -hbYSize / 2. + hbThickness};
-        fHBeamPoints.push_back(nowHBeamPoint);
+        ftHBeamPoints.push_back(nowHBeamPoint);
         nowHBeamPoint += {hbThickness / 2. - hbXSize / 2., 0};
-        fHBeamPoints.push_back(nowHBeamPoint);
+        ftHBeamPoints.push_back(nowHBeamPoint);
         nowHBeamPoint += {0, -hbThickness};
-        fHBeamPoints.push_back(nowHBeamPoint);
+        ftHBeamPoints.push_back(nowHBeamPoint);
         nowHBeamPoint += {hbXSize, 0};
-        fHBeamPoints.push_back(nowHBeamPoint);
+        ftHBeamPoints.push_back(nowHBeamPoint);
         nowHBeamPoint += {0, hbThickness};
-        fHBeamPoints.push_back(nowHBeamPoint);
+        ftHBeamPoints.push_back(nowHBeamPoint);
         nowHBeamPoint += {-hbXSize / 2. + hbThickness / 2., 0};
-        fHBeamPoints.push_back(nowHBeamPoint);
+        ftHBeamPoints.push_back(nowHBeamPoint);
 
         nowHBeamPoint = {hbThickness / 2., hbYSize / 2. - hbThickness};
-        fHBeamPoints.push_back(nowHBeamPoint);
+        ftHBeamPoints.push_back(nowHBeamPoint);
         nowHBeamPoint += {-hbThickness / 2. + hbXSize / 2., 0};
-        fHBeamPoints.push_back(nowHBeamPoint);
+        ftHBeamPoints.push_back(nowHBeamPoint);
         nowHBeamPoint += {0, hbThickness};
-        fHBeamPoints.push_back(nowHBeamPoint);
+        ftHBeamPoints.push_back(nowHBeamPoint);
         nowHBeamPoint += {-hbXSize, 0};
-        fHBeamPoints.push_back(nowHBeamPoint);
+        ftHBeamPoints.push_back(nowHBeamPoint);
         nowHBeamPoint += {0, -hbThickness};
-        fHBeamPoints.push_back(nowHBeamPoint);
+        ftHBeamPoints.push_back(nowHBeamPoint);
         nowHBeamPoint += {hbXSize / 2. - hbThickness / 2., 0};
-        fHBeamPoints.push_back(nowHBeamPoint);
+        ftHBeamPoints.push_back(nowHBeamPoint);
 
-        fLevelingBoltPoints.clear();
+        ftLevelingBoltPoints.clear();
 
         G4TwoVector nowLBPoint = {0, fWBLevelingBoltSize / 2.};
-        fLevelingBoltPoints.push_back(nowLBPoint);
+        ftLevelingBoltPoints.push_back(nowLBPoint);
         nowLBPoint.rotate(60 * deg);
-        fLevelingBoltPoints.push_back(nowLBPoint);
+        ftLevelingBoltPoints.push_back(nowLBPoint);
         nowLBPoint.rotate(60 * deg);
-        fLevelingBoltPoints.push_back(nowLBPoint);
+        ftLevelingBoltPoints.push_back(nowLBPoint);
         nowLBPoint.rotate(60 * deg);
-        fLevelingBoltPoints.push_back(nowLBPoint);
+        ftLevelingBoltPoints.push_back(nowLBPoint);
         nowLBPoint.rotate(60 * deg);
-        fLevelingBoltPoints.push_back(nowLBPoint);
+        ftLevelingBoltPoints.push_back(nowLBPoint);
         nowLBPoint.rotate(60 * deg);
-        fLevelingBoltPoints.push_back(nowLBPoint);
+        ftLevelingBoltPoints.push_back(nowLBPoint);
     }
 
     G4LogicalVolume *BL10DetectorConstruction::BuildIroncase() const {
@@ -465,9 +469,9 @@ namespace bl10sim {
                           fCheckOverlaps);
 
         G4ExtrudedSolid *xSupportHBeamSolid = new G4ExtrudedSolid(
-            "WBXSupportHBeamSolid", fHBeamPoints, fWorkbenchXSupportLength / 2.);
+            "WBXSupportHBeamSolid", ftHBeamPoints, fWorkbenchXSupportLength / 2.);
         G4ExtrudedSolid *zSupportHBeamSolid = new G4ExtrudedSolid(
-            "WBZSupportHBeamSolid", fHBeamPoints, fWorkbenchZSupportLength / 2.);
+            "WBZSupportHBeamSolid", ftHBeamPoints, fWorkbenchZSupportLength / 2.);
 
         G4LogicalVolume *xSupportHBeamLV =
             new G4LogicalVolume(xSupportHBeamSolid, matFe, "WBXSupportHBeamLV");
@@ -788,7 +792,7 @@ namespace bl10sim {
         new G4PVPlacement(nullptr, wbTlate, wbLV, "WorkbenchPV", labLV, false, 0, fCheckOverlaps);
 
         G4ExtrudedSolid *wbBoltSolid = new G4ExtrudedSolid(
-            "WBLevelingBoltSolid", fLevelingBoltPoints, fWBLevelingBoltThickness / 2.);
+            "WBLevelingBoltSolid", ftLevelingBoltPoints, fWBLevelingBoltThickness / 2.);
         G4LogicalVolume *wbBoltLV = new G4LogicalVolume(wbBoltSolid, matFe, "WBLevelingBoltLV");
 
         G4RotationMatrix *wbBoltRotMtx = new G4RotationMatrix();
@@ -830,6 +834,27 @@ namespace bl10sim {
                           fCheckOverlaps);
     }
 
+    void BL10DetectorConstruction::PlaceBeamWindow(G4LogicalVolume *labLV) const {
+        const G4double windowThickness = 1 * nm;
+
+        G4Material *matAir = G4Material::GetMaterial("G4_AIR");
+
+        G4Box *windowBox = new G4Box("BeamWindowBox", fBeamWindowWidth / 2., fBeamWindowHeight / 2.,
+                                     windowThickness / 2.);
+        G4LogicalVolume *windowLV = new G4LogicalVolume(windowBox, matAir, "BeamWindowLV");
+
+        G4ThreeVector windowTlate = {0, 0, 0};
+        // Move the beam window solid to the z-end of the lab
+        windowTlate += {0, 0, -fLabZLength / 2. + windowThickness / 2.};
+        // Move the beam window to the fBeamYDistanceFromFloor on the y-axis
+        windowTlate += {0, -fLabHeight / 2. + fBeamWindowHeight / 2. + fBeamYDistanceFromFloor, 0};
+        // Move the beam window to the center of beamline
+        windowTlate += {fLabWidthBeamside / 2. - fBeamXDistanceFromWall, 0, 0};
+
+        new G4PVPlacement(nullptr, windowTlate, windowLV, "BeamWindowPV", labLV, false, 0,
+                          fCheckOverlaps);
+    }
+
     G4VPhysicalVolume *BL10DetectorConstruction::DefineVolumes() {
         std::string geomType = "bl10_";
         if (fSimpleGeometry) {
@@ -840,10 +865,12 @@ namespace bl10sim {
         simcore::MetadataManager::GetInstance().SetGeometryType(geomType);
 
         G4LogicalVolume *ironcaseLV   = BuildIroncase();
-        G4VPhysicalVolume *ironcasePV = new G4PVPlacement(nullptr, {}, ironcaseLV, "IroncasePV",
+        G4VPhysicalVolume *ironcasePV = new G4PVPlacement(nullptr, {}, ironcaseLV, "WorldPV",
                                                           nullptr, false, 0, fCheckOverlaps);
 
-        G4LogicalVolume *labLV       = FillIroncase(ironcaseLV);
+        G4LogicalVolume *labLV = FillIroncase(ironcaseLV);
+        PlaceBeamWindow(labLV);
+
         G4LogicalVolume *wbLV        = BuildWorkbench();
         G4ThreeVector samplePosition = PlaceWorkbench(labLV, wbLV);
 

@@ -37,6 +37,8 @@ namespace bl10sim {
         G4LogicalVolume *BuildWorkbench() const;
         G4ThreeVector PlaceWorkbench(G4LogicalVolume *labLV, G4LogicalVolume *wbLV) const;
 
+        void PlaceBeamWindow(G4LogicalVolume *labLV) const;
+
         void PlaceSamples(G4LogicalVolume *labLV, const G4ThreeVector sampleTlate) const;
 
         G4VPhysicalVolume *DefineVolumes() override;
@@ -48,10 +50,11 @@ namespace bl10sim {
         G4double ftWBEnvelopeWidth;
         G4double ftWBEnvelopeHeight;
         G4double ftWBEnvelopeZLength;
-        std::vector<G4TwoVector> fHBeamPoints;
-        std::vector<G4TwoVector> fLevelingBoltPoints;
+        std::vector<G4TwoVector> ftHBeamPoints;
+        std::vector<G4TwoVector> ftLevelingBoltPoints;
 
         G4double fBeamXDistanceFromWall;
+        G4double fBeamYDistanceFromFloor;
 
         G4double fBoronResinThickness;
         G4double fIronThickness;
@@ -113,7 +116,8 @@ namespace bl10sim {
 
         G4double fSampleZPosFromWBCenter;
 
-        G4ThreeVector fGlobalTlate;
+        G4double fBeamWindowWidth;
+        G4double fBeamWindowHeight;
     };
 } // namespace bl10sim
 #endif

@@ -3,12 +3,13 @@
 #include <cmath>
 #include <fstream>
 
-#include "G4Box.hh"
 #include "G4LogicalVolume.hh"
-#include "G4LogicalVolumeStore.hh"
 #include "G4ParticleGun.hh"
 #include "G4ParticleTable.hh"
+#include "G4PhysicalVolumeStore.hh"
 #include "G4SystemOfUnits.hh"
+#include "G4TransportationManager.hh"
+#include "G4VSolid.hh"
 #include "Randomize.hh"
 
 namespace bl10sim {
@@ -31,31 +32,57 @@ namespace bl10sim {
     }
 
     void PrimaryGeneratorAction::GeneratePrimaries(G4Event *event) {
-        G4double worldZHalfLength = 0.;
-        auto worldLV              = G4LogicalVolumeStore::GetInstance()->GetVolume("World");
+        G4ThreadLocal static G4VPhysicalVolume *worldPV     = nullptr;
+        G4ThreadLocal static G4ThreeVector totalTranslation = {0, 0, 0};
 
-        // Check that the world volume has box shape
-        G4Box *worldBox = nullptr;
-        if (worldLV) {
-            worldBox = dynamic_cast<G4Box *>(worldLV->GetSolid());
+        if (worldPV == nullptr) {
+            G4PhysicalVolumeStore *store = G4PhysicalVolumeStore::GetInstance();
+
+            worldPV = G4TransportationManager::GetTransportationManager()
+                          ->GetNavigatorForTracking()
+                          ->GetWorldVolume();
+
+            G4VPhysicalVolume *targetPV;
+            targetPV = store->GetVolume("BeamWindowPV");
+            if (targetPV == nullptr) {
+                G4Exception("PrimaryVertexGeneration", "1", G4ExceptionSeverity::FatalException,
+                            "We couldn't find PV named 'BeamWindowPV'. Please use the "
+                            "realistic beampipe geometry if you want to generate primaries in the "
+                            "deuteron mode. Aborting.");
+            }
+
+            totalTranslation = targetPV->GetTranslation();
+
+            G4LogicalVolume *nowMotherLV = targetPV->GetMotherLogical();
+
+            G4LogicalVolume *worldLV = worldPV->GetLogicalVolume();
+
+            while (nowMotherLV != worldLV) {
+                G4VPhysicalVolume *findres = nullptr;
+                for (auto *nowPV : *store) {
+                    if (nowPV->GetLogicalVolume() == nowMotherLV) {
+                        findres = nowPV;
+                        break;
+                    }
+                }
+
+                if (findres == nullptr) {
+                    G4Exception("PrimaryVertexGeneration", "1", G4ExceptionSeverity::FatalException,
+                                "We couldn't find PV from LV. Aborting.");
+                } else {
+                    totalTranslation += findres->GetTranslation();
+                    nowMotherLV = findres->GetMotherLogical();
+                }
+            }
         }
 
-        if (worldBox) {
-            worldZHalfLength = worldBox->GetZHalfLength();
-        } else {
-            G4ExceptionDescription msg;
-            msg << "World volume of box shape not found." << G4endl;
-            msg << "Perhaps you have changed geometry." << G4endl;
-            msg << "The gun will be place in the center.";
-            G4Exception("PrimaryGeneratorAction::GeneratePrimaries()", "MyCode0002", JustWarning,
-                        msg);
-        }
+        auto beamWindowPV = G4PhysicalVolumeStore::GetInstance()->GetVolume("BeamWindowPV");
+
+        G4VSolid *beamWindowSolid = beamWindowPV->GetLogicalVolume()->GetSolid();
 
         // Set gun position
-        G4ThreeVector position(0, 0, -worldZHalfLength);
-        position.setX(G4UniformRand() * 10 * cm - 5 * cm);
-        position.setY(G4UniformRand() * 10 * cm - 5 * cm);
-        fParticleGun->SetParticlePosition(position);
+        G4ThreeVector position = beamWindowSolid->GetPointOnSurface();
+        fParticleGun->SetParticlePosition(position + totalTranslation);
 
         fParticleGun->SetParticleEnergy(fEGenerator->Generate());
 
