@@ -1,4 +1,5 @@
 #include "simcore/RootManager.h"
+#include "simcore/MetadataManager.h"
 
 #include "ROOT/TBufferMerger.hxx"
 
@@ -267,9 +268,7 @@ namespace simcore {
         fMetadata = new simobj::Metadata();
         fPTree->Branch("Metadata", &fMetadata);
 
-        fMetadata->SetGitHash("TEST");
-        fMetadata->SetSimulationName("TEST");
-        fMetadata->SetGeometryType("TEST");
+        MetadataManager::GetInstance().FillMetadata(fMetadata);
 
         fPTree->Fill();
     }

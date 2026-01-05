@@ -4,8 +4,6 @@
 #include "TObject.h"
 #include "TString.h"
 
-#include <string>
-
 namespace simobj {
     class Metadata : public TObject {
       public:
@@ -24,12 +22,34 @@ namespace simobj {
         void SetGitHash(const std::string &);
         std::string GetGitHash() const;
 
+        void SetOutputTreename(const std::string &);
+        std::string GetOutputTreename() const;
+
+        void SetAllStepRecorded(bool a) { fStepRecorded = a; }
+        bool GetAllStepRecorded() const { return fStepRecorded; }
+
+        void SetPrimaryRecorded(bool a) { fPrimaryRecorded = a; }
+        bool GetPrimaryRecorded() const { return fPrimaryRecorded; }
+
+        void SetMaxTrackNum(size_t a) { fMaxNTrack = a; }
+        size_t GetMaxTrackNum() const { return fMaxNTrack; }
+
+        void SetMaxStepNum(size_t a) { fMaxNStep = a; }
+        size_t GetMaxStepNum() const { return fMaxNStep; }
+
         void Print(Option_t *option = "") const override;
 
       protected:
         TString fSimName;
         TString fGeomType;
         TString fGitHash;
+        TString fOutputTreename;
+
+        bool fStepRecorded;
+        bool fPrimaryRecorded;
+
+        size_t fMaxNTrack;
+        size_t fMaxNStep;
 
         ClassDefOverride(simobj::Metadata, 1)
     };

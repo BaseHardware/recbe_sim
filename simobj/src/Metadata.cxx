@@ -17,10 +17,18 @@ namespace simobj {
     void Metadata::SetGitHash(const std::string &a) { fGitHash = a; }
     std::string Metadata::GetGitHash() const { return fGitHash.Data(); }
 
+    void Metadata::SetOutputTreename(const std::string &a) { fOutputTreename = a; }
+    std::string Metadata::GetOutputTreename() const { return fOutputTreename.Data(); }
+
     void Metadata::Print(Option_t *option) const {
         using namespace std;
         cout << "Simulation name: " << fSimName << endl;
         cout << "Geometry type: " << fGeomType << endl;
+        cout << "Name of output tree: " << fOutputTreename << endl;
         cout << "Git hash for the simulation binary:" << fGitHash << endl;
+        cout << "All step recording: " << (fStepRecorded ? "Yes" : "No") << endl;
+        cout << "Primary vertex recording: " << (fPrimaryRecorded ? "Yes" : "No") << endl;
+        cout << "The maximum number of tracks: " << fMaxNTrack << endl;
+        cout << "The maximum number of steps: " << fMaxNStep << endl;
     }
 } // namespace simobj
