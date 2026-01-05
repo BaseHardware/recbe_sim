@@ -347,7 +347,7 @@ namespace bl10sim {
             return labTrdWithFloor;
         } else {
             // Compensating a tlanslation for the the iron case
-            floorSpacingTlate += {0, 0, -fIronThickness};
+            floorSpacingTlate += {0, 0, labTrdZLength / 2. - boronResinZLength / 2.};
 
             labTrdWithFloor =
                 new G4UnionSolid("LabFloorSolid", labTrd, labFloorTrd, nullptr, floorSpacingTlate);
@@ -793,10 +793,14 @@ namespace bl10sim {
         G4RotationMatrix *wbBoltRotMtx = new G4RotationMatrix();
         wbBoltRotMtx->rotateX(90 * deg);
 
-        G4ThreeVector wbBoltXTlate = {-ftWBEnvelopeWidth / 2. + fWBLevelingBoltSize / 2., 0, 0};
+        G4ThreeVector wbBoltXTlate = {-ftWBEnvelopeWidth / 2. + fWBLevelingBoltSize / 2. +
+                                          fWorkbenchPlateOuterMargin + fWorkbenchPlateInnerMargin,
+                                      0, 0};
         G4ThreeVector wbBoltYTlate = {0, ftWBEnvelopeHeight / 2. + fWBLevelingBoltThickness / 2.,
                                       0};
-        G4ThreeVector wbBoltZTlate = {0, 0, -ftWBEnvelopeZLength / 2. + fWBLevelingBoltSize / 2.};
+        G4ThreeVector wbBoltZTlate = {0, 0,
+                                      -ftWBEnvelopeZLength / 2. + fWBLevelingBoltSize / 2. +
+                                          fWorkbenchPlateOuterMargin + fWorkbenchPlateInnerMargin};
 
         new G4PVPlacement(wbBoltRotMtx, wbTlate + wbBoltXTlate + wbBoltYTlate + wbBoltZTlate,
                           wbBoltLV, "WBBoltPV", labLV, true, 0, fCheckOverlaps);
