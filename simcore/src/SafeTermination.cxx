@@ -6,6 +6,8 @@
 #include <csignal>
 #include <iostream>
 
+#include <unistd.h>
+
 void __local_signal_handler(int signum) {
     using namespace std;
     if (signum == SIGTERM) {
@@ -26,7 +28,7 @@ void __local_signal_handler(int signum) {
         case G4State_Quit:
         case G4State_Abort:
             cout << " Exit the application RIGHT NOW." << endl;
-            exit(0);
+            _exit(0);
             break;
     }
 }
