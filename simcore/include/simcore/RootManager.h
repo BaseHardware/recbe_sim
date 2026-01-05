@@ -15,7 +15,8 @@ namespace ROOT {
 
 namespace simobj {
     class Primary;
-}
+    class Metadata;
+} // namespace simobj
 
 class TClonesArray;
 class TTree;
@@ -60,6 +61,7 @@ namespace simcore {
 
         void SetFilename(const char *a) { fFilename = a; }
         void SetTreename(const char *a) { fTreename = a; }
+        void SetPersistentTreename(const char *a) { fPTreename = a; }
 
         void Fill() const;
         void Clear() const;
@@ -82,14 +84,18 @@ namespace simcore {
 
         std::string GetFilename() const { return fFilename; }
         std::string GetTreename() const { return fTreename; }
+        std::string GetPersistentTreename() const { return fPTreename; }
 
       protected:
+        void MakeMetadata();
         void MakeBranches() const;
 
       private:
-        RootManager(const char *filename = "simout.root", const char *treename = "tree")
-            : fMessenger(nullptr), fFilename(filename), fTreename(treename), fStarted(false),
-              fRecordStep(true), fRecordPrimary(true), fMerger(nullptr) {
+        RootManager(const char *filename = "simout.root", const char *treename = "tree",
+                    const char *persistent_treename = "persistent")
+            : fMessenger(nullptr), fFilename(filename), fTreename(treename),
+              fPTreename(persistent_treename), fStarted(false), fRecordStep(true),
+              fRecordPrimary(true), fMerger(nullptr), fPTree(nullptr), fMetadata(nullptr) {
             fMessenger = new RootManagerMessenger(this);
         };
         virtual ~RootManager() { delete fMessenger; };
@@ -98,11 +104,16 @@ namespace simcore {
 
         std::string fFilename;
         std::string fTreename;
+        std::string fPTreename;
 
         bool fStarted;
         bool fRecordStep;
         bool fRecordPrimary;
         ROOT::TBufferMerger *fMerger;
+
+        std::shared_ptr<ROOT::TBufferMergerFile> fFileForMaster;
+        TTree *fPTree;
+        simobj::Metadata *fMetadata;
 
         inline static G4Mutex fgcStartMutex = G4MUTEX_INITIALIZER;
 

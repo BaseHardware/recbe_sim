@@ -13,6 +13,7 @@
 #include "G4Track.hh"
 #include "G4VProcess.hh"
 
+#include "simobj/Metadata.h"
 #include "simobj/Primary.h"
 #include "simobj/Step.h"
 #include "simobj/Track.h"
@@ -229,15 +230,48 @@ namespace simcore {
         fStarted = true;
         fMerger  = new ROOT::TBufferMerger(fFilename.c_str());
 
+        fFileForMaster = fMerger->GetFile();
+        fPTree =
+            new TTree(fPTreename.c_str(), "An instance of TTree for the persistency information");
+        if (fPTree == nullptr) return false;
+        fPTree->ResetBit(kMustCleanup);
+        fPTree->SetDirectory(fFileForMaster.get());
+
+        MakeMetadata();
+
         return true;
     }
     bool RootManager::EndRunMaster() {
         if (!fStarted) return false;
+
+        fFileForMaster->Write();
+
+        delete fPTree;
+        fFileForMaster.reset();
+
+        delete fMetadata;
+
         delete fMerger;
 
-        fStarted = false;
-        fMerger  = nullptr;
+        fMerger   = nullptr;
+        fPTree    = nullptr;
+        fMetadata = nullptr;
+        fStarted  = false;
+
         return true;
+    }
+
+    void RootManager::MakeMetadata() {
+        if (!fStarted || fMerger == nullptr || fPTree == nullptr) return;
+
+        fMetadata = new simobj::Metadata();
+        fPTree->Branch("Metadata", &fMetadata);
+
+        fMetadata->SetGitHash("TEST");
+        fMetadata->SetSimulationName("TEST");
+        fMetadata->SetGeometryType("TEST");
+
+        fPTree->Fill();
     }
 
     void RootManager::MakeBranches() const {
@@ -265,7 +299,8 @@ namespace simcore {
 
         fgTLS->fFile = fMerger->GetFile();
 
-        fgTLS->fTree = new TTree(fTreename.c_str(), "The output TTree instance");
+        fgTLS->fTree =
+            new TTree(fTreename.c_str(), "An instance of TTree for the simulation output");
         if (fgTLS->fTree == nullptr) return false;
         fgTLS->fTree->ResetBit(kMustCleanup);
         fgTLS->fTree->SetDirectory(fgTLS->fFile.get());
@@ -282,9 +317,11 @@ namespace simcore {
         fgTLS->fFile->Write();
 
         delete fgTLS->fTree;
-        delete fgTLS->fTCATrack;
+        fgTLS->fFile.reset();
 
+        delete fgTLS->fTCATrack;
         delete fgTLS->fTCAStep;
+
         if (fRecordPrimary) delete fgTLS->fPrimary;
 
         delete fgTLS;
