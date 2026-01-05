@@ -4,6 +4,8 @@
 #include "TObject.h"
 #include "TString.h"
 
+#include <string>
+
 namespace simobj {
     class Metadata : public TObject {
       public:

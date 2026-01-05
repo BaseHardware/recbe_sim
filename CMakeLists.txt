@@ -4,6 +4,8 @@ project(recbesim)
 include(cmake/add_sim_subdir.cmake)
 include(cmake/git_version.cmake)
 
+include_directories(${PROJECT_BINARY_DIR}/include)
+
 add_sim_subdir(simobj)
 add_sim_subdir(simcore)
 add_sim_subdir(bl10sim)
@@ -29,5 +31,3 @@ configure_file(
     ${PROJECT_BINARY_DIR}/.ycm_extra_conf.py
     @ONLY
 )
-
-include_directories(${CMAKE_BINARY_DIR}/include)
