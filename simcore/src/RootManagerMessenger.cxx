@@ -45,8 +45,14 @@ namespace simcore {
     }
 
     RootManagerMessenger::~RootManagerMessenger() {
-        delete fRecordPrimary;
         delete fDirectory;
+
+        delete fRecordStep;
+        delete fRecordPrimary;
+        delete fOutFilename;
+
+        delete fMaxTrack;
+        delete fMaxStep;
     }
 
     void RootManagerMessenger::SetNewValue(G4UIcommand *command, G4String newValue) {
@@ -55,8 +61,8 @@ namespace simcore {
             fRootManager->RecordPrimary(boolValue);
             return;
         } else if (command == fRecordStep) {
-            G4bool boolValue = fRecordPrimary->GetNewBoolValue(newValue);
-            fRootManager->RecordPrimary(boolValue);
+            G4bool boolValue = fRecordStep->GetNewBoolValue(newValue);
+            fRootManager->RecordStep(boolValue);
             return;
         } else if (command == fMaxTrack) {
             G4int intValue = fMaxTrack->GetNewIntValue(newValue);
