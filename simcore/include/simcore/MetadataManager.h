@@ -26,11 +26,17 @@ namespace simcore {
         void SetGeometryType(const std::string &a) { fSimName = a; }
         std::string GetGeometryType() const { return fSimName; }
 
+        void SetRandomSeed(long a, bool aux);
+        long GetRandomSeed(bool aux) const;
+
         void FillMetadata(simobj::Metadata *target) const;
 
       private:
         MetadataManager() : fSimName(""), fGeomTypename("") {};
         virtual ~MetadataManager() {};
+
+        long fRandomSeeds[2];
+        bool fAutoRandomSeed;
 
         std::string fSimName;
         std::string fGeomTypename;

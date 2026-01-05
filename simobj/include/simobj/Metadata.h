@@ -37,6 +37,12 @@ namespace simobj {
         void SetMaxStepNum(size_t a) { fMaxNStep = a; }
         size_t GetMaxStepNum() const { return fMaxNStep; }
 
+        void SetThreadNum(size_t a) { fNThreads = a; }
+        size_t GetThreadNum() const { return fNThreads; }
+
+        void SetRandomSeed(long a, bool aux);
+        long GetRandomSeed(bool aux) const;
+
         void Print(Option_t *option = "") const override;
 
       protected:
@@ -48,6 +54,9 @@ namespace simobj {
         bool fStepRecorded;
         bool fPrimaryRecorded;
 
+        long fRandomSeeds[2];
+
+        size_t fNThreads;
         size_t fMaxNTrack;
         size_t fMaxNStep;
 

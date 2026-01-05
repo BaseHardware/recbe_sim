@@ -5,6 +5,9 @@
 
 #include "simobj/Metadata.h"
 
+#include "G4RunManager.hh"
+#include "Randomize.hh"
+
 namespace simcore {
     void MetadataManager::FillMetadata(simobj::Metadata *target) const {
         using namespace recbesim;
@@ -20,5 +23,30 @@ namespace simcore {
         target->SetAllStepRecorded(rootman.DoesRecordStep());
         target->SetPrimaryRecorded(rootman.DoesRecordPrimary());
         target->SetOutputTreename(rootman.GetTreename());
+
+        const long *seeds;
+        if (fAutoRandomSeed) {
+            seeds = G4Random::getTheSeeds();
+        } else {
+            seeds = fRandomSeeds;
+        }
+        target->SetRandomSeed(seeds[0], false);
+        target->SetRandomSeed(seeds[1], true);
+
+        target->SetThreadNum(G4RunManager::GetRunManager()->GetNumberOfThreads());
+    }
+
+    void MetadataManager::SetRandomSeed(long a, bool aux) {
+        if (aux)
+            fRandomSeeds[1] = a;
+        else
+            fRandomSeeds[0] = a;
+    }
+
+    long MetadataManager::GetRandomSeed(bool aux) const {
+        if (aux)
+            return fRandomSeeds[1];
+        else
+            return fRandomSeeds[0];
     }
 } // namespace simcore
