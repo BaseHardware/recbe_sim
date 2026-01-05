@@ -1,8 +1,9 @@
-#include "simcore/SafeTermination.h"
-
 #include "FTFP_BERT_HP.hh"
 #include "bl10sim/ActionInitialization.h"
 #include "bl10sim/DuctDetectorConstruction.h"
+
+#include "simcore/MetadataManager.h"
+#include "simcore/SafeTermination.h"
 
 #include "G4RunManagerFactory.hh"
 #include "G4SteppingVerbose.hh"
@@ -23,6 +24,7 @@ namespace {
 
 int main(int argc, char **argv) {
     simcore::SafeTermination::RegisterSignalHandler();
+    simcore::MetadataManager::GetInstance().SetSimulationName("bl10_ductsim");
     // Evaluate arguments
     //
     if (argc > 7) {

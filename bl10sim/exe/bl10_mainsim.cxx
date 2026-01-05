@@ -2,13 +2,16 @@
 #include "bl10sim/ActionInitialization.h"
 #include "bl10sim/BL10DetectorConstruction.h"
 
+#include "simcore/MetadataManager.h"
+#include "simcore/SafeTermination.h"
+
 #include "G4RunManagerFactory.hh"
 #include "G4SteppingVerbose.hh"
 #include "G4UIExecutive.hh"
 #include "G4UIcommand.hh"
 #include "G4UImanager.hh"
 #include "G4VisExecutive.hh"
-// #include "Randomize.hh"
+#include "Randomize.hh"
 
 namespace {
     void PrintUsage() {
@@ -19,6 +22,8 @@ namespace {
 } // namespace
 
 int main(int argc, char **argv) {
+    simcore::SafeTermination::RegisterSignalHandler();
+    simcore::MetadataManager::GetInstance().SetSimulationName("bl10_mainsim");
     // Evaluate arguments
     //
     if (argc > 7) {
