@@ -4,6 +4,8 @@
 #include "TObject.h"
 #include "TString.h"
 
+#include <vector>
+
 namespace simobj {
     class Metadata : public TObject {
       public:
@@ -43,7 +45,11 @@ namespace simobj {
         void SetRandomSeed(long a, bool aux);
         long GetRandomSeed(bool aux) const;
 
+        bool ReadGeometryFile(const std::string &filepath);
+        std::vector<unsigned char> GetGeometryData() const;
+
         void Print(Option_t *option = "") const override;
+        void Clear(Option_t *option = "") override;
 
       protected:
         TString fSimName;
@@ -59,6 +65,8 @@ namespace simobj {
         size_t fNThreads;
         size_t fMaxNTrack;
         size_t fMaxNStep;
+
+        std::vector<unsigned char> fGeometryData;
 
         ClassDefOverride(simobj::Metadata, 1)
     };

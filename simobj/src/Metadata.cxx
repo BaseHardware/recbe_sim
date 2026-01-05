@@ -1,3 +1,4 @@
+#include <fstream>
 #include <iostream>
 #include <string>
 
@@ -34,6 +35,29 @@ namespace simobj {
             return fRandomSeeds[0];
     }
 
+    bool Metadata::ReadGeometryFile(const std::string &filepath) {
+        std::ifstream infile(filepath, std::ios::binary | std::ios::ate);
+        if (!infile) {
+            throw std::runtime_error("The input file is not opened");
+        }
+
+        const std::streamsize filesize = infile.tellg();
+        if (filesize < 0) {
+            throw std::runtime_error("tellg() failed.");
+        }
+        infile.seekg(0, std::ios::beg);
+
+        fGeometryData.resize(static_cast<size_t>(filesize));
+        if (!infile.read(reinterpret_cast<char *>(fGeometryData.data()), filesize)) {
+            throw std::runtime_error("Failed to read file.");
+        }
+        infile.close();
+
+        return true;
+    }
+
+    std::vector<unsigned char> Metadata::GetGeometryData() const { return fGeometryData; }
+
     void Metadata::Print(Option_t *option) const {
         using namespace std;
         cout << "Simulation name: " << fSimName << endl;
@@ -46,5 +70,25 @@ namespace simobj {
         cout << "The maximum number of steps: " << fMaxNStep << endl;
         cout << "Random seed pair: (" << fRandomSeeds[0] << ", " << fRandomSeeds[1] << ")" << endl;
         cout << "Number of threads: " << fNThreads << endl;
+        cout << "Size of geometry data: " << fGeometryData.size() << endl;
+    }
+
+    void Metadata::Clear(Option_t *option) {
+        fSimName        = "";
+        fGeomType       = "";
+        fGitHash        = "";
+        fOutputTreename = "";
+
+        fStepRecorded    = false;
+        fPrimaryRecorded = false;
+
+        fRandomSeeds[0] = 0;
+        fRandomSeeds[1] = 0;
+
+        fNThreads  = 0;
+        fMaxNTrack = 0;
+        fMaxNStep  = 0;
+
+        fGeometryData.clear();
     }
 } // namespace simobj

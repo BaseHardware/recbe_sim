@@ -43,8 +43,7 @@ namespace simobj {
         using namespace std;
 
         if (fgcMaxStepSize <= idx || fNStep <= idx) {
-            cerr << "idx for the step index array is wrong: " << idx << endl;
-            throw;
+            throw std::runtime_error("idx for the step index array is wrong: " + to_string(idx));
         }
 
         return fStepIdxArray[idx];

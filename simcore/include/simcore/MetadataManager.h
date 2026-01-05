@@ -26,6 +26,9 @@ namespace simcore {
         void SetGeometryType(const std::string &a) { fSimName = a; }
         std::string GetGeometryType() const { return fSimName; }
 
+        void AutoSetRandomSeed(bool a) { fAutoRandomSeed = a; }
+        bool AutoSetRandomSeed() const { return fAutoRandomSeed; }
+
         void SetRandomSeed(long a, bool aux);
         long GetRandomSeed(bool aux) const;
 
