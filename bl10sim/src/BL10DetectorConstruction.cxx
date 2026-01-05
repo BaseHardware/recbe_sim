@@ -4,20 +4,25 @@
 
 #include "G4Box.hh"
 #include "G4DisplacedSolid.hh"
+#include "G4ExtrudedSolid.hh"
 #include "G4LogicalVolume.hh"
 #include "G4Material.hh"
 #include "G4NistManager.hh"
 #include "G4PVPlacement.hh"
+#include "G4RotationMatrix.hh"
 #include "G4SubtractionSolid.hh"
 #include "G4SystemOfUnits.hh"
 #include "G4Trd.hh"
 #include "G4UnionSolid.hh"
+
+#include <vector>
 
 static const G4double booleanSolidTolerance = 200 * um;
 
 namespace bl10sim {
     BL10DetectorConstruction::BL10DetectorConstruction() : fSimpleGeometry(false) {
         SetGeometryParameters();
+        CalculateGeometrySubparameters();
     }
 
     void BL10DetectorConstruction::DefineMaterials() {
@@ -45,6 +50,8 @@ namespace bl10sim {
     }
 
     void BL10DetectorConstruction::SetGeometryParameters() {
+        fBeamYDistanceFromWall = 75 * cm;
+
         fBoronResinThickness = 20 * cm;
         fIronThickness       = 10 * cm;
         fFloorThickness      = 10 * cm;
@@ -62,10 +69,81 @@ namespace bl10sim {
 
         fExitpathWidth = 60 * cm;
 
-        ftLabWidthSlope = (fLabWidthDumpside - fLabWidthBeamside) / fLabZLength;
+        fWorkbenchPlateWidth     = 1000 * mm;
+        fWorkbenchPlateLength    = 2000 * mm;
+        fWorkbenchPlateThickness = 30 * mm;
+
+        fWorkbenchPlateOuterMargin = 60 * mm;
+        fWorkbenchPlateInnerMargin = 25 * mm;
+
+        fWorkbenchSupportWidth     = 100 * mm;
+        fWorkbenchSupportHeight    = 100 * mm;
+        fWorkbenchSupportThickness = 10 * mm;
+        fWorkbenchXSupportLength   = 850 * mm;
+        fWorkbenchZSupportLength   = 2050 * mm;
+
+        fWBPipeEndplateThickness = 20 * mm;
+        fWBPipeEndplate1Width    = 220 * mm;
+        fWBPipeEndplate2Width    = 220 * mm;
+        fWBPipeEndplate3Width    = 155 * mm;
+        fWBPipeEndplate1Length   = 220 * mm;
+        fWBPipeEndplate2Length   = 320 * mm;
+        fWBPipeEndplate3Length   = 155 * mm;
+
+        fWBVertPipeLength     = 900 * mm;
+        fWBDiagPipe1Length    = 950 * mm;
+        fWBDiagPipe2Length    = 630 * mm;
+        fWBVertPipeRadius     = 115 * mm / 2.;
+        fWBDiagPipe1Radius    = 65 * mm / 2.;
+        fWBDiagPipe2Radius    = 65 * mm / 2.;
+        fWBVertPipeThickness  = 4.5 * mm;
+        fWBDiagPipe1Thickness = 3 * mm;
+        fWBDiagPipe2Thickness = 3 * mm;
+
+        fWBLevelingBoltSize = 60 * mm;
+
+        fWBZDistanceFromWall = 10 * cm;
     }
 
-    G4LogicalVolume *BL10DetectorConstruction::BuildIroncase(G4bool floor) const {
+    void BL10DetectorConstruction::CalculateGeometrySubparameters() {
+        ftLabWidthSlope = (fLabWidthDumpside - fLabWidthBeamside) / fLabZLength;
+
+        G4TwoVector nowHBeamPoint;
+
+        G4double hbXSize     = fWorkbenchSupportWidth;
+        G4double hbYSize     = fWorkbenchSupportHeight;
+        G4double hbThickness = fWorkbenchSupportThickness;
+
+        fHBeamPoints.clear();
+
+        nowHBeamPoint = {-hbThickness / 2., -hbYSize / 2. + hbThickness};
+        fHBeamPoints.push_back(nowHBeamPoint);
+        nowHBeamPoint += {hbThickness / 2. - hbXSize / 2., 0};
+        fHBeamPoints.push_back(nowHBeamPoint);
+        nowHBeamPoint += {0, -hbThickness};
+        fHBeamPoints.push_back(nowHBeamPoint);
+        nowHBeamPoint += {hbXSize, 0};
+        fHBeamPoints.push_back(nowHBeamPoint);
+        nowHBeamPoint += {0, hbThickness};
+        fHBeamPoints.push_back(nowHBeamPoint);
+        nowHBeamPoint += {-hbXSize / 2. + hbThickness / 2., 0};
+        fHBeamPoints.push_back(nowHBeamPoint);
+
+        nowHBeamPoint = {hbThickness / 2., hbYSize / 2. - hbThickness};
+        fHBeamPoints.push_back(nowHBeamPoint);
+        nowHBeamPoint += {-hbThickness / 2. + hbXSize / 2., 0};
+        fHBeamPoints.push_back(nowHBeamPoint);
+        nowHBeamPoint += {0, hbThickness};
+        fHBeamPoints.push_back(nowHBeamPoint);
+        nowHBeamPoint += {-hbXSize, 0};
+        fHBeamPoints.push_back(nowHBeamPoint);
+        nowHBeamPoint += {0, -hbThickness};
+        fHBeamPoints.push_back(nowHBeamPoint);
+        nowHBeamPoint += {hbXSize / 2. - hbThickness / 2., 0};
+        fHBeamPoints.push_back(nowHBeamPoint);
+    }
+
+    G4LogicalVolume *BL10DetectorConstruction::BuildIroncase() const {
         // Making a logical volume for the world (Iron case)
         G4Material *matIron = G4Material::GetMaterial("G4_Fe");
 
@@ -87,17 +165,14 @@ namespace bl10sim {
                                     worldHeight / 2., worldHeight / 2., worldZLength / 2.);
         G4LogicalVolume *worldLV = new G4LogicalVolume(worldTrd, matIron, "IroncaseLV");
 
-        if (floor) {
-            G4Material *matConcrete = G4Material::GetMaterial("G4_CONCRETE");
-            G4Trd *floorTrd =
-                new G4Trd("FloorTrd", worldWidthBeamside / 2., worldWidthDumpside / 2.,
-                          fFloorThickness / 2., fFloorThickness / 2., worldZLength / 2.);
-            G4LogicalVolume *floorLV = new G4LogicalVolume(floorTrd, matConcrete, "FloorLV");
+        G4Material *matConcrete = G4Material::GetMaterial("G4_CONCRETE");
+        G4Trd *floorTrd = new G4Trd("FloorTrd", worldWidthBeamside / 2., worldWidthDumpside / 2.,
+                                    fFloorThickness / 2., fFloorThickness / 2., worldZLength / 2.);
+        G4LogicalVolume *floorLV = new G4LogicalVolume(floorTrd, matConcrete, "FloorLV");
 
-            G4ThreeVector floorTlate = {0, -worldHeight / 2. + fFloorThickness / 2., 0};
-            new G4PVPlacement(nullptr, floorTlate, floorLV, "FloorPV", worldLV, false, 0,
-                              fCheckOverlaps);
-        }
+        G4ThreeVector floorTlate = {0, -worldHeight / 2. + fFloorThickness / 2., 0};
+        new G4PVPlacement(nullptr, floorTlate, floorLV, "FloorPV", worldLV, false, 0,
+                          fCheckOverlaps);
 
         return worldLV;
     }
@@ -309,12 +384,12 @@ namespace bl10sim {
         return labWithExit;
     }
 
-    void BL10DetectorConstruction::FillIroncase(G4LogicalVolume *lv) const {
-        G4Material *matB4C            = G4Material::GetMaterial("G4_BORON_CARBIDE");
-        G4Material *matAir            = G4Material::GetMaterial("G4_AIR");
+    G4LogicalVolume *BL10DetectorConstruction::FillIroncase(G4LogicalVolume *lv) const {
+        G4Material *matB4C = G4Material::GetMaterial("G4_BORON_CARBIDE");
+        G4Material *matAir = G4Material::GetMaterial("G4_AIR");
+
         G4LogicalVolume *boronResinLV = new G4LogicalVolume(
             BuildBoronResincaseSolid(fSimpleGeometry), matB4C, "BoronResinCaseLV");
-
         G4ThreeVector boronResinTlate = {
             0, -(fFloorThickness + fIronThickness) / 2. + fFloorThickness, 0};
         new G4PVPlacement(nullptr, boronResinTlate, boronResinLV, "BoronResinCasePV", lv, false, 0,
@@ -322,17 +397,146 @@ namespace bl10sim {
 
         G4LogicalVolume *labLV =
             new G4LogicalVolume(BuildLabSolid(fSimpleGeometry), matAir, "LabLV");
-
         G4ThreeVector labTlate = {0, -fBoronResinThickness / 2., 0};
         new G4PVPlacement(nullptr, labTlate, labLV, "LabPV", boronResinLV, false, 0,
                           fCheckOverlaps);
+
+        return labLV;
     }
 
+    G4LogicalVolume *BL10DetectorConstruction::BuildWorkbench() const {
+        G4Material *matAir = G4Material::GetMaterial("G4_AIR");
+        G4Material *matSS  = G4Material::GetMaterial("Stainless_Steel");
+        G4Material *matFe  = G4Material::GetMaterial("G4_Fe");
+
+        G4double envelopeWidth =
+            fWorkbenchXSupportLength + fWorkbenchSupportWidth * 2 + fWorkbenchPlateOuterMargin * 2;
+        G4double envelopeHeight = fWBPipeEndplateThickness + fWBVertPipeLength +
+                                  fWBPipeEndplateThickness + fWorkbenchSupportHeight +
+                                  fWorkbenchPlateThickness;
+        G4double envelopeZLength = fWorkbenchPlateOuterMargin * 2 + fWorkbenchZSupportLength;
+
+        G4Box *envelopeBox = new G4Box("WorkbenchEnvelopeBox", envelopeWidth / 2.,
+                                       envelopeHeight / 2., envelopeZLength / 2.);
+        G4LogicalVolume *envelopeLV =
+            new G4LogicalVolume(envelopeBox, matAir, "WorkbenchEnvelopeLV");
+
+        G4Box *plateBox          = new G4Box("WorkbenchPlateBox", fWorkbenchPlateWidth / 2.,
+                                             fWorkbenchPlateThickness / 2., fWorkbenchPlateLength / 2.);
+        G4LogicalVolume *plateLV = new G4LogicalVolume(plateBox, matSS, "WorkbenchPlateLV");
+
+        G4ThreeVector plateTlate = {0, 0, 0};
+        // Move the plate to the +y-end of the envelope
+        plateTlate += {0, envelopeHeight / 2. - fWorkbenchPlateThickness / 2., 0};
+        // Move the plate in the -z-end of the envelope
+        plateTlate += {0, 0, -envelopeZLength / 2. + fWorkbenchPlateLength / 2.};
+        // Add +z margin for the plate
+        plateTlate += {0, 0, fWorkbenchPlateOuterMargin + fWorkbenchPlateInnerMargin};
+        // Move the plate in the -x-end of the envelope
+        plateTlate += {-envelopeWidth / 2. + fWorkbenchPlateWidth / 2., 0, 0};
+        // Add +x margin for the plate
+        plateTlate += {fWorkbenchPlateOuterMargin + fWorkbenchPlateInnerMargin, 0, 0};
+        new G4PVPlacement(nullptr, plateTlate, plateLV, "WorkbenchPlatePV", envelopeLV, false, 0,
+                          fCheckOverlaps);
+
+        std::cout << "Fjsdiofjsao: " << fHBeamPoints.size() << std::endl;
+        G4ExtrudedSolid *xSupportHBeamSolid =
+            new G4ExtrudedSolid("XSupportHBeamSolid", fHBeamPoints, fWorkbenchXSupportLength / 2.);
+        G4ExtrudedSolid *zSupportHBeamSolid =
+            new G4ExtrudedSolid("ZSupportHBeamSolid", fHBeamPoints, fWorkbenchZSupportLength / 2.);
+        std::cout << "Fjsdiofjsao" << std::endl;
+
+        G4LogicalVolume *xSupportHBeamLV =
+            new G4LogicalVolume(xSupportHBeamSolid, matFe, "XSupportHBeamLV");
+        G4LogicalVolume *zSupportHBeamLV =
+            new G4LogicalVolume(zSupportHBeamSolid, matFe, "ZSupportHBeamLV");
+
+        G4ThreeVector beamsideYHBeamTlate = {
+            0, envelopeHeight / 2. - fWorkbenchPlateThickness - fWorkbenchSupportHeight / 2.,
+            -envelopeZLength / 2. + fWorkbenchSupportWidth / 2. + fWorkbenchPlateOuterMargin};
+        G4ThreeVector dumpsideYHBeamTlate = beamsideYHBeamTlate;
+        dumpsideYHBeamTlate[G4ThreeVector::Z] *= -1;
+
+        G4ThreeVector xPlussideZHBeamTlate = {
+            fWorkbenchXSupportLength / 2. + fWorkbenchSupportWidth / 2.,
+            envelopeHeight / 2. - fWorkbenchPlateThickness - fWorkbenchSupportHeight / 2.,
+            -envelopeZLength / 2. + fWorkbenchZSupportLength / 2. + fWorkbenchPlateOuterMargin};
+        G4ThreeVector xMinussideZHBeamTlate = xPlussideZHBeamTlate;
+        xMinussideZHBeamTlate[G4ThreeVector::X] *= -1;
+
+        G4RotationMatrix *xSupportHBeamRotMtx = new G4RotationMatrix();
+        xSupportHBeamRotMtx->rotateY(90 * deg);
+
+        new G4PVPlacement(xSupportHBeamRotMtx, beamsideYHBeamTlate, xSupportHBeamLV,
+                          "XSupportHBeamPV", envelopeLV, true, 0, fCheckOverlaps);
+        new G4PVPlacement(xSupportHBeamRotMtx, dumpsideYHBeamTlate, xSupportHBeamLV,
+                          "XSupportHBeamPV", envelopeLV, true, 1, fCheckOverlaps);
+        new G4PVPlacement(nullptr, xPlussideZHBeamTlate, zSupportHBeamLV, "ZSuppoerHBeamPV",
+                          envelopeLV, true, 0, fCheckOverlaps);
+        new G4PVPlacement(nullptr, xMinussideZHBeamTlate, zSupportHBeamLV, "ZSuppoerHBeamPV",
+                          envelopeLV, true, 1, fCheckOverlaps);
+
+        G4Box *wbPipeEndplate1Box =
+            new G4Box("WorkbenchPipeEndplate1Box", fWBPipeEndplate1Width / 2.,
+                      fWBPipeEndplateThickness / 2., fWBPipeEndplate1Length / 2.);
+        G4Box *wbPipeEndplate2Box =
+            new G4Box("WorkbenchPipeEndplate2Box", fWBPipeEndplate2Width / 2.,
+                      fWBPipeEndplateThickness / 2., fWBPipeEndplate2Length / 2.);
+        G4Box *wbPipeEndplate3Box =
+            new G4Box("WorkbenchPipeEndplate3Box", fWBPipeEndplate3Width / 2.,
+                      fWBPipeEndplateThickness / 2., fWBPipeEndplate3Length / 2.);
+
+        G4LogicalVolume *wbPipeEndplate1LV =
+            new G4LogicalVolume(wbPipeEndplate1Box, matFe, "WorkbenchEndplate1LV");
+        G4LogicalVolume *wbPipeEndplate2LV =
+            new G4LogicalVolume(wbPipeEndplate2Box, matFe, "WorkbenchEndplate2LV");
+        G4LogicalVolume *wbPipeEndplate3LV =
+            new G4LogicalVolume(wbPipeEndplate3Box, matFe, "WorkbenchEndplate3LV");
+
+        G4ThreeVector topEndplateXTlate = {-envelopeWidth / 2. + fWBPipeEndplate2Width / 2., 0, 0};
+        G4ThreeVector topEndplateYTlate = {0,
+                                           envelopeHeight / 2. - fWorkbenchPlateThickness -
+                                               fWorkbenchSupportHeight -
+                                               fWBPipeEndplateThickness / 2.,
+                                           0};
+        G4ThreeVector topEndplateBeamsideTlate = {
+            0, 0, -envelopeZLength / 2. + fWBPipeEndplate2Length / 2.};
+        G4ThreeVector topEndplateDumpsideTlate = {
+            0, 0, envelopeZLength / 2. - fWBPipeEndplate1Length / 2.};
+
+        new G4PVPlacement(nullptr, topEndplateXTlate + topEndplateYTlate + topEndplateBeamsideTlate,
+                          wbPipeEndplate2LV, "WorkbenchTopBeamsideEndplatePV", envelopeLV, true, 0,
+                          fCheckOverlaps);
+        new G4PVPlacement(nullptr,
+                          -topEndplateXTlate + topEndplateYTlate + topEndplateBeamsideTlate,
+                          wbPipeEndplate2LV, "WorkbenchTopBeamsideEndplatePV", envelopeLV, true, 1,
+                          fCheckOverlaps);
+
+        new G4PVPlacement(nullptr, topEndplateXTlate + topEndplateYTlate + topEndplateDumpsideTlate,
+                          wbPipeEndplate1LV, "WorkbenchTopDumpsideEndplatePV", envelopeLV, true, 0,
+                          fCheckOverlaps);
+        new G4PVPlacement(nullptr,
+                          -topEndplateXTlate + topEndplateYTlate + topEndplateDumpsideTlate,
+                          wbPipeEndplate1LV, "WorkbenchTopDumpsideEndplatePV", envelopeLV, true, 1,
+                          fCheckOverlaps);
+
+        return envelopeLV;
+    }
+
+    void BL10DetectorConstruction::PlaceWorkbench(G4LogicalVolume *lv) const {}
+
     G4VPhysicalVolume *BL10DetectorConstruction::DefineVolumes() {
-        G4LogicalVolume *ironcaseLV   = BuildIroncase(true);
+        G4LogicalVolume *ironcaseLV   = BuildIroncase();
         G4VPhysicalVolume *ironcasePV = new G4PVPlacement(nullptr, {}, ironcaseLV, "IroncasePV",
                                                           nullptr, false, 0, fCheckOverlaps);
-        FillIroncase(ironcaseLV);
+
+        G4LogicalVolume *labLV = FillIroncase(ironcaseLV);
+        G4LogicalVolume *wbLV  = BuildWorkbench();
+
+        new G4PVPlacement(nullptr, {}, wbLV, "WorkbenchPV", labLV, false, 0, fCheckOverlaps);
+        std::cout << "FJDIojo" << std::endl;
+
+        // PlaceWorkbench(labLV);
 
         std::string geomType = "bl10_";
 
