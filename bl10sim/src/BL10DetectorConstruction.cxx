@@ -1,5 +1,7 @@
 #include "bl10sim/BL10DetectorConstruction.h"
 
+#include "simcore/MetadataManager.h"
+
 #include "G4Box.hh"
 #include "G4DisplacedSolid.hh"
 #include "G4LogicalVolume.hh"
@@ -331,6 +333,16 @@ namespace bl10sim {
         G4VPhysicalVolume *ironcasePV = new G4PVPlacement(nullptr, {}, ironcaseLV, "IroncasePV",
                                                           nullptr, false, 0, fCheckOverlaps);
         FillIroncase(ironcaseLV);
+
+        std::string geomType = "bl10_";
+
+        if (fSimpleGeometry) {
+            geomType += "simple";
+        } else {
+            geomType += "detailed";
+        }
+
+        simcore::MetadataManager::GetInstance().SetGeometryType(geomType);
 
         return ironcasePV;
     }

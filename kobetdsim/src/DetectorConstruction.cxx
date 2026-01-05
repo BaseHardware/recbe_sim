@@ -2,6 +2,8 @@
 
 #include "kobetdsim/DetectorConstruction.h"
 #include "kobetdsim/DetectorMessenger.h"
+
+#include "simcore/MetadataManager.h"
 #include "simcore/TouchTriggerSD.h"
 
 #include "G4AutoDelete.hh"
@@ -28,14 +30,6 @@ namespace kobetdsim {
         : fUseBoratedPE(false), fMessenger(new DetectorMessenger(this)), fGeometryType("default") {}
 
     DetectorConstruction::~DetectorConstruction() { delete fMessenger; }
-
-    G4VPhysicalVolume *DetectorConstruction::Construct() {
-        // Define materials
-        DefineMaterials();
-
-        // Define volumes
-        return DefineVolumes();
-    }
 
     static G4LogicalVolume *MakeDosimeter() {
         G4double entireBoxWidth     = 1.8 * cm;
@@ -807,6 +801,8 @@ namespace kobetdsim {
             G4Exception("DetectorConstruction", "1", G4ExceptionSeverity::FatalException,
                         "Not supported geometry type.");
         }
+
+        simcore::MetadataManager::GetInstance().SetGeometryType(fGeometryType);
 
         return worldPV;
     }

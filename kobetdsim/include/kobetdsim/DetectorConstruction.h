@@ -17,7 +17,6 @@ namespace kobetdsim {
         ~DetectorConstruction() override;
 
       public:
-        G4VPhysicalVolume *Construct() override;
         void ConstructSDandField() override;
 
         void SetBoratedPE(G4bool a) { fUseBoratedPE = a; }

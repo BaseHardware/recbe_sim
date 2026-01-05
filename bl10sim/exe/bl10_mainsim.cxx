@@ -24,16 +24,9 @@ namespace {
 } // namespace
 
 int main(int argc, char **argv) {
+    simcore::SafeTermination::RegisterSignalHandler();
     std::random_device rng;
     long seeds[2] = {rng(), rng()};
-
-    simcore::SafeTermination::RegisterSignalHandler();
-    auto &mdinstance = simcore::MetadataManager::GetInstance();
-    mdinstance.SetSimulationName("bl10_mainsim");
-
-    mdinstance.SetRandomSeed(seeds[0], false);
-    mdinstance.SetRandomSeed(seeds[1], true);
-    G4Random::setTheSeeds(seeds);
 
     // Evaluate arguments
     //
@@ -41,6 +34,13 @@ int main(int argc, char **argv) {
         PrintUsage();
         return 1;
     }
+
+    auto &mdinstance = simcore::MetadataManager::GetInstance();
+    mdinstance.SetSimulationName("bl10_mainsim");
+
+    mdinstance.SetRandomSeed(seeds[0], false);
+    mdinstance.SetRandomSeed(seeds[1], true);
+    G4Random::setTheSeeds(seeds);
 
     G4String macro;
     G4String session;

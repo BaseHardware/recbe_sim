@@ -1,13 +1,12 @@
-#include <iostream>
 #include <random>
 
 #include "kobetdsim/ActionInitialization.h"
 #include "kobetdsim/DetectorConstruction.h"
 
-#include "QGSP_BERT_HP.hh"
+#include "simcore/MetadataManager.h"
+#include "simcore/SafeTermination.h"
+
 #include "QGSP_BIC_AllHP.hh"
-#include "QGSP_BIC_HP.hh"
-#include "Shielding.hh"
 
 #include "G4EmParameters.hh"
 #include "G4SystemOfUnits.hh"
@@ -19,12 +18,7 @@
 #include "G4UImanager.hh"
 #include "G4VisExecutive.hh"
 
-#include "G4DecayPhysics.hh"
-#include "G4IonPhysics.hh"
 #include "G4NuclideTable.hh"
-#include "G4ParticleHPManager.hh"
-#include "G4RadioactiveDecayPhysics.hh"
-#include "G4StoppingPhysics.hh"
 
 #include "Randomize.hh"
 
@@ -33,13 +27,22 @@ using namespace std;
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
 int main(int argc, char **argv) {
+    simcore::SafeTermination::RegisterSignalHandler();
+    std::random_device rng;
+    long seeds[2] = {rng(), rng()};
     // Detect interactive mode (if no arguments) and define UI session
     //
     G4UIExecutive *ui = nullptr;
     if (argc == 1) {
         ui = new G4UIExecutive(argc, argv);
     }
-    CLHEP::HepRandom::setTheSeed(std::random_device()());
+
+    auto &mdinstance = simcore::MetadataManager::GetInstance();
+    mdinstance.SetSimulationName("kobetd_mainsim");
+
+    mdinstance.SetRandomSeed(seeds[0], false);
+    mdinstance.SetRandomSeed(seeds[1], true);
+    G4Random::setTheSeeds(seeds);
 
     // Optionally: choose a different Random engine...
     // G4Random::setTheEngine(new CLHEP::MTwistEngine);

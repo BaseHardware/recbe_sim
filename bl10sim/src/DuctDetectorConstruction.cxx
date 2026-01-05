@@ -1,5 +1,6 @@
 #include "bl10sim/DuctDetectorConstruction.h"
 
+#include "simcore/MetadataManager.h"
 #include "simcore/TouchTriggerSD.h"
 
 #include "G4Box.hh"
@@ -97,6 +98,8 @@ namespace bl10sim {
             new G4PVPlacement(nullptr, nowFilterTlate, filterLV, "FilterPV", ductInnerLV, true, i,
                               fCheckOverlaps);
         }
+
+        simcore::MetadataManager::GetInstance().SetGeometryType("bl10_duct");
 
         return worldPV;
     }
