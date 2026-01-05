@@ -50,10 +50,11 @@ namespace simobj {
         }
         infile.seekg(0, std::ios::beg);
 
-        fGeometryData.resize(static_cast<size_t>(filesize));
+        fGeometryData.resize(static_cast<size_t>(filesize + 1));
         if (!infile.read(reinterpret_cast<char *>(fGeometryData.data()), filesize)) {
             throw std::runtime_error("Failed to read file.");
         }
+        fGeometryData.back() = 0;
         infile.close();
 
         return true;

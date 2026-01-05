@@ -20,7 +20,5 @@ void dump_geometry_data() {
 
     std::vector<unsigned char> geomdata = std::move(md->GetGeometryData());
 
-    for (auto &i : geomdata) {
-        cout << i;
-    }
+    cout << geomdata.data() << endl;
 }
