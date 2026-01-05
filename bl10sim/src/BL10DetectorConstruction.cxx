@@ -385,11 +385,12 @@ namespace bl10sim {
         G4double exitpathCarverHeight = fLabHeight + 2 * booleanSolidTolerance;
         G4double exitpathCarverZLength =
             fBoronResinThickness + fIronThickness + booleanSolidTolerance;
-        G4double exitpathCarverMZWidth =
-            boronResinWidthDumpside - fExitpathWidth + booleanSolidTolerance;
-        G4double exitpathCarverPZWidth = boronResinWidthDumpside - fExitpathWidth +
-                                         ftLabWidthSlope * exitpathCarverZLength +
-                                         booleanSolidTolerance;
+        G4double exitpathCarverMZWidth = boronResinWidthDumpside -
+                                         ftLabWidthSlope * (fBoronResinThickness + fIronThickness) +
+                                         booleanSolidTolerance - fExitpathWidth;
+        G4double exitpathCarverPZWidth = boronResinWidthDumpside +
+                                         ftLabWidthSlope * booleanSolidTolerance +
+                                         booleanSolidTolerance - fExitpathWidth;
 
         G4Trd *exitpathCarver = new G4Trd("LabExitCarverTrd", exitpathCarverMZWidth / 2.,
                                           exitpathCarverPZWidth / 2., exitpathCarverHeight / 2.,
@@ -786,9 +787,9 @@ namespace bl10sim {
         // Move wb
         new G4PVPlacement(nullptr, wbTlate, wbLV, "WorkbenchPV", labLV, false, 0, fCheckOverlaps);
 
-        G4ExtrudedSolid *wbBoltSolid =
-            new G4ExtrudedSolid("WBBoltSolid", fLevelingBoltPoints, fWBLevelingBoltThickness / 2.);
-        G4LogicalVolume *wbBoltLV = new G4LogicalVolume(wbBoltSolid, matFe, "WBBoltLV");
+        G4ExtrudedSolid *wbBoltSolid = new G4ExtrudedSolid(
+            "WBLevelingBoltSolid", fLevelingBoltPoints, fWBLevelingBoltThickness / 2.);
+        G4LogicalVolume *wbBoltLV = new G4LogicalVolume(wbBoltSolid, matFe, "WBLevelingBoltLV");
 
         G4RotationMatrix *wbBoltRotMtx = new G4RotationMatrix();
         wbBoltRotMtx->rotateX(90 * deg);
@@ -803,13 +804,13 @@ namespace bl10sim {
                                           fWorkbenchPlateOuterMargin + fWorkbenchPlateInnerMargin};
 
         new G4PVPlacement(wbBoltRotMtx, wbTlate + wbBoltXTlate + wbBoltYTlate + wbBoltZTlate,
-                          wbBoltLV, "WBBoltPV", labLV, true, 0, fCheckOverlaps);
+                          wbBoltLV, "WBLevelingBoltPV", labLV, true, 0, fCheckOverlaps);
         new G4PVPlacement(wbBoltRotMtx, wbTlate - wbBoltXTlate + wbBoltYTlate + wbBoltZTlate,
-                          wbBoltLV, "WBBoltPV", labLV, true, 1, fCheckOverlaps);
+                          wbBoltLV, "WBLevelingBoltPV", labLV, true, 1, fCheckOverlaps);
         new G4PVPlacement(wbBoltRotMtx, wbTlate + wbBoltXTlate + wbBoltYTlate - wbBoltZTlate,
-                          wbBoltLV, "WBBoltPV", labLV, true, 2, fCheckOverlaps);
+                          wbBoltLV, "WBLevelingBoltPV", labLV, true, 2, fCheckOverlaps);
         new G4PVPlacement(wbBoltRotMtx, wbTlate - wbBoltXTlate + wbBoltYTlate - wbBoltZTlate,
-                          wbBoltLV, "WBBoltPV", labLV, true, 3, fCheckOverlaps);
+                          wbBoltLV, "WBLevelingBoltPV", labLV, true, 3, fCheckOverlaps);
 
         G4ThreeVector samplePosition{0, ftWBEnvelopeHeight / 2., fSampleZPosFromWBCenter};
         samplePosition += wbTlate;
