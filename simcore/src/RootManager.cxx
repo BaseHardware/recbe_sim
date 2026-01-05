@@ -54,7 +54,7 @@ static void G4Step2SimStep(const G4Step *src, simobj::Step *dest) {
     dest->SetVolumeName(volName.c_str());
 }
 
-static void G4Track2SimStep(const G4Track *src, simobj::Step *dest) {
+static void G4Track2SimStep(const G4Track *src, simobj::Step *dest, G4bool start) {
     G4ThreeVector pos = src->GetPosition();
     G4double glob_t   = src->GetGlobalTime();
 
@@ -62,15 +62,34 @@ static void G4Track2SimStep(const G4Track *src, simobj::Step *dest) {
     G4double energy   = src->GetKineticEnergy();
 
     G4double prop_t = src->GetProperTime();
-    G4double edep   = 0;
+    G4double edep;
 
-    G4int nDaug = 0;
+    G4int nDaug;
 
     std::string procName, volName;
 
-    procName = "initStep";
+    if (start) {
+        procName = "initStep";
+        volName  = src->GetVolume()->GetName();
+        edep     = 0;
 
-    volName = src->GetVolume()->GetName();
+        nDaug = 0;
+    } else {
+        const G4Step *nowStep            = src->GetStep();
+        const G4StepPoint *postStepPoint = nowStep->GetPostStepPoint();
+        const G4VProcess *nowProcess     = postStepPoint->GetProcessDefinedStep();
+        const G4VPhysicalVolume *nowVol  = postStepPoint->GetPhysicalVolume();
+
+        procName = nowProcess->GetProcessName();
+        if (nowVol != nullptr) {
+            volName = nowVol->GetName();
+        } else {
+            volName = "OutOfWorld";
+        }
+
+        nDaug = nowStep->GetNumberOfSecondariesInCurrentStep();
+        edep  = nowStep->GetTotalEnergyDeposit();
+    }
 
     dest->SetNDaughters(nDaug);
     dest->SetDepositedEnergy(edep / MeV);
@@ -96,8 +115,10 @@ namespace simcore {
         fgTLS->fID2IdxTable.clear();
     }
 
-    bool RootManager::StartTrack(const G4Track *track) const {
+    bool RootManager::CheckTrack(const G4Track *track, G4bool start) const {
         using namespace simobj;
+
+        if (!start && fRecordStep) return false;
 
         if (fgcMaxTrackNum <= fgTLS->fNTrack) {
             G4cerr << "WARNING: The number of tracks exceeds the maximum number (" << fgcMaxTrackNum
@@ -105,23 +126,29 @@ namespace simcore {
             return false;
         }
 
-        if (fRecordStep && fgcMaxStepNum <= fgTLS->fNStep) {
+        if (fgcMaxStepNum <= fgTLS->fNStep) {
             G4cerr << "WARNING: The number of steps exceeds the maximum number (" << fgcMaxTrackNum
                    << "). This track will not be added." << G4endl;
             return false;
         }
 
-        fgTLS->fID2IdxTable[track->GetTrackID()] = fgTLS->fNTrack;
+        Track *nowTrack;
+        if (start) {
+            fgTLS->fID2IdxTable[track->GetTrackID()] = fgTLS->fNTrack;
 
-        Track *newTrack = new ((*fgTLS->fTCATrack)[fgTLS->fNTrack++]) Track(
-            track->GetDefinition()->GetPDGEncoding(), track->GetDefinition()->GetParticleName(),
-            track->GetTrackID(), track->GetParentID());
+            nowTrack = new ((*fgTLS->fTCATrack)[fgTLS->fNTrack]) Track(
+                track->GetDefinition()->GetPDGEncoding(), track->GetDefinition()->GetParticleName(),
+                track->GetTrackID(), track->GetParentID());
 
-        if (fRecordStep) {
-            newTrack->AppendStepIdx(fgTLS->fNStep);
-            Step *newStep = (new ((*fgTLS->fTCAStep)[fgTLS->fNStep++]) Step());
-            G4Track2SimStep(track, newStep);
+            fgTLS->fNTrack++;
+        } else {
+            nowTrack = static_cast<Track *>(
+                fgTLS->fTCATrack->At(fgTLS->fID2IdxTable[track->GetTrackID()]));
         }
+
+        nowTrack->AppendStepIdx(fgTLS->fNStep);
+        Step *newStep = (new ((*fgTLS->fTCAStep)[fgTLS->fNStep++]) Step());
+        G4Track2SimStep(track, newStep, start);
 
         return true;
     }
@@ -216,15 +243,11 @@ namespace simcore {
     void RootManager::MakeBranches() const {
         fgTLS->fTCATrack = new TClonesArray("simobj::Track", fgcMaxTrackNum);
         fgTLS->fNTrack   = 0;
-        fgTLS->fTree->Branch("Track", &fgTLS->fTCATrack);
+        fgTLS->fTree->Branch("Tracks", &fgTLS->fTCATrack);
 
-        fgTLS->fNStep = 0;
-        if (fRecordStep) {
-            fgTLS->fTCAStep = new TClonesArray("simobj::Step", fgcMaxStepNum);
-            fgTLS->fTree->Branch("Step", &fgTLS->fTCAStep);
-        } else {
-            fgTLS->fTCAStep = nullptr;
-        }
+        fgTLS->fNStep   = 0;
+        fgTLS->fTCAStep = new TClonesArray("simobj::Step", fgcMaxStepNum);
+        fgTLS->fTree->Branch("Steps", &fgTLS->fTCAStep);
 
         if (fRecordPrimary) {
             fgTLS->fPrimary = new simobj::Primary;
@@ -261,7 +284,7 @@ namespace simcore {
         delete fgTLS->fTree;
         delete fgTLS->fTCATrack;
 
-        if (fRecordStep) delete fgTLS->fTCAStep;
+        delete fgTLS->fTCAStep;
         if (fRecordPrimary) delete fgTLS->fPrimary;
 
         delete fgTLS;

@@ -3,9 +3,9 @@
 
 namespace simcore {
     void TrackingAction::PreUserTrackingAction(const G4Track *trk) {
-        RootManager &instance = RootManager::GetInstance();
-
-        instance.StartTrack(trk);
+        RootManager::GetInstance().CheckTrack(trk, true);
     }
-    void TrackingAction::PostUserTrackingAction(const G4Track *trk) {}
+    void TrackingAction::PostUserTrackingAction(const G4Track *trk) {
+        RootManager::GetInstance().CheckTrack(trk, false);
+    }
 } // namespace simcore

@@ -64,7 +64,7 @@ namespace simcore {
         void Fill() const;
         void Clear() const;
 
-        bool StartTrack(const G4Track *track) const;
+        bool CheckTrack(const G4Track *track, G4bool start) const;
         bool AppendStep(const G4Step *step) const;
         bool StorePrimary(const G4Event *event) const;
 
