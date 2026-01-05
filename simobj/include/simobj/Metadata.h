@@ -24,6 +24,9 @@ namespace simobj {
         void SetGitHash(const std::string &);
         std::string GetGitHash() const;
 
+        void SetGitDescription(const std::string &);
+        std::string GetGitDescription() const;
+
         void SetOutputTreename(const std::string &);
         std::string GetOutputTreename() const;
 
@@ -55,6 +58,7 @@ namespace simobj {
         TString fSimName;
         TString fGeomType;
         TString fGitHash;
+        TString fGitDescription;
         TString fOutputTreename;
 
         bool fStepRecorded;

@@ -18,6 +18,9 @@ namespace simobj {
     void Metadata::SetGitHash(const std::string &a) { fGitHash = a; }
     std::string Metadata::GetGitHash() const { return fGitHash.Data(); }
 
+    void Metadata::SetGitDescription(const std::string &a) { fGitDescription = a; }
+    std::string Metadata::GetGitDescription() const { return fGitDescription.Data(); }
+
     void Metadata::SetOutputTreename(const std::string &a) { fOutputTreename = a; }
     std::string Metadata::GetOutputTreename() const { return fOutputTreename.Data(); }
 

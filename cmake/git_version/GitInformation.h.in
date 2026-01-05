@@ -16,8 +16,8 @@ namespace recbesim {
         const std::string cGitBranch   = "@GIT_BRANCH@";
 
         std::string GetHash() const { return cGitHash; }
-        std::string GetDescription() const { return cGitHash; }
-        std::string GetBranch() const { return cGitHash; }
+        std::string GetDescription() const { return cGitDescribe; }
+        std::string GetBranch() const { return cGitBranch; }
 
         static GitInformation &GetInstance() {
             static GitInformation fgInstance;

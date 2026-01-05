@@ -52,6 +52,7 @@ namespace simcore {
         target->SetGeometryType(fGeomTypename);
         target->SetSimulationName(fSimName);
         target->SetGitHash(gitInfo.GetHash());
+        target->SetGitDescription(gitInfo.GetDescription());
 
         target->SetMaxTrackNum(rootman.GetMaxTrackNum());
         target->SetMaxStepNum(rootman.GetMaxStepNum());
