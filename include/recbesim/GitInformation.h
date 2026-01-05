@@ -1,0 +1,1 @@
+../../cmake/git_version/GitInformation.h.in

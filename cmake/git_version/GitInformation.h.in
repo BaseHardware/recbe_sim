@@ -1,0 +1,19 @@
+#ifndef __recbesim_GitInformation_h__
+#define __recbesim_GitInformation_h__
+
+#include <string>
+
+namespace recbesim {
+    class GitInformation {
+      public:
+        GitInformation()                                  = delete;
+        GitInformation(const GitInformation &)            = delete;
+        GitInformation &operator=(const GitInformation &) = delete;
+
+        const std::string cGitHash     = "@GIT_SHA@";
+        const std::string cGitDescribe = "@GIT_DESCRIBE@";
+        const std::string cGitBranch   = "@GIT_BRANCH@";
+    };
+} // namespace recbesim
+
+#endif

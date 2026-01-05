@@ -27,3 +27,5 @@ target_include_directories(simcore PUBLIC include)
 target_link_libraries(simcore PRIVATE ${Geant4_LIBRARIES})
 target_link_libraries(simcore PRIVATE simobj)
 target_link_libraries(simcore PRIVATE ${ROOT_LIBRARIES})
+
+add_dependencies(simcore git_version_header)
