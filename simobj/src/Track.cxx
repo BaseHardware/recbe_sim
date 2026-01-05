@@ -22,7 +22,7 @@ namespace simobj {
         }
     }
 
-    Track::Track(int pdgCode, std::string pdgName, int tID, int pID)
+    Track::Track(int pdgCode, const std::string &pdgName, int tID, int pID)
         : TNamed(pdgName.c_str(), ""), fPDGCode(pdgCode), fTrackID(tID), fParentID(pID), fNStep(0),
           fStepIdxArray() {
         using namespace std;

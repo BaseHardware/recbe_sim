@@ -18,7 +18,7 @@ include(${ROOT_USE_FILE})
 file(GLOB simobj_lib_sources ${PROJECT_SOURCE_DIR}/src/*.cxx)
 file(GLOB simobj_lib_headers ${PROJECT_SOURCE_DIR}/include/simobj/*.h)
 
-file(GLOB simobj_dict ${PROJECT_SOURCE_DIR}/dict/simobj_linkdef.h)
+file(GLOB simobj_dict ${PROJECT_SOURCE_DIR}/dict/simobj.h)
 
 #----------------------------------------------------------------------------
 # Add a library with sources and the local headers and the ROOT libraries

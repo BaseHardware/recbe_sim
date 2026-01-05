@@ -8,7 +8,7 @@ namespace simobj {
       public:
         Track();
         Track(int pdgCode, int trkID, int parID);
-        Track(int pdgCode, std::string pdgName, int trkID, int parID);
+        Track(int pdgCode, const std::string &pdgName, int trkID, int parID);
         Track(const Track &orig);
         virtual ~Track() {};
 
