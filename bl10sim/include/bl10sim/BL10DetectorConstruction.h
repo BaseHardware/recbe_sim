@@ -35,7 +35,9 @@ namespace bl10sim {
         G4LogicalVolume *FillIroncase(G4LogicalVolume *) const;
 
         G4LogicalVolume *BuildWorkbench() const;
-        void PlaceWorkbench(G4LogicalVolume *lv) const;
+        G4ThreeVector PlaceWorkbench(G4LogicalVolume *labLV, G4LogicalVolume *wbLV) const;
+
+        void PlaceSamples(G4LogicalVolume *labLV, const G4ThreeVector sampleTlate) const;
 
         G4VPhysicalVolume *DefineVolumes() override;
 
@@ -43,9 +45,13 @@ namespace bl10sim {
         G4bool fSimpleGeometry;
 
         G4double ftLabWidthSlope;
+        G4double ftWBEnvelopeWidth;
+        G4double ftWBEnvelopeHeight;
+        G4double ftWBEnvelopeZLength;
         std::vector<G4TwoVector> fHBeamPoints;
+        std::vector<G4TwoVector> fLevelingBoltPoints;
 
-        G4double fBeamYDistanceFromWall;
+        G4double fBeamXDistanceFromWall;
 
         G4double fBoronResinThickness;
         G4double fIronThickness;
@@ -86,18 +92,26 @@ namespace bl10sim {
         G4double fWBPipeEndplate3Length;
 
         G4double fWBVertPipeLength;
-        G4double fWBDiagPipe1Length;
-        G4double fWBDiagPipe2Length;
+        G4double fWBZDiagPipeLength;
+        G4double fWBXDiagPipeLength;
         G4double fWBVertPipeRadius;
-        G4double fWBDiagPipe1Radius;
-        G4double fWBDiagPipe2Radius;
+        G4double fWBZDiagPipeRadius;
+        G4double fWBXDiagPipeRadius;
         G4double fWBVertPipeThickness;
-        G4double fWBDiagPipe1Thickness;
-        G4double fWBDiagPipe2Thickness;
+        G4double fWBZDiagPipeThickness;
+        G4double fWBXDiagPipeThickness;
+
+        G4double fWBZDiagPipeAngle;
+        G4double fWBXDiagPipeAngle;
+        G4double fWBZDiagPipeYDistance;
+        G4double fWBXDiagPipeYDistance;
 
         G4double fWBLevelingBoltSize;
+        G4double fWBLevelingBoltThickness;
 
         G4double fWBZDistanceFromWall;
+
+        G4double fSampleZPosFromWBCenter;
 
         G4ThreeVector fGlobalTlate;
     };
