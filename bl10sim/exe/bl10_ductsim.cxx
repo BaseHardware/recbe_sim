@@ -1,3 +1,5 @@
+#include <random>
+
 #include "FTFP_BERT_HP.hh"
 #include "bl10sim/ActionInitialization.h"
 #include "bl10sim/DuctDetectorConstruction.h"
@@ -23,8 +25,17 @@ namespace {
 } // namespace
 
 int main(int argc, char **argv) {
+    std::random_device rng;
+    long seeds[2] = {rng(), rng()};
+
     simcore::SafeTermination::RegisterSignalHandler();
-    simcore::MetadataManager::GetInstance().SetSimulationName("bl10_ductsim");
+    auto &mdinstance = simcore::MetadataManager::GetInstance();
+    mdinstance.SetSimulationName("bl10_mainsim");
+
+    mdinstance.SetRandomSeed(seeds[0], false);
+    mdinstance.SetRandomSeed(seeds[1], true);
+    G4Random::setTheSeeds(seeds);
+
     // Evaluate arguments
     //
     if (argc > 7) {

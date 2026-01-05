@@ -35,7 +35,7 @@ namespace simcore {
         void FillMetadata(simobj::Metadata *target) const;
 
       private:
-        MetadataManager() : fSimName(""), fGeomTypename("") {};
+        MetadataManager() : fAutoRandomSeed(false), fSimName(""), fGeomTypename("") {};
         virtual ~MetadataManager() {};
 
         long fRandomSeeds[2];
