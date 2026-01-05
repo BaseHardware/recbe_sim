@@ -1,15 +1,11 @@
 #include "simcore/DetectorConstruction.h"
 
-#include "G4AutoDelete.hh"
-#include "G4GlobalMagFieldMessenger.hh"
 #include "G4LogicalVolume.hh"
 #include "G4Material.hh"
 #include "G4NistManager.hh"
 #include "G4SystemOfUnits.hh"
 
 namespace simcore {
-    G4ThreadLocal G4GlobalMagFieldMessenger *DetectorConstruction::fMagFieldMessenger = nullptr;
-
     G4VPhysicalVolume *DetectorConstruction::Construct() {
         // Define materials
         DefineMaterials();
@@ -84,17 +80,5 @@ namespace simcore {
 
         // Print materials
         G4cout << *(G4Material::GetMaterialTable()) << G4endl;
-    }
-
-    void DetectorConstruction::ConstructSDandField() {
-        // Create global magnetic field messenger.
-        // Uniform magnetic field is then created automatically if
-        // the field value is not zero.
-        G4ThreeVector fieldValue;
-        fMagFieldMessenger = new G4GlobalMagFieldMessenger(fieldValue);
-        fMagFieldMessenger->SetVerboseLevel(1);
-
-        // Register the field messenger for deleting
-        G4AutoDelete::Register(fMagFieldMessenger);
     }
 } // namespace simcore
