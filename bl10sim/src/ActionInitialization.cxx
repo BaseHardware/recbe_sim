@@ -6,17 +6,14 @@
 #include "simcore/SteppingAction.h"
 #include "simcore/TrackingAction.h"
 
-
 namespace bl10sim {
     ActionInitialization::ActionInitialization() {}
 
-    void ActionInitialization::BuildForMaster() const {
-        SetUserAction(new simcore::RunAction(true));
-    }
+    void ActionInitialization::BuildForMaster() const { SetUserAction(new simcore::RunAction()); }
 
     void ActionInitialization::Build() const {
         SetUserAction(new PrimaryGeneratorAction);
-        SetUserAction(new simcore::RunAction(false));
+        SetUserAction(new simcore::RunAction());
         SetUserAction(new simcore::EventAction);
         SetUserAction(new simcore::TrackingAction);
         SetUserAction(new simcore::SteppingAction);

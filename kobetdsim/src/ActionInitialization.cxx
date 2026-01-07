@@ -6,13 +6,11 @@
 #include "simcore/TrackingAction.h"
 
 namespace kobetdsim {
-    void ActionInitialization::BuildForMaster() const {
-        SetUserAction(new simcore::RunAction(true));
-    }
+    void ActionInitialization::BuildForMaster() const { SetUserAction(new simcore::RunAction()); }
 
     void ActionInitialization::Build() const {
         SetUserAction(new PrimaryGeneratorAction(fPrimaryMode, fPrimaryFilename));
-        SetUserAction(new simcore::RunAction(false));
+        SetUserAction(new simcore::RunAction());
         SetUserAction(new simcore::TrackingAction());
         SetUserAction(new simcore::EventAction());
     }

@@ -4,9 +4,10 @@
 
 #include "G4Run.hh"
 #include "G4RunManager.hh"
+#include "G4Threading.hh"
 
 namespace simcore {
-    RunAction::RunAction(bool m) : fMaster(m) {
+    RunAction::RunAction() {
         // set printing event number per each event
         G4RunManager::GetRunManager()->SetPrintProgress(1000);
     }
@@ -17,7 +18,7 @@ namespace simcore {
 
         mmInst.SetNumberOfRequestedEvents(run->GetNumberOfEventToBeProcessed());
 
-        if (fMaster) {
+        if (G4Threading::IsMasterThread()) {
             rmInst.StartRunMaster();
         } else {
             rmInst.StartRunSlave();
@@ -30,7 +31,7 @@ namespace simcore {
 
         mmInst.SetNumberOfProcessedEvents(run->GetNumberOfEvent());
 
-        if (fMaster) {
+        if (G4Threading::IsMasterThread()) {
             rmInst.EndRunMaster();
         } else {
             rmInst.EndRunSlave();
