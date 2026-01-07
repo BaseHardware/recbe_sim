@@ -38,11 +38,12 @@ namespace bl10sim {
         G4double ductWindowXY = 10 * cm;
 
         G4double neutDetectorThick = 1 * cm;
+        G4double neutWindowThick   = 1 * nm;
 
         G4double filterWindowThick = 0.5 * mm;
 
         G4double worldSizeXY = ductWindowXY + ductThick * 2.;
-        G4double worldSizeZ  = ductLength + srcDuctDistance;
+        G4double worldSizeZ  = ductLength + srcDuctDistance + neutDetectorThick;
 
         // Get materials
         G4Material *airMaterial    = G4Material::GetMaterial("G4_AIR");
@@ -64,6 +65,13 @@ namespace bl10sim {
                                                        0,               // copy number
                                                        fCheckOverlaps); // checking overlaps
 
+        G4Box *nWindowBox = new G4Box("NeutronWindowBox", ductWindowXY / 2., ductWindowXY / 2.,
+                                      neutWindowThick / 2.);
+        G4LogicalVolume *nWindowLV =
+            new G4LogicalVolume(nWindowBox, airMaterial, "NeutronWindowLV");
+        new G4PVPlacement(nullptr, {0, 0, -worldSizeZ / 2. + neutWindowThick / 2.}, nWindowLV,
+                          "BeamWindowPV", worldLV, false, 0, fCheckOverlaps);
+
         G4Box *ductOuterBox = new G4Box("DuctOuterBox", ductWindowXY / 2. + ductThick,
                                         ductWindowXY / 2. + ductThick, ductLength / 2.);
         G4Box *ductInnerBox =
@@ -74,8 +82,8 @@ namespace bl10sim {
         G4LogicalVolume *ductInnerLV =
             new G4LogicalVolume(ductInnerBox, airMaterial, "DuctInnerLV");
 
-        new G4PVPlacement(nullptr, {0, 0, srcDuctDistance / 2.}, ductOuterLV, "DuctOuterPV",
-                          worldLV, false, 0, fCheckOverlaps);
+        new G4PVPlacement(nullptr, {0, 0, -worldSizeZ / 2. + ductLength / 2. + srcDuctDistance},
+                          ductOuterLV, "DuctOuterPV", worldLV, false, 0, fCheckOverlaps);
         new G4PVPlacement(nullptr, {0, 0, 0}, ductInnerLV, "DuctInnerPV", ductOuterLV, false, 0,
                           fCheckOverlaps);
 
@@ -83,8 +91,8 @@ namespace bl10sim {
                                            ductWindowXY / 2., neutDetectorThick / 2.);
         G4LogicalVolume *neutDetectorLV =
             new G4LogicalVolume(neutDetectorBox, airMaterial, "NeutronDetectorLV");
-        new G4PVPlacement(nullptr, {0, 0, ductLength / 2. - neutDetectorThick / 2.}, neutDetectorLV,
-                          "NeutronDetectorPV", ductInnerLV, false, 0, fCheckOverlaps);
+        new G4PVPlacement(nullptr, {0, 0, worldSizeZ / 2. - neutDetectorThick / 2.}, neutDetectorLV,
+                          "NeutronDetectorPV", worldLV, false, 0, fCheckOverlaps);
 
         G4Box *filterBox =
             new G4Box("FilterBox", ductWindowXY / 2., ductWindowXY / 2., filterWindowThick / 2.);
