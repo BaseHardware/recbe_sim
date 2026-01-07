@@ -60,6 +60,9 @@ namespace simcore {
         target->SetPrimaryRecorded(rootman.DoesRecordPrimary());
         target->SetOutputTreename(rootman.GetTreename());
 
+        target->SetNumberOfRequestedEvents(fNRequestedEvents);
+        target->SetNumberOfProcessedEvents(fNEvents);
+
         const long *seeds;
         if (fAutoRandomSeed) {
             seeds = G4Random::getTheSeeds();

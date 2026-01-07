@@ -45,6 +45,12 @@ namespace simobj {
         void SetThreadNum(size_t a) { fNThreads = a; }
         size_t GetThreadNum() const { return fNThreads; }
 
+        void SetNumberOfRequestedEvents(int a) { fNReqEvts = a; }
+        int GetNumberOfRequestedEvents() const { return fNReqEvts; }
+
+        void SetNumberOfProcessedEvents(int a) { fNEvts = a; }
+        int GetNumberOfProcessedEvents() const { return fNEvts; }
+
         void SetRandomSeed(long a, bool aux);
         long GetRandomSeed(bool aux) const;
 
@@ -69,6 +75,9 @@ namespace simobj {
         size_t fNThreads;
         size_t fMaxNTrack;
         size_t fMaxNStep;
+
+        int fNEvts;
+        int fNReqEvts;
 
         std::vector<unsigned char> fGeometryData;
 

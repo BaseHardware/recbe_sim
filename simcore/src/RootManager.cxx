@@ -238,12 +238,17 @@ namespace simcore {
         fPTree->ResetBit(kMustCleanup);
         fPTree->SetDirectory(fFileForMaster.get());
 
-        MakeMetadata();
+        fMetadata = new simobj::Metadata();
+        fPTree->Branch("Metadata", &fMetadata);
 
         return true;
     }
+
     bool RootManager::EndRunMaster() {
         if (!fStarted) return false;
+
+        MetadataManager::GetInstance().FillMetadata(fMetadata);
+        fPTree->Fill();
 
         fFileForMaster->Write();
 
@@ -260,17 +265,6 @@ namespace simcore {
         fStarted  = false;
 
         return true;
-    }
-
-    void RootManager::MakeMetadata() {
-        if (!fStarted || fMerger == nullptr || fPTree == nullptr) return;
-
-        fMetadata = new simobj::Metadata();
-        fPTree->Branch("Metadata", &fMetadata);
-
-        MetadataManager::GetInstance().FillMetadata(fMetadata);
-
-        fPTree->Fill();
     }
 
     void RootManager::MakeBranches() const {

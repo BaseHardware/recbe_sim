@@ -87,7 +87,6 @@ namespace simcore {
         std::string GetPersistentTreename() const { return fPTreename; }
 
       protected:
-        void MakeMetadata();
         void MakeBranches() const;
 
       private:
