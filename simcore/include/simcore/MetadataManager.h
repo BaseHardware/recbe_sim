@@ -23,8 +23,8 @@ namespace simcore {
         void SetSimulationName(const std::string &a) { fSimName = a; }
         std::string GetSimulationName() const { return fSimName; }
 
-        void SetGeometryType(const std::string &a) { fSimName = a; }
-        std::string GetGeometryType() const { return fSimName; }
+        void SetGeometryType(const std::string &a) { fGeomTypename = a; }
+        std::string GetGeometryType() const { return fGeomTypename; }
 
         void AutoSetRandomSeed(bool a) { fAutoRandomSeed = a; }
         bool AutoSetRandomSeed() const { return fAutoRandomSeed; }
