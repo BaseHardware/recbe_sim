@@ -68,8 +68,12 @@ namespace simobj {
         }
     }
 
-    TObject *Primary::GetVertexObjPtr(int idx) const { return (*fTCAVertex)[idx]; }
-    TObject *Primary::GetPrimaryParticleObjPtr(int idx) const { return (*fTCAPrimPart)[idx]; }
+    Vertex *Primary::GetVertexObjPtr(int idx) const {
+        return static_cast<Vertex *>((*fTCAVertex)[idx]);
+    }
+    PrimaryParticle *Primary::GetPrimaryParticleObjPtr(int idx) const {
+        return static_cast<PrimaryParticle *>((*fTCAPrimPart)[idx]);
+    }
     int Primary::GetVertexSize() const { return fTCAVertex->GetSize(); }
     int Primary::GetPrimaryParticleSize() const { return fTCAVertex->GetSize(); }
 

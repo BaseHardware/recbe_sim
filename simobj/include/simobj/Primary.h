@@ -99,8 +99,8 @@ namespace simobj {
 
         void Print(Option_t *option = "") const override;
 
-        TObject *GetVertexObjPtr(int idx) const;
-        TObject *GetPrimaryParticleObjPtr(int idx) const;
+        Vertex *GetVertexObjPtr(int idx) const;
+        PrimaryParticle *GetPrimaryParticleObjPtr(int idx) const;
 
         int GetVertexSize() const;
         int GetPrimaryParticleSize() const;
