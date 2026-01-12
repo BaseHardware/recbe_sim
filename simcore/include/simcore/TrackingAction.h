@@ -12,8 +12,12 @@ namespace simcore {
         TrackingAction() {};
         ~TrackingAction() override = default;
 
-        void PreUserTrackingAction(const G4Track *trk) override;
-        void PostUserTrackingAction(const G4Track *trk) override;
+        inline virtual void PreAction(const G4Track *) {};
+        inline virtual void PostAction(const G4Track *) {};
+
+      private:
+        void PreUserTrackingAction(const G4Track *trk) final;
+        void PostUserTrackingAction(const G4Track *trk) final;
     };
 }; // namespace simcore
 

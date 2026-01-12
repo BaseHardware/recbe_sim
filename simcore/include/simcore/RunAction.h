@@ -11,8 +11,12 @@ namespace simcore {
         RunAction();
         ~RunAction() override = default;
 
-        void BeginOfRunAction(const G4Run *) override;
-        void EndOfRunAction(const G4Run *) override;
+        inline virtual void BeginAction(const G4Run *event) {};
+        inline virtual void EndAction(const G4Run *event) {};
+
+      private:
+        void BeginOfRunAction(const G4Run *) final;
+        void EndOfRunAction(const G4Run *) final;
     };
 } // namespace simcore
 #endif

@@ -23,9 +23,13 @@ namespace simcore {
         } else {
             rmInst.StartRunSlave();
         }
+
+        BeginAction(run);
     }
 
     void RunAction::EndOfRunAction(const G4Run *run) {
+        EndAction(run);
+
         RootManager &rmInst     = RootManager::GetInstance();
         MetadataManager &mmInst = MetadataManager::GetInstance();
 

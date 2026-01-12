@@ -8,5 +8,7 @@ namespace simcore {
 
     void SteppingAction::UserSteppingAction(const G4Step *step) {
         RootManager::GetInstance().AppendStep(step);
+
+        StepAction(step);
     }
 } // namespace simcore

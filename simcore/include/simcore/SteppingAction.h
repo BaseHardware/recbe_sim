@@ -14,9 +14,10 @@ namespace simcore {
         SteppingAction();
         ~SteppingAction() override = default;
 
-        void UserSteppingAction(const G4Step *step) override;
+        inline virtual void StepAction(const G4Step *step) {};
 
       private:
+        void UserSteppingAction(const G4Step *step) final;
     };
 } // namespace simcore
 #endif

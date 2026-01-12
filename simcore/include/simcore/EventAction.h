@@ -11,10 +11,12 @@ namespace simcore {
         EventAction()           = default;
         ~EventAction() override = default;
 
-        void BeginOfEventAction(const G4Event *event) override;
-        void EndOfEventAction(const G4Event *event) override;
+        inline virtual void BeginAction(const G4Event *event) {};
+        inline virtual void EndAction(const G4Event *event) {};
 
       private:
+        void BeginOfEventAction(const G4Event *event) final;
+        void EndOfEventAction(const G4Event *event) final;
     };
 } // namespace simcore
 #endif
