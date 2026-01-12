@@ -3,12 +3,11 @@
 #include "G4RunManager.hh"
 #include "G4StateManager.hh"
 
-#include <csignal>
 #include <iostream>
 
 #include <unistd.h>
 
-void __local_signal_handler(int signum) {
+void my_local_signal_handler(int signum) {
     using namespace std;
     if (signum == SIGTERM) {
         cout << "SIGTERM received.";
@@ -21,6 +20,7 @@ void __local_signal_handler(int signum) {
         case G4State_EventProc:
             cout << " The simulation will be aborted as soon as possible..." << endl;
             G4RunManager::GetRunManager()->AbortRun(true);
+            simcore::SafeTermination::GetInstance().Terminate();
             break;
         case G4State_PreInit:
         case G4State_Init:
@@ -34,9 +34,16 @@ void __local_signal_handler(int signum) {
 }
 
 namespace simcore {
+    SafeTermination &SafeTermination::GetInstance() {
+        static SafeTermination fgInstance;
+        return fgInstance;
+    }
+
+    bool SafeTermination::IsTerminated() const { return (fgStopFlag != 0); }
+
     void SafeTermination::RegisterSignalHandler() {
-        std::signal(SIGTERM, __local_signal_handler);
-        std::signal(SIGINT, __local_signal_handler);
+        std::signal(SIGTERM, my_local_signal_handler);
+        std::signal(SIGINT, my_local_signal_handler);
     }
 
     void SafeTermination::DeregisterSignalHandler() {
