@@ -30,6 +30,7 @@ static void G4Step2SimStep(const G4Step *src, simobj::Step *dest) {
     G4double edep   = src->GetTotalEnergyDeposit();
 
     G4int nDaug = src->GetNumberOfSecondariesInCurrentStep();
+    G4int copyNo;
 
     std::string procName, volName;
 
@@ -43,8 +44,10 @@ static void G4Step2SimStep(const G4Step *src, simobj::Step *dest) {
     const G4VPhysicalVolume *nowVolume = src->GetPostStepPoint()->GetPhysicalVolume();
     if (nowVolume == nullptr) {
         volName = "OutOfWorld";
+        copyNo  = -1;
     } else {
         volName = nowVolume->GetName();
+        copyNo  = nowVolume->GetCopyNo();
     }
 
     dest->SetNDaughters(nDaug);
@@ -54,6 +57,7 @@ static void G4Step2SimStep(const G4Step *src, simobj::Step *dest) {
     dest->SetPxPyPzE(mom.x() / MeV, mom.y() / MeV, mom.z() / MeV, energy / MeV);
     dest->SetProcessName(procName.c_str());
     dest->SetVolumeName(volName.c_str());
+    dest->SetCopyNumber(copyNo);
 }
 
 static void G4Track2SimStep(const G4Track *src, simobj::Step *dest, G4bool start) {
@@ -66,7 +70,7 @@ static void G4Track2SimStep(const G4Track *src, simobj::Step *dest, G4bool start
     G4double prop_t = src->GetProperTime();
     G4double edep;
 
-    G4int nDaug;
+    G4int nDaug, copyNo;
 
     std::string procName, volName;
 
@@ -75,7 +79,8 @@ static void G4Track2SimStep(const G4Track *src, simobj::Step *dest, G4bool start
         volName  = src->GetVolume()->GetName();
         edep     = 0;
 
-        nDaug = 0;
+        nDaug  = 0;
+        copyNo = src->GetVolume()->GetCopyNo();
     } else {
         const G4Step *nowStep            = src->GetStep();
         const G4StepPoint *postStepPoint = nowStep->GetPostStepPoint();
@@ -85,8 +90,10 @@ static void G4Track2SimStep(const G4Track *src, simobj::Step *dest, G4bool start
         procName = nowProcess->GetProcessName();
         if (nowVol != nullptr) {
             volName = nowVol->GetName();
+            copyNo  = nowVol->GetCopyNo();
         } else {
             volName = "OutOfWorld";
+            copyNo  = -1;
         }
 
         nDaug = nowStep->GetNumberOfSecondariesInCurrentStep();
@@ -100,6 +107,7 @@ static void G4Track2SimStep(const G4Track *src, simobj::Step *dest, G4bool start
     dest->SetPxPyPzE(mom.x() / mm, mom.y() / mm, mom.z() / mm, energy / MeV);
     dest->SetProcessName(procName.c_str());
     dest->SetVolumeName(volName.c_str());
+    dest->SetCopyNumber(copyNo);
 }
 
 namespace simcore {

@@ -6,7 +6,7 @@ namespace simobj {
     Step::Step(const Step &orig)
         : fTrackID(0), fNDaughters(orig.fNDaughters), fEdep(orig.fEdep),
           fProperTime(orig.fProperTime), f4Position(orig.f4Position), f4Momentum(orig.f4Momentum),
-          fProcessName(orig.fProcessName), fVolumeName(orig.fVolumeName) {};
+          fProcessName(orig.fProcessName), fVolumeName(orig.fVolumeName), fCopyNo(orig.fCopyNo) {};
 
     TObject *Step::Clone(const char *) const { return static_cast<Step *>(new Step(*this)); }
 
@@ -20,7 +20,7 @@ namespace simobj {
         cout << "Number of daughters: " << fNDaughters << endl;
         cout << "Edep: " << fEdep << endl;
         cout << "Proper time: " << fProperTime << endl;
-        cout << "Volume: " << fVolumeName << endl;
+        cout << "Volume: " << fVolumeName << ", copy number: " << fCopyNo << endl;
         cout << "Process: " << fProcessName << endl;
     }
 } // namespace simobj

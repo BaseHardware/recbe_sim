@@ -11,8 +11,8 @@ namespace simobj {
     class Step : public TObject {
       public:
         Step()
-            : fTrackID(0), fNDaughters(0), fEdep(0), fProperTime(0), f4Position(), f4Momentum(),
-              fProcessName(""), fVolumeName("") {};
+            : fTrackID(0), fNDaughters(0), fEdep(0), fProperTime(0), f4Position({}), f4Momentum({}),
+              fProcessName(""), fVolumeName(""), fCopyNo(0) {};
         Step(const Step &orig);
 
         TObject *Clone(const char *) const override;
@@ -57,6 +57,9 @@ namespace simobj {
         TString GetProcessName() const { return fProcessName; }
         TString GetVolumeName() const { return fVolumeName; }
 
+        void SetCopyNumber(int a) { fCopyNo = a; }
+        int GetCopyNumber() const { return fCopyNo; }
+
         void Print(Option_t *option = "") const override;
 
       private:
@@ -68,6 +71,7 @@ namespace simobj {
         ROOT::Math::PxPyPzEVector f4Momentum;
         TString fProcessName;
         TString fVolumeName;
+        int fCopyNo;
 
         ClassDefOverride(simobj::Step, 1)
     };
