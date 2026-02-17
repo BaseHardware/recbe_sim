@@ -10,6 +10,8 @@ class G4ParticleGun;
 class G4Event;
 
 namespace bl10sim {
+    class PrimaryGeneratorMessenger;
+
     class LethargyEnergyGenerator {
       public:
         LethargyEnergyGenerator();
@@ -40,9 +42,21 @@ namespace bl10sim {
 
         void GeneratePrimaries(G4Event *event) override;
 
+        void SetDuctLength(double a) { fDuctLength = a; };
+        double GetDuctLength() const { return fDuctLength; };
+        void SetDuctEnteranceXSize(double a) { fDuctEnterX = a; };
+        double GetDuctEnteranceXSize() const { return fDuctEnterX; };
+        void SetDuctEnteranceYSize(double a) { fDuctEnterY = a; };
+        double GetDuctEnteranceYSize() const { return fDuctEnterY; };
+
       private:
-        G4ParticleGun *fParticleGun          = nullptr; // G4 particle gun
-        LethargyEnergyGenerator *fEGenerator = nullptr;
+        G4ParticleGun *fParticleGun           = nullptr; // G4 particle gun
+        LethargyEnergyGenerator *fEGenerator  = nullptr;
+        PrimaryGeneratorMessenger *fMessenger = nullptr;
+
+        double fDuctLength;
+        double fDuctEnterX;
+        double fDuctEnterY;
     };
 } // namespace bl10sim
 #endif

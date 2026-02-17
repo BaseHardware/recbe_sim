@@ -1,4 +1,5 @@
 #include "bl10sim/PrimaryGeneratorAction.h"
+#include "bl10sim/PrimaryGeneratorMessenger.h"
 
 #include <cmath>
 #include <fstream>
@@ -12,6 +13,27 @@
 #include "G4VSolid.hh"
 #include "Randomize.hh"
 
+#include "G4Box.hh"
+
+// Copied from G4Box source code. It uses G4QuickRand(), which is not suitable for the MT
+// environment
+G4ThreeVector GetPointOnSurface(const G4Box *solid) {
+    G4double fDx = solid->GetXHalfLength();
+    G4double fDy = solid->GetYHalfLength();
+    G4double fDz = solid->GetZHalfLength();
+    G4double sxy = fDx * fDy, sxz = fDx * fDz, syz = fDy * fDz;
+    G4double select = (sxy + sxz + syz) * G4UniformRand();
+    G4double u      = 2. * G4UniformRand() - 1.;
+    G4double v      = 2. * G4UniformRand() - 1.;
+
+    if (select < sxy)
+        return {u * fDx, v * fDy, ((select < 0.5 * sxy) ? -fDz : fDz)};
+    else if (select < sxy + sxz)
+        return {u * fDx, ((select < sxy + 0.5 * sxz) ? -fDy : fDy), v * fDz};
+    else
+        return {((select < sxy + sxz + 0.5 * syz) ? -fDx : fDx), u * fDy, v * fDz};
+}
+
 namespace bl10sim {
     PrimaryGeneratorAction::PrimaryGeneratorAction() {
         G4int nofParticles = 1;
@@ -24,11 +46,18 @@ namespace bl10sim {
         fEGenerator->SetInputFilename("./data/port10_inp.txt");
         fEGenerator->SetTrimLastones(true);
         fEGenerator->Initialize();
+
+        fMessenger = new PrimaryGeneratorMessenger(this);
+
+        fDuctLength = 12.5 * m;
+        fDuctEnterX = 10 * cm;
+        fDuctEnterY = 10 * cm;
     }
 
     PrimaryGeneratorAction::~PrimaryGeneratorAction() {
         delete fParticleGun;
         delete fEGenerator;
+        delete fMessenger;
     }
 
     void PrimaryGeneratorAction::GeneratePrimaries(G4Event *event) {
@@ -78,17 +107,22 @@ namespace bl10sim {
 
         auto beamWindowPV = G4PhysicalVolumeStore::GetInstance()->GetVolume("BeamWindowPV");
 
-        G4VSolid *beamWindowSolid = beamWindowPV->GetLogicalVolume()->GetSolid();
+        G4Box *beamWindowSolid = static_cast<G4Box *>(beamWindowPV->GetLogicalVolume()->GetSolid());
 
-        // Set gun position
-        G4ThreeVector position = beamWindowSolid->GetPointOnSurface();
-        fParticleGun->SetParticlePosition(position + totalTranslation);
-
+        G4ThreeVector bwSurfPosition = GetPointOnSurface(beamWindowSolid);
+        fParticleGun->SetParticlePosition(bwSurfPosition + totalTranslation);
         fParticleGun->SetParticleEnergy(fEGenerator->Generate());
 
-        G4ThreeVector pDir(0, 0, 1);
-        pDir.setTheta(0.065 * G4UniformRand());
-        pDir.setPhi(2 * M_PI * G4UniformRand());
+        G4ThreeVector exitPosition, enterPosition;
+        enterPosition.setX((G4UniformRand() - 0.5) * fDuctEnterX);
+        enterPosition.setY((G4UniformRand() - 0.5) * fDuctEnterY);
+        enterPosition.setZ(0);
+
+        exitPosition = bwSurfPosition;
+        exitPosition.setZ(fDuctLength);
+
+        G4ThreeVector pDir = exitPosition - enterPosition;
+        pDir *= 1. / pDir.mag();
         fParticleGun->SetParticleMomentumDirection(pDir);
 
         fParticleGun->GeneratePrimaryVertex(event);
