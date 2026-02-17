@@ -1,10 +1,10 @@
 #include "bl10sim/PrimaryGeneratorAction.h"
 #include "bl10sim/PrimaryGeneratorMessenger.h"
 
-#include <CLHEP/Units/PhysicalConstants.h>
 #include <cmath>
 #include <fstream>
 
+#include "G4Box.hh"
 #include "G4LogicalVolume.hh"
 #include "G4ParticleGun.hh"
 #include "G4ParticleTable.hh"
@@ -14,7 +14,7 @@
 #include "G4VSolid.hh"
 #include "Randomize.hh"
 
-#include "G4Box.hh"
+#include "CLHEP/Units/PhysicalConstants.h"
 
 // Copied from G4Box source code. It uses G4QuickRand(), which is not suitable for the MT
 // environment
@@ -133,12 +133,11 @@ namespace bl10sim {
         pDir *= 1. / flightDistance;
         fParticleGun->SetParticleMomentumDirection(pDir);
 
-        G4double gamma = 1 + particleEnergy / (fParticleGun->GetParticleDefinition()->GetPDGMass() *
-                                               CLHEP::c_squared);
-        G4double rel_v = CLHEP::c_light * sqrt(1 - 1 / (gamma * gamma));
-        G4double rel_t = flightDistance / rel_v;
-        fParticleGun->SetParticleTime(rel_t);
+        G4double particleMass = fParticleGun->GetParticleDefinition()->GetPDGMass();
 
+        G4double cla_t = flightDistance * sqrt(particleMass / (2 * particleEnergy));
+
+        fParticleGun->SetParticleTime(cla_t);
         fParticleGun->GeneratePrimaryVertex(event);
     }
 
