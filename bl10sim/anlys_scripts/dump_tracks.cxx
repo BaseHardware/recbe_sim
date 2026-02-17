@@ -37,10 +37,8 @@ void dump_tracks() {
 
         cout << "Track #" << idx_track + 1 << ": " << nowtrk->GetName() << endl;
         size_t nStep = nowtrk->GetNStep();
-        cout << " Step#         X          Y          Z           KineE         dEStep         "
-                "Volume  "
-                "   "
-                "   Process  #daug"
+        cout << " Step#         X          Y          Z           KineE         dEStep             "
+                "    Volume        CopyNo     Process  #daug"
              << endl;
 
         for (size_t idx_step = 0; idx_step < nStep; idx_step++) {
@@ -52,11 +50,9 @@ void dump_tracks() {
             cout << fixed << " " << setw(5) << idx_step << "   " << setw(9) << nowstep->GetX()
                  << "  " << setw(9) << nowstep->GetY() << "  " << setw(9) << nowstep->GetZ() << "  "
                  << setw(12) << nowstep->GetKineticEnergy() << "  " << setw(13)
-                 << nowstep->GetDepositedEnergy() << "  " << setw(13) << nowstep->GetVolumeName()
-                 << "  " << setw(13) << nowstep->GetProcessName() << "  "
-                 << nowstep->GetNDaughters() << endl;
-
-            // nowstep->Get
+                 << nowstep->GetDepositedEnergy() << "  " << setw(20) << nowstep->GetVolumeName()
+                 << "  " << setw(9) << nowstep->GetCopyNumber() << setw(13) << " "
+                 << nowstep->GetProcessName() << "  " << nowstep->GetNDaughters() << endl;
         }
     }
     // simobj::Step *nowstep = static_cast<simobj::Track *>(tcaTrack->At(0));

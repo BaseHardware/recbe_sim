@@ -14,7 +14,7 @@
 #include "G4UIcommand.hh"
 #include "G4UImanager.hh"
 #include "G4VisExecutive.hh"
-// #include "Randomize.hh"
+#include "Randomize.hh"
 
 namespace {
     void PrintUsage() {
