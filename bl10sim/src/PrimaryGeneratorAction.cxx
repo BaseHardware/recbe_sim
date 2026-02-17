@@ -1,6 +1,7 @@
 #include "bl10sim/PrimaryGeneratorAction.h"
 #include "bl10sim/PrimaryGeneratorMessenger.h"
 
+#include <CLHEP/Units/PhysicalConstants.h>
 #include <cmath>
 #include <fstream>
 
@@ -111,7 +112,9 @@ namespace bl10sim {
 
         G4ThreeVector bwSurfPosition = GetPointOnSurface(beamWindowSolid);
         fParticleGun->SetParticlePosition(bwSurfPosition + totalTranslation);
-        fParticleGun->SetParticleEnergy(fEGenerator->Generate());
+
+        G4double particleEnergy = fEGenerator->Generate();
+        fParticleGun->SetParticleEnergy(particleEnergy);
 
         G4ThreeVector exitPosition, enterPosition;
         enterPosition.setX((G4UniformRand() - 0.5) * fDuctEnterX);
@@ -121,9 +124,16 @@ namespace bl10sim {
         exitPosition = bwSurfPosition;
         exitPosition.setZ(fDuctLength);
 
-        G4ThreeVector pDir = exitPosition - enterPosition;
-        pDir *= 1. / pDir.mag();
+        G4ThreeVector pDir      = exitPosition - enterPosition;
+        G4double flightDistance = pDir.mag();
+        pDir *= 1. / flightDistance;
         fParticleGun->SetParticleMomentumDirection(pDir);
+
+        G4double gamma = 1 + particleEnergy / (fParticleGun->GetParticleDefinition()->GetPDGMass() *
+                                               CLHEP::c_squared);
+        G4double rel_v = CLHEP::c_light * sqrt(1 - 1 / (gamma * gamma));
+        G4double rel_t = flightDistance / rel_v;
+        fParticleGun->SetParticleTime(rel_t);
 
         fParticleGun->GeneratePrimaryVertex(event);
     }
