@@ -59,11 +59,9 @@ namespace simcore {
         if (command == fRecordPrimary) {
             G4bool boolValue = fRecordPrimary->GetNewBoolValue(newValue);
             fRootManager->RecordPrimary(boolValue);
-            return;
         } else if (command == fRecordStep) {
             G4bool boolValue = fRecordStep->GetNewBoolValue(newValue);
             fRootManager->RecordStep(boolValue);
-            return;
         } else if (command == fMaxTrack) {
             G4int intValue = fMaxTrack->GetNewIntValue(newValue);
             fRootManager->SetMaxTrackNum(intValue);
@@ -75,7 +73,6 @@ namespace simcore {
                 newValue = newValue + ".root";
             }
             fRootManager->SetFilename(newValue);
-            return;
         }
     }
 } // namespace simcore
