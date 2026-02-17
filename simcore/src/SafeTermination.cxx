@@ -2,6 +2,7 @@
 
 #include "G4RunManager.hh"
 #include "G4StateManager.hh"
+#include "G4Threading.hh"
 
 #include <iostream>
 
@@ -34,6 +35,8 @@ void my_local_signal_handler(int signum) {
 }
 
 namespace simcore {
+    bool SafeTermination::fgRegistered = false;
+
     SafeTermination &SafeTermination::GetInstance() {
         static SafeTermination fgInstance;
         return fgInstance;
@@ -42,12 +45,22 @@ namespace simcore {
     bool SafeTermination::IsTerminated() const { return (fgStopFlag != 0); }
 
     void SafeTermination::RegisterSignalHandler() {
+        if (G4Threading::IsWorkerThread()) return;
         std::signal(SIGTERM, my_local_signal_handler);
         std::signal(SIGINT, my_local_signal_handler);
+        fgRegistered = true;
     }
 
     void SafeTermination::DeregisterSignalHandler() {
+        if (G4Threading::IsWorkerThread()) return;
         std::signal(SIGTERM, SIG_DFL);
         std::signal(SIGINT, SIG_DFL);
+        fgRegistered = false;
+    }
+
+    void SafeTermination::RestoreSignalHandler() {
+        if (!fgRegistered) return;
+
+        std::signal(SIGINT, my_local_signal_handler);
     }
 } // namespace simcore

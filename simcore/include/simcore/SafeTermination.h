@@ -12,6 +12,7 @@ namespace simcore {
 
         static void RegisterSignalHandler();
         static void DeregisterSignalHandler();
+        static void RestoreSignalHandler();
 
         static SafeTermination &GetInstance();
 
@@ -23,6 +24,7 @@ namespace simcore {
       private:
         SafeTermination() : fgStopFlag(0) {};
         volatile sig_atomic_t fgStopFlag;
+        static bool fgRegistered;
     };
 } // namespace simcore
 

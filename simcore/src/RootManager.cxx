@@ -1,5 +1,6 @@
 #include "simcore/RootManager.h"
 #include "simcore/MetadataManager.h"
+#include "simcore/SafeTermination.h"
 
 #include "ROOT/TBufferMerger.hxx"
 
@@ -113,7 +114,10 @@ static void G4Track2SimStep(const G4Track *src, simobj::Step *dest, G4bool start
 namespace simcore {
     G4ThreadLocal TLSContainer *RootManager::fgTLS = nullptr;
 
-    void RootManager::Fill() const { fgTLS->fTree->Fill(); }
+    void RootManager::Fill() const {
+        fgTLS->fTree->Fill();
+        SafeTermination::RestoreSignalHandler();
+    }
 
     void RootManager::Clear() const {
         fgTLS->fTCAStep->Clear("C");
