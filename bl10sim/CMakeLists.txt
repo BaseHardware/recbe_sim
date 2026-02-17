@@ -52,7 +52,8 @@ set(BL10SIM_USERDATA
     macros/run1.mac
     macros/run2.mac
     macros/vis.mac
-    data/port10_inp.txt
+    data/at_ductexit.txt
+    data/at_moderator.txt
 )
 
 foreach(_script ${BL10SIM_USERDATA})

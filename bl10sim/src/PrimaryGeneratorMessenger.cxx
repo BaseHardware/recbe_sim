@@ -1,12 +1,9 @@
-#include <iostream>
-
-#include "bl10sim/PrimaryGeneratorAction.h"
 #include "bl10sim/PrimaryGeneratorMessenger.h"
+#include "bl10sim/PrimaryGeneratorAction.h"
 
 #include "G4UIcmdWithADoubleAndUnit.hh"
+#include "G4UIcmdWithAString.hh"
 #include "G4UIcommand.hh"
-
-using namespace std;
 
 namespace bl10sim {
     PrimaryGeneratorMessenger::PrimaryGeneratorMessenger(PrimaryGeneratorAction *pm)
@@ -29,6 +26,11 @@ namespace bl10sim {
         fDuctEnterYSizeCmd->SetGuidance("Set the size of y-axis(height) of the duct enterance.");
         fDuctEnterYSizeCmd->SetParameterName("size", false);
         fDuctEnterYSizeCmd->AvailableForStates(G4State_PreInit, G4State_Init, G4State_Idle);
+
+        fFluxFilenameCmd = new G4UIcmdWithAString("/prim_gen/flux_filename", this);
+        fFluxFilenameCmd->SetGuidance("Set the filename for the neutron flux.");
+        fFluxFilenameCmd->SetParameterName("filename (path)", false);
+        fFluxFilenameCmd->AvailableForStates(G4State_PreInit, G4State_Init, G4State_Idle);
     }
 
     PrimaryGeneratorMessenger::~PrimaryGeneratorMessenger() {
@@ -36,6 +38,7 @@ namespace bl10sim {
         delete fDuctLengthCmd;
         delete fDuctEnterXSizeCmd;
         delete fDuctEnterYSizeCmd;
+        delete fFluxFilenameCmd;
     }
 
     void PrimaryGeneratorMessenger::SetNewValue(G4UIcommand *command, G4String newValue) {
@@ -48,6 +51,8 @@ namespace bl10sim {
         } else if (command == fDuctEnterYSizeCmd) {
             double length = fDuctEnterYSizeCmd->GetNewDoubleValue(newValue);
             fPrimGenAction->SetDuctEnteranceYSize(length);
+        } else if (command == fFluxFilenameCmd) {
+            fPrimGenAction->SetFluxFilename(newValue);
         }
     }
 } // namespace bl10sim

@@ -40,6 +40,7 @@ namespace bl10sim {
         PrimaryGeneratorAction();
         ~PrimaryGeneratorAction() override;
 
+        void InitializeEGenerator();
         void GeneratePrimaries(G4Event *event) override;
 
         void SetDuctLength(double a) { fDuctLength = a; };
@@ -49,6 +50,9 @@ namespace bl10sim {
         void SetDuctEnteranceYSize(double a) { fDuctEnterY = a; };
         double GetDuctEnteranceYSize() const { return fDuctEnterY; };
 
+        void SetFluxFilename(const std::string &a) { fFluxFilename = a; }
+        std::string GetFluxFilename() const { return fFluxFilename; }
+
       private:
         G4ParticleGun *fParticleGun           = nullptr; // G4 particle gun
         LethargyEnergyGenerator *fEGenerator  = nullptr;
@@ -57,6 +61,8 @@ namespace bl10sim {
         double fDuctLength;
         double fDuctEnterX;
         double fDuctEnterY;
+
+        std::string fFluxFilename;
     };
 } // namespace bl10sim
 #endif

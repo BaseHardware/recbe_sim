@@ -43,22 +43,26 @@ namespace bl10sim {
         auto particleDefinition = G4ParticleTable::GetParticleTable()->FindParticle("neutron");
         fParticleGun->SetParticleDefinition(particleDefinition);
 
-        fEGenerator = new LethargyEnergyGenerator();
-        fEGenerator->SetInputFilename("./data/port10_inp.txt");
-        fEGenerator->SetTrimLastones(true);
-        fEGenerator->Initialize();
-
         fMessenger = new PrimaryGeneratorMessenger(this);
 
         fDuctLength = 12.5 * m;
         fDuctEnterX = 10 * cm;
         fDuctEnterY = 10 * cm;
+
+        fEGenerator   = new LethargyEnergyGenerator();
+        fFluxFilename = "./data/at_ductexit.txt";
     }
 
     PrimaryGeneratorAction::~PrimaryGeneratorAction() {
         delete fParticleGun;
         delete fEGenerator;
         delete fMessenger;
+    }
+
+    void PrimaryGeneratorAction::InitializeEGenerator() {
+        fEGenerator->SetInputFilename(fFluxFilename);
+        fEGenerator->SetTrimLastones(true);
+        fEGenerator->Initialize();
     }
 
     void PrimaryGeneratorAction::GeneratePrimaries(G4Event *event) {
@@ -152,6 +156,7 @@ namespace bl10sim {
 
         fBoundaries.clear();
         fCumulative.clear();
+        fReady = false;
 
         ifstream fin(fFluxFilename);
         if (fin.is_open()) {
@@ -258,7 +263,7 @@ namespace bl10sim {
             }
         } else {
             G4ExceptionDescription msg;
-            msg << "Failed to open the flux file." << G4endl;
+            msg << "Failed to open the flux file '" << fFluxFilename << "'." << G4endl;
             G4Exception("LethargyEnergyGenerator::Initialize()", "LethargyE0001", FatalException,
                         msg);
             goto cleanup_and_exit;
