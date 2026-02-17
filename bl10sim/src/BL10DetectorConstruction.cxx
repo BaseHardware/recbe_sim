@@ -1,6 +1,7 @@
 #include "bl10sim/BL10DetectorConstruction.h"
 
 #include "simcore/MetadataManager.h"
+#include "simcore/TouchTriggerSD.h"
 
 #include "G4Box.hh"
 #include "G4DisplacedSolid.hh"
@@ -10,6 +11,7 @@
 #include "G4NistManager.hh"
 #include "G4PVPlacement.hh"
 #include "G4RotationMatrix.hh"
+#include "G4SDManager.hh"
 #include "G4SubtractionSolid.hh"
 #include "G4SystemOfUnits.hh"
 #include "G4Trd.hh"
@@ -116,6 +118,8 @@ namespace bl10sim {
 
         fBeamWindowWidth  = 2 * cm;
         fBeamWindowHeight = 10 * cm;
+
+        fWindowThickness = 1 * nm;
     }
 
     void BL10DetectorConstruction::CalculateGeometrySubparameters() {
@@ -835,21 +839,21 @@ namespace bl10sim {
     }
 
     void BL10DetectorConstruction::PlaceBeamWindow(G4LogicalVolume *labLV) const {
-        const G4double windowThickness = 1 * nm;
 
         G4Material *matAir = G4Material::GetMaterial("G4_AIR");
 
         G4Box *windowBox = new G4Box("BeamWindowBox", fBeamWindowWidth / 2., fBeamWindowHeight / 2.,
-                                     windowThickness / 2.);
+                                     fWindowThickness / 2.);
         G4LogicalVolume *windowLV = new G4LogicalVolume(windowBox, matAir, "BeamWindowLV");
 
         G4ThreeVector windowTlate = {0, 0, 0};
         // Move the beam window solid to the z-end of the lab
-        windowTlate += {0, 0, -fLabZLength / 2. + windowThickness / 2.};
+        windowTlate += {0, 0, -fLabZLength / 2. + fWindowThickness / 2.};
         // Move the beam window to the fBeamYDistanceFromFloor on the y-axis
         windowTlate += {0, -fLabHeight / 2. + fBeamWindowHeight / 2. + fBeamYDistanceFromFloor, 0};
         // Move the beam window to the center of beamline
-        windowTlate += {fLabWidthBeamside / 2. - fBeamXDistanceFromWall, 0, 0};
+        windowTlate +=
+            {fLabWidthBeamside / 2. - fBeamWindowWidth / 2. - fBeamXDistanceFromWall, 0, 0};
 
         new G4PVPlacement(nullptr, windowTlate, windowLV, "BeamWindowPV", labLV, false, 0,
                           fCheckOverlaps);
@@ -874,10 +878,61 @@ namespace bl10sim {
         G4LogicalVolume *wbLV        = BuildWorkbench();
         G4ThreeVector samplePosition = PlaceWorkbench(labLV, wbLV);
 
-        PlaceSamples(labLV, samplePosition);
+        G4Material *labMaterial = labLV->GetMaterial();
+
+        G4double detectorWidth     = 30 * cm;
+        G4double detectorHeight    = 30 * cm;
+        G4double detectorThickness = 1 * nm;
+        G4double detectorSpacing   = 50 * cm;
+
+        G4int detectorNum = 5;
+
+        G4double envelopeWidth  = detectorWidth;
+        G4double envelopeHeight = detectorHeight;
+        G4double envelopeLength =
+            detectorSpacing * (detectorNum - 1) + detectorThickness * detectorNum;
+
+        G4Box *detectorEnvelopeBox = new G4Box("DetectorEnvelopeBox", envelopeWidth / 2.,
+                                               envelopeHeight / 2., envelopeLength / 2.);
+        G4LogicalVolume *detectorEnvelopeLV =
+            new G4LogicalVolume(detectorEnvelopeBox, labMaterial, "DetectorEnvelopeLV");
+
+        G4Box *detectorBox = new G4Box("DetectorBox", detectorWidth / 2., detectorHeight / 2.,
+                                       detectorThickness / 2.);
+        G4LogicalVolume *detectorLV = new G4LogicalVolume(detectorBox, labMaterial, "DetectorLV");
+        for (int i = 0; i < detectorNum; i++) {
+            new G4PVPlacement(
+                nullptr,
+                {0, 0, -envelopeLength / 2. + detectorThickness / 2. + detectorSpacing * i},
+                detectorLV, "DetectorPV", detectorEnvelopeLV, true, i, fCheckOverlaps);
+        }
+
+        G4ThreeVector envelopeTlate;
+        // Move the envelope solid next to the beam window (z-direction)
+        envelopeTlate += {0, 0, -fLabZLength / 2. + fWindowThickness + envelopeLength / 2.};
+        // Move the envelope solid to align to the center of beam window
+        envelopeTlate +=
+            {0, -fLabHeight / 2. + fBeamYDistanceFromFloor + fBeamWindowHeight / 2, 0.};
+        envelopeTlate +=
+            {fLabWidthBeamside / 2. - fBeamXDistanceFromWall - fBeamWindowWidth / 2., 0, 0};
+        // Add the distance between the beam window and envelope
+        envelopeTlate += {0, 0, detectorSpacing};
+
+        new G4PVPlacement(nullptr, envelopeTlate, detectorEnvelopeLV, "DetectorEnvelopePV", labLV,
+                          false, 0, fCheckOverlaps);
+
+        // PlaceSamples(labLV, samplePosition);
 
         return ironcasePV;
     }
 
-    void BL10DetectorConstruction::ConstructSDandField() {}
+    void BL10DetectorConstruction::ConstructSDandField() {
+        G4String detectorSDName = "/SimpleSD";
+
+        simcore::TouchTriggerSD *ttsd = new simcore::TouchTriggerSD(detectorSDName);
+        ttsd->SetRequireNonzeroEdep(false);
+
+        G4SDManager::GetSDMpointer()->AddNewDetector(ttsd);
+        SetSensitiveDetector("DetectorLV", ttsd, true);
+    }
 } // namespace bl10sim

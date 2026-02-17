@@ -118,6 +118,8 @@ namespace bl10sim {
 
         G4double fBeamWindowWidth;
         G4double fBeamWindowHeight;
+
+        G4double fWindowThickness;
     };
 } // namespace bl10sim
 #endif
