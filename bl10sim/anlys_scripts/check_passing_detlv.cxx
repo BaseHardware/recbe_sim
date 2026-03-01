@@ -20,12 +20,14 @@ void check_passing_detlv(const char *input_file  = "./simout.root",
     TTree *pOTree  = new TTree("incident", "tree for incident particles");
     pOTree->SetDirectory(pOutput);
 
-    Int_t copy_num, pdg, id;
+    Int_t copy_num, pdg, id, event, enter_cnt, enter_cnts[5];
     Double_t x, y, z, t, px, py, pz, e;
 
     pOTree->Branch("id", &id, "id/I");
     pOTree->Branch("pdg", &pdg, "pdg/I");
+    pOTree->Branch("event", &event, "event/I");
     pOTree->Branch("copynum", &copy_num, "copynum/I");
+    pOTree->Branch("enter_cnt", &enter_cnt, "enter_cnt/I");
     pOTree->Branch("x", &x, "x/D");
     pOTree->Branch("y", &y, "y/D");
     pOTree->Branch("z", &z, "z/D");
@@ -57,6 +59,8 @@ void check_passing_detlv(const char *input_file  = "./simout.root",
         for (int idx_track = 0; idx_track < n_trk; idx_track++) {
             simobj::Track *now_track = static_cast<simobj::Track *>(tcaTrack->At(idx_track));
 
+            for (auto &i : enter_cnts)
+                i = 0;
             for (int idx_step = 0; idx_step < now_track->GetNStep(); idx_step++) {
                 simobj::Step *now_step =
                     static_cast<simobj::Step *>(tcaStep->At(now_track->GetStepIndex(idx_step)));
@@ -70,17 +74,19 @@ void check_passing_detlv(const char *input_file  = "./simout.root",
                         tcaStep->At(now_track->GetStepIndex(idx_step - 1)));
 
                     if (prev_step->GetVolumeName() != volName) {
-                        id       = now_track->GetTrackID();
-                        pdg      = now_track->GetPDGCode();
-                        copy_num = now_step->GetCopyNumber();
-                        x        = now_step->GetX();
-                        y        = now_step->GetY();
-                        z        = now_step->GetZ();
-                        t        = now_step->GetGlobalTime();
-                        px       = now_step->GetPx();
-                        py       = now_step->GetPy();
-                        pz       = now_step->GetPz();
-                        e        = now_step->GetKineticEnergy();
+                        id        = now_track->GetTrackID();
+                        pdg       = now_track->GetPDGCode();
+                        event     = i;
+                        copy_num  = now_step->GetCopyNumber();
+                        x         = now_step->GetX();
+                        y         = now_step->GetY();
+                        z         = now_step->GetZ();
+                        t         = now_step->GetGlobalTime();
+                        px        = now_step->GetPx();
+                        py        = now_step->GetPy();
+                        pz        = now_step->GetPz();
+                        e         = now_step->GetKineticEnergy();
+                        enter_cnt = enter_cnts[copy_num]++;
 
                         pOTree->Fill();
                     }
