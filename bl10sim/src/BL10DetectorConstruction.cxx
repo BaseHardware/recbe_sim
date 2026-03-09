@@ -120,6 +120,18 @@ namespace bl10sim {
         fBeamWindowHeight = 10 * cm;
 
         fWindowThickness = 1 * nm;
+
+        fJigWHSize = 2 * cm;
+
+        fJigCenterHoleRadius = 2 * mm;
+
+        fJigSpaceStemBottomWidth = 6 * mm;
+        fJigSpaceStemLength      = 2 * mm;
+        fJigSpaceMiddleWidth     = 3 * mm;
+        fJigSpaceMiddleLength    = 1 * mm;
+        fJigSpaceHeight          = 6 * mm;
+
+        fJigCount = 0;
     }
 
     void BL10DetectorConstruction::CalculateGeometrySubparameters() {
@@ -180,6 +192,37 @@ namespace bl10sim {
         ftLevelingBoltPoints.push_back(nowLBPoint);
         nowLBPoint.rotate(60 * deg);
         ftLevelingBoltPoints.push_back(nowLBPoint);
+
+        G4TwoVector nowJigSpacePoint = {0, 0};
+
+        ftJigSpacePoints.clear();
+
+        std::vector<G4TwoVector> jigSpaceRPoints, jigSpaceLPoints;
+
+        nowJigSpacePoint += {fJigSpaceStemBottomWidth / 2., 0};
+        jigSpaceRPoints.push_back(nowJigSpacePoint);
+        jigSpaceLPoints.push_back({-nowJigSpacePoint.x(), nowJigSpacePoint.y()});
+
+        nowJigSpacePoint += {0, fJigSpaceStemLength};
+        jigSpaceRPoints.push_back(nowJigSpacePoint);
+        jigSpaceLPoints.push_back({-nowJigSpacePoint.x(), nowJigSpacePoint.y()});
+
+        nowJigSpacePoint += {fJigSpaceMiddleWidth, 0};
+        jigSpaceRPoints.push_back(nowJigSpacePoint);
+        jigSpaceLPoints.push_back({-nowJigSpacePoint.x(), nowJigSpacePoint.y()});
+
+        nowJigSpacePoint += {0, fJigSpaceMiddleLength};
+        jigSpaceRPoints.push_back(nowJigSpacePoint);
+        jigSpaceLPoints.push_back({-nowJigSpacePoint.x(), nowJigSpacePoint.y()});
+
+        nowJigSpacePoint = {fJigSpaceStemBottomWidth / 2., fJigSpaceHeight};
+        jigSpaceRPoints.push_back(nowJigSpacePoint);
+        jigSpaceLPoints.push_back({-nowJigSpacePoint.x(), nowJigSpacePoint.y()});
+
+        for (auto i = jigSpaceRPoints.begin(); i != jigSpaceRPoints.end(); ++i)
+            ftJigSpacePoints.push_back(*i);
+        for (auto i = jigSpaceLPoints.rbegin(); i != jigSpaceLPoints.rend(); ++i)
+            ftJigSpacePoints.push_back(*i);
     }
 
     G4LogicalVolume *BL10DetectorConstruction::BuildIroncase() const {
@@ -857,6 +900,58 @@ namespace bl10sim {
 
         new G4PVPlacement(nullptr, windowTlate, windowLV, "BeamWindowPV", labLV, false, 0,
                           fCheckOverlaps);
+    }
+
+    G4LogicalVolume *BL10DetectorConstruction::BuildJig(G4double jigLength, G4Material *jigMaterial,
+                                                        G4Material *aroundMaterial) const {
+        G4String envSolidName   = "JigBox_";
+        G4String spaceSolidName = "JigSpaceSolid_";
+        G4String holeSolidName  = "JigHoleSolid_";
+        G4String envLVName      = "JigLV_";
+        G4String spaceLVName    = "JigSpaceLV_";
+        G4String holeLVName     = "JigHoleLV_";
+
+        envSolidName += fJigCount;
+        envLVName += fJigCount;
+
+        spaceSolidName += fJigCount;
+        spaceLVName += fJigCount;
+
+        holeSolidName += fJigCount;
+        holeLVName += fJigCount;
+
+        G4Box *jigBox = new G4Box(envSolidName, fJigWHSize / 2., fJigWHSize / 2., jigLength / 2.);
+        G4Tubs *jigHole =
+            new G4Tubs(holeSolidName, 0, fJigCenterHoleRadius, jigLength / 2., 0, 360 * deg);
+
+        G4LogicalVolume *jigLV     = new G4LogicalVolume(jigBox, aroundMaterial, envLVName);
+        G4LogicalVolume *jigHoleLV = new G4LogicalVolume(jigHole, aroundMaterial, holeLVName);
+
+        new G4PVPlacement(nullptr, {}, jigHoleLV, "JigHolePV", jigLV, false, 0, true);
+
+        G4ExtrudedSolid *spaceSolid =
+            new G4ExtrudedSolid(spaceSolidName, ftJigSpacePoints, jigLength / 2.);
+        G4LogicalVolume *spaceLV = new G4LogicalVolume(spaceSolid, jigMaterial, spaceLVName);
+
+        G4ThreeVector spaceTlate = {0, -fJigWHSize / 2., 0};
+
+        G4RotationMatrix *rotMtx1 = new G4RotationMatrix();
+        G4RotationMatrix *rotMtx2 = new G4RotationMatrix();
+        G4RotationMatrix *rotMtx3 = new G4RotationMatrix();
+        rotMtx1->rotateZ(90 * deg);
+        rotMtx2->rotateZ(180 * deg);
+        rotMtx3->rotateZ(270 * deg);
+
+        new G4PVPlacement(nullptr, spaceTlate, spaceLV, "JigSpacePV", jigLV, true, 0, true);
+        spaceTlate.rotateZ(-90 * deg);
+        new G4PVPlacement(rotMtx1, spaceTlate, spaceLV, "JigSpacePV", jigLV, true, 1, true);
+        spaceTlate.rotateZ(-90 * deg);
+        new G4PVPlacement(rotMtx2, spaceTlate, spaceLV, "JigSpacePV", jigLV, true, 2, true);
+        spaceTlate.rotateZ(-90 * deg);
+        new G4PVPlacement(rotMtx3, spaceTlate, spaceLV, "JigSpacePV", jigLV, true, 3, true);
+
+        fJigCount++;
+        return jigLV;
     }
 
     G4VPhysicalVolume *BL10DetectorConstruction::DefineVolumes() {

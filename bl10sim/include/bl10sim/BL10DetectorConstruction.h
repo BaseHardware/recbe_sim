@@ -12,6 +12,7 @@
 class G4VPhysicalVolume;
 class G4GlobalMagFieldMessenger;
 class G4VSolid;
+class G4Material;
 
 namespace bl10sim {
     class BL10DetectorConstruction : public simcore::DetectorConstruction {
@@ -37,6 +38,9 @@ namespace bl10sim {
         G4LogicalVolume *BuildWorkbench() const;
         G4ThreeVector PlaceWorkbench(G4LogicalVolume *labLV, G4LogicalVolume *wbLV) const;
 
+        G4LogicalVolume *BuildJig(G4double jigLength, G4Material *jigMaterial,
+                                  G4Material *aroundMaterial) const;
+
         void PlaceBeamWindow(G4LogicalVolume *labLV) const;
 
         void PlaceSamples(G4LogicalVolume *labLV, const G4ThreeVector sampleTlate) const;
@@ -52,6 +56,7 @@ namespace bl10sim {
         G4double ftWBEnvelopeZLength;
         std::vector<G4TwoVector> ftHBeamPoints;
         std::vector<G4TwoVector> ftLevelingBoltPoints;
+        std::vector<G4TwoVector> ftJigSpacePoints;
 
         G4double fBeamXDistanceFromWall;
         G4double fBeamYDistanceFromFloor;
@@ -120,6 +125,18 @@ namespace bl10sim {
         G4double fBeamWindowHeight;
 
         G4double fWindowThickness;
+
+        G4double fJigWHSize;
+
+        G4double fJigCenterHoleRadius;
+
+        G4double fJigSpaceStemBottomWidth;
+        G4double fJigSpaceStemLength;
+        G4double fJigSpaceMiddleWidth;
+        G4double fJigSpaceMiddleLength;
+        G4double fJigSpaceHeight;
+
+        mutable G4int fJigCount;
     };
 } // namespace bl10sim
 #endif
