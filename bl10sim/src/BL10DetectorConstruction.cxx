@@ -66,6 +66,7 @@ namespace bl10sim {
 
         // Copper from NIST DB
         G4Material *matCu = nist->FindOrBuildMaterial("G4_Cu");
+        G4Material *matNi = nist->FindOrBuildMaterial("G4_Ni");
 
         G4Material *matDGEBA = new G4Material("DGEBA_Epoxy", 1.16 * g / cm3, 3);
         matDGEBA->AddElement(atomC, 21);
@@ -84,9 +85,17 @@ namespace bl10sim {
         FR4->AddMaterial(matEGlass, 60. * perCent);
         FR4->AddMaterial(matDGEBA, 40. * perCent);
 
-        auto EffectivePCB = new G4Material("EffectivePCB", 2.6 * g / cm3, 2);
-        EffectivePCB->AddMaterial(matCu, 30. * perCent);
-        EffectivePCB->AddMaterial(FR4, 70. * perCent);
+        G4Material *matEffectivePCB = new G4Material("EffectivePCB", 2.6 * g / cm3, 2);
+        matEffectivePCB->AddMaterial(matCu, 30. * perCent);
+        matEffectivePCB->AddMaterial(FR4, 70. * perCent);
+
+        G4Material *matFPGASubstrate = new G4Material("FPGASubstrate", 2.6 * g / cm3, 2);
+        matFPGASubstrate->AddMaterial(matCu, 40. * perCent);
+        matFPGASubstrate->AddMaterial(FR4, 60. * perCent);
+
+        G4Material *matLid = new G4Material("FPGALid", 8.9 * g / cm3, 2);
+        matLid->AddMaterial(matCu, 99.15 * perCent);
+        matLid->AddMaterial(matNi, 0.85 * perCent);
     }
 
     void BL10DetectorConstruction::SetGeometryParameters() {
@@ -178,11 +187,11 @@ namespace bl10sim {
         fRECBEFPGAVSpace  = 6.2 * cm;
         fRECBEFPGAHSpace  = 7.5 * cm;
 
-        fRECBEFPGASubstrateVHSize    = 2.6 * cm;
-        fRECBEFPGAHeatsinkThickness  = 0.5 * mm;
+        fRECBEFPGASubstrateVHSize    = 4.3 * cm;
+        fRECBEFPGALidThickness       = 0.8 * mm;
         fRECBEFPGASubstrateThickness = 1.0 * mm;
-        fRECBEFPGADieThickness       = 0.2 * mm;
-        fRECBEFPGADieVHSize          = 1.0 * cm;
+        fRECBEFPGADieThickness       = 0.8 * mm;
+        fRECBEFPGADieVHSize          = 3.5 * cm;
 
         fMkIITopWidth    = 20 * cm;
         fMkIIThickness   = 2 * mm;
@@ -192,11 +201,11 @@ namespace bl10sim {
         fMkIIFPGAVSpace  = 6. * cm;
         fMkIIFPGAHSpace  = 8.2 * cm;
 
-        fMkIIFPGASubstrateVHSize    = 4.2 * cm;
-        fMKIIFPGAHeatsinkThickness  = 0.8 * mm;
+        fMkIIFPGASubstrateVHSize    = 2.6 * cm;
+        fMkIIFPGALidThickness       = 0.5 * mm;
         fMkIIFPGASubstrateThickness = 1.0 * mm;
-        fMkIIFPGADieThickness       = 0.8 * mm;
-        fMkIIFPGADieVHSize          = 3.5 * cm;
+        fMkIIFPGADieThickness       = 0.2 * mm;
+        fMkIIFPGADieVHSize          = 1.0 * cm;
 
         fROESTIWidth      = 18.5 * cm;
         fROESTIThickness  = 2 * mm;
@@ -1086,9 +1095,10 @@ namespace bl10sim {
         G4Material *matPCB = G4Material::GetMaterial("EffectivePCB");
         G4Material *matFR4 = G4Material::GetMaterial("FR4");
         G4Material *matSi  = G4Material::GetMaterial("G4_Si");
+        G4Material *matLid = G4Material::GetMaterial("FPGALid");
 
         G4double envelopeZLength = (fMkIIThickness + fMkIIFPGASubstrateThickness +
-                                    fMkIIFPGADieThickness + fMKIIFPGAHeatsinkThickness);
+                                    fMkIIFPGADieThickness + fMkIIFPGALidThickness);
 
         G4Box *envelopeBox = new G4Box("MkIIEnvelopeBox", fMkIITopWidth / 2., fMkIILongHeight / 2.,
                                        envelopeZLength / 2.);
@@ -1126,6 +1136,77 @@ namespace bl10sim {
         fpgaDieTlate += {0, 0, fMkIIFPGASubstrateThickness / 2. + fMkIIFPGADieThickness / 2.};
         new G4PVPlacement(nullptr, fpgaDieTlate, mkIIFPGALV, "MkIIFPGADiePV", envelopeLV, false, 0,
                           fCheckOverlaps);
+
+        G4Box *mkIIFPGALidBox =
+            new G4Box("MkIIFPGALidBox", fMkIIFPGASubstrateVHSize / 2.,
+                      fMkIIFPGASubstrateVHSize / 2., fMkIIFPGALidThickness / 2.);
+        G4LogicalVolume *mkIIFPGALidLV =
+            new G4LogicalVolume(mkIIFPGALidBox, matLid, "MkIIFPGALidLV");
+
+        G4ThreeVector fpgaLidTlate = fpgaDieTlate;
+        fpgaLidTlate += {0, 0, fMkIIFPGADieThickness / 2. + fMkIIFPGALidThickness / 2.};
+        new G4PVPlacement(nullptr, fpgaLidTlate, mkIIFPGALidLV, "MkIIFPGALidPV", envelopeLV, false,
+                          0, fCheckOverlaps);
+
+        return envelopeLV;
+    }
+
+    G4LogicalVolume *BL10DetectorConstruction::BuildRECBE(G4Material *aroundMaterial) const {
+        G4Material *matPCB = G4Material::GetMaterial("EffectivePCB");
+        G4Material *matFR4 = G4Material::GetMaterial("FR4");
+        G4Material *matSi  = G4Material::GetMaterial("G4_Si");
+        G4Material *matLid = G4Material::GetMaterial("FPGALid");
+
+        G4double envelopeZLength = (fRECBEThickness + fRECBEFPGASubstrateThickness +
+                                    fRECBEFPGADieThickness + fMkIIFPGALidThickness);
+
+        G4Box *envelopeBox = new G4Box("RECBEEnvelopeBox", fRECBETopWidth / 2.,
+                                       fRECBELongHeight / 2., envelopeZLength / 2.);
+        G4LogicalVolume *envelopeLV =
+            new G4LogicalVolume(envelopeBox, aroundMaterial, "RECBEEnvelopeLV");
+        envelopeLV->SetVisAttributes(G4VisAttributes::GetInvisible());
+
+        G4ExtrudedSolid *pcbSolid =
+            new G4ExtrudedSolid("RECBEPCBSolid", ftRECBEBoardPoints, fRECBEThickness / 2.);
+        G4LogicalVolume *pcbLV = new G4LogicalVolume(pcbSolid, matPCB, "RECBEPCBLV");
+
+        new G4PVPlacement(nullptr,
+                          {0, +fRECBELongHeight / 2., -envelopeZLength / 2. + fRECBEThickness / 2.},
+                          pcbLV, "RECBEPCBPV", envelopeLV, false, 0, fCheckOverlaps);
+
+        G4Box *mkIIFPGASubstrateBox =
+            new G4Box("RECBEFPGASubstrateBox", fRECBEFPGASubstrateVHSize / 2.,
+                      fRECBEFPGASubstrateVHSize / 2., fRECBEFPGASubstrateThickness / 2.);
+        G4LogicalVolume *mkIIFPGASubstrateLV =
+            new G4LogicalVolume(mkIIFPGASubstrateBox, matFR4, "RECBEFPGASubstrateLV");
+
+        G4ThreeVector fpgaSubstrateTlate;
+        fpgaSubstrateTlate = {-fRECBETopWidth / 2., fRECBELongHeight / 2.,
+                              -envelopeZLength / 2. + fRECBEThickness +
+                                  fRECBEFPGASubstrateThickness / 2.};
+        fpgaSubstrateTlate += {fRECBEFPGAHSpace, -fRECBEFPGAVSpace, 0};
+        new G4PVPlacement(nullptr, fpgaSubstrateTlate, mkIIFPGASubstrateLV, "RECBEFPGASubstratePV",
+                          envelopeLV, false, 0, fCheckOverlaps);
+
+        G4Box *mkIIFPGADieBox       = new G4Box("RECBEFPGADieBox", fRECBEFPGADieVHSize / 2.,
+                                                fRECBEFPGADieVHSize / 2., fRECBEFPGADieThickness / 2.);
+        G4LogicalVolume *mkIIFPGALV = new G4LogicalVolume(mkIIFPGADieBox, matSi, "RECBEFPGADieLV");
+
+        G4ThreeVector fpgaDieTlate = fpgaSubstrateTlate;
+        fpgaDieTlate += {0, 0, fRECBEFPGASubstrateThickness / 2. + fRECBEFPGADieThickness / 2.};
+        new G4PVPlacement(nullptr, fpgaDieTlate, mkIIFPGALV, "RECBEFPGADiePV", envelopeLV, false, 0,
+                          fCheckOverlaps);
+
+        G4Box *mkIIFPGALidBox =
+            new G4Box("RECBEFPGALidBox", fRECBEFPGASubstrateVHSize / 2.,
+                      fRECBEFPGASubstrateVHSize / 2., fMkIIFPGALidThickness / 2.);
+        G4LogicalVolume *mkIIFPGALidLV =
+            new G4LogicalVolume(mkIIFPGALidBox, matLid, "RECBEFPGALidLV");
+
+        G4ThreeVector fpgaLidTlate = fpgaDieTlate;
+        fpgaLidTlate += {0, 0, fRECBEFPGADieThickness / 2. + fMkIIFPGALidThickness / 2.};
+        new G4PVPlacement(nullptr, fpgaLidTlate, mkIIFPGALidLV, "RECBEFPGALidPV", envelopeLV, false,
+                          0, fCheckOverlaps);
 
         return envelopeLV;
     }
@@ -1192,6 +1273,8 @@ namespace bl10sim {
         new G4PVPlacement(nullptr, envelopeTlate, detectorEnvelopeLV, "DetectorEnvelopePV", labLV,
                           false, 0, fCheckOverlaps);
 
+        auto a = BuildRECBE(labMaterial);
+        new G4PVPlacement(nullptr, {}, a, "test", labLV, false, 0, fCheckOverlaps);
         // PlaceSamples(labLV, samplePosition);
 
         return ironcasePV;

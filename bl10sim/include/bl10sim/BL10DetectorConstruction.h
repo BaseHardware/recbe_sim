@@ -42,7 +42,7 @@ namespace bl10sim {
                                   G4Material *aroundMaterial) const;
 
         G4LogicalVolume *BuildMkII(G4Material *aroundMaterial) const;
-        G4LogicalVolume *BuildRECBE() const;
+        G4LogicalVolume *BuildRECBE(G4Material* aroundMaterial) const;
         G4LogicalVolume *BuildROESTI() const;
 
         void PlaceBeamWindow(G4LogicalVolume *labLV) const;
@@ -153,7 +153,7 @@ namespace bl10sim {
         G4double fRECBEFPGAHSpace;
 
         G4double fRECBEFPGASubstrateVHSize;
-        G4double fRECBEFPGAHeatsinkThickness;
+        G4double fRECBEFPGALidThickness;
         G4double fRECBEFPGASubstrateThickness;
         G4double fRECBEFPGADieThickness;
         G4double fRECBEFPGADieVHSize;
@@ -167,7 +167,7 @@ namespace bl10sim {
         G4double fMkIIFPGAHSpace;
 
         G4double fMkIIFPGASubstrateVHSize;
-        G4double fMKIIFPGAHeatsinkThickness;
+        G4double fMkIIFPGALidThickness;
         G4double fMkIIFPGASubstrateThickness;
         G4double fMkIIFPGADieThickness;
         G4double fMkIIFPGADieVHSize;
