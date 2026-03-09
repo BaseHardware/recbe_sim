@@ -36,14 +36,13 @@ namespace bl10sim {
         G4LogicalVolume *FillIroncase(G4LogicalVolume *) const;
 
         G4LogicalVolume *BuildWorkbench() const;
-        G4ThreeVector PlaceWorkbench(G4LogicalVolume *labLV, G4LogicalVolume *wbLV) const;
+        G4ThreeVector PlaceWorkbench(G4LogicalVolume *, G4LogicalVolume *) const;
 
-        G4LogicalVolume *BuildJig(G4double jigLength, G4Material *jigMaterial,
-                                  G4Material *aroundMaterial) const;
+        G4LogicalVolume *BuildJig(G4double, G4Material *, G4Material *) const;
 
-        G4LogicalVolume *BuildMkII(G4Material *aroundMaterial) const;
-        G4LogicalVolume *BuildRECBE(G4Material* aroundMaterial) const;
-        G4LogicalVolume *BuildROESTI() const;
+        G4LogicalVolume *BuildMkII(G4Material *) const;
+        G4LogicalVolume *BuildRECBE(G4Material *) const;
+        G4LogicalVolume *BuildROESTI(G4Material *) const;
 
         void PlaceBeamWindow(G4LogicalVolume *labLV) const;
 
