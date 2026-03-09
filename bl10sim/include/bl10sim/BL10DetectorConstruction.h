@@ -41,6 +41,10 @@ namespace bl10sim {
         G4LogicalVolume *BuildJig(G4double jigLength, G4Material *jigMaterial,
                                   G4Material *aroundMaterial) const;
 
+        G4LogicalVolume *BuildMkII(G4Material *aroundMaterial) const;
+        G4LogicalVolume *BuildRECBE() const;
+        G4LogicalVolume *BuildROESTI() const;
+
         void PlaceBeamWindow(G4LogicalVolume *labLV) const;
 
         void PlaceSamples(G4LogicalVolume *labLV, const G4ThreeVector sampleTlate) const;
@@ -57,6 +61,8 @@ namespace bl10sim {
         std::vector<G4TwoVector> ftHBeamPoints;
         std::vector<G4TwoVector> ftLevelingBoltPoints;
         std::vector<G4TwoVector> ftJigSpacePoints;
+        std::vector<G4TwoVector> ftMkIIBoardPoints;
+        std::vector<G4TwoVector> ftRECBEBoardPoints;
 
         G4double fBeamXDistanceFromWall;
         G4double fBeamYDistanceFromFloor;
@@ -126,7 +132,7 @@ namespace bl10sim {
 
         G4double fWindowThickness;
 
-        G4double fJigWHSize;
+        G4double fJigVHSize;
 
         G4double fJigCenterHoleRadius;
 
@@ -135,6 +141,48 @@ namespace bl10sim {
         G4double fJigSpaceMiddleWidth;
         G4double fJigSpaceMiddleLength;
         G4double fJigSpaceHeight;
+
+        G4double fJigToBoardSpace;
+
+        G4double fRECBEThickness;
+        G4double fRECBETopWidth;
+        G4double fRECBEMiddleWidth;
+        G4double fRECBELongHeight;
+        G4double fRECBEShortHeight;
+        G4double fRECBEFPGAVSpace;
+        G4double fRECBEFPGAHSpace;
+
+        G4double fRECBEFPGASubstrateVHSize;
+        G4double fRECBEFPGAHeatsinkThickness;
+        G4double fRECBEFPGASubstrateThickness;
+        G4double fRECBEFPGADieThickness;
+        G4double fRECBEFPGADieVHSize;
+
+        G4double fMkIIThickness;
+        G4double fMkIITopWidth;
+        G4double fMkIIMiddleWidth;
+        G4double fMkIILongHeight;
+        G4double fMkIIShortHeight;
+        G4double fMkIIFPGAVSpace;
+        G4double fMkIIFPGAHSpace;
+
+        G4double fMkIIFPGASubstrateVHSize;
+        G4double fMKIIFPGAHeatsinkThickness;
+        G4double fMkIIFPGASubstrateThickness;
+        G4double fMkIIFPGADieThickness;
+        G4double fMkIIFPGADieVHSize;
+
+        G4double fROESTIThickness;
+        G4double fROESTIWidth;
+        G4double fROESTIHeight;
+        G4double fROESTIFPGAVSpace;
+        G4double fROESTIFPGAHSpace;
+
+        G4double fROESTIFPGADieVSize;
+        G4double fROESTIFPGADieHSize;
+        G4double fROESTIFPGASubstrateThickness;
+        G4double fROESTIFPGADieThickness;
+        G4double fROESTIFPGASubstrateVHSize;
 
         mutable G4int fJigCount;
     };

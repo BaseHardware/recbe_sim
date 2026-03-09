@@ -17,6 +17,7 @@
 #include "G4Trd.hh"
 #include "G4Tubs.hh"
 #include "G4UnionSolid.hh"
+#include "G4VisAttributes.hh"
 
 #include <vector>
 
@@ -30,8 +31,10 @@ namespace bl10sim {
 
     void BL10DetectorConstruction::DefineMaterials() {
         DetectorConstruction::DefineMaterials();
-        G4NistManager::Instance()->FindOrBuildMaterial("G4_Fe");
-        G4NistManager::Instance()->FindOrBuildMaterial("G4_BORON_CARBIDE");
+        G4NistManager *nist = G4NistManager::Instance();
+        nist->FindOrBuildMaterial("G4_Fe");
+        nist->FindOrBuildMaterial("G4_Si");
+        nist->FindOrBuildMaterial("G4_BORON_CARBIDE");
 
         // B4C material definition from the PHITS code for BL10.
         // Currently, commented out as we cannot believe this value
@@ -50,6 +53,40 @@ namespace bl10sim {
         // b4c_10b_97p->AddElementByMassFraction(atomB10, 2.113e-2);
         // b4c_10b_97p->AddElementByMassFraction(atomB11, 6.536e-4);
         // b4c_10b_97p->AddElementByMassFraction(atomC12, 5.447e-3);
+
+        // Elements
+        G4Element *atomH  = nist->FindOrBuildElement("H");
+        G4Element *atomC  = nist->FindOrBuildElement("C");
+        G4Element *atomO  = nist->FindOrBuildElement("O");
+        G4Element *atomSi = nist->FindOrBuildElement("Si");
+        G4Element *atomAl = nist->FindOrBuildElement("Al");
+        G4Element *atomCa = nist->FindOrBuildElement("Ca");
+        G4Element *atomB  = nist->FindOrBuildElement("B");
+        G4Element *atomMg = nist->FindOrBuildElement("Mg");
+
+        // Copper from NIST DB
+        G4Material *matCu = nist->FindOrBuildMaterial("G4_Cu");
+
+        G4Material *matDGEBA = new G4Material("DGEBA_Epoxy", 1.16 * g / cm3, 3);
+        matDGEBA->AddElement(atomC, 21);
+        matDGEBA->AddElement(atomH, 24);
+        matDGEBA->AddElement(atomO, 4);
+
+        G4Material *matEGlass = new G4Material("EGlass_Epoxy", 2.55 * g / cm3, 6);
+        matEGlass->AddElement(atomO, 0.47424);
+        matEGlass->AddElement(atomSi, 0.25241);
+        matEGlass->AddElement(atomAl, 0.07939);
+        matEGlass->AddElement(atomCa, 0.15723);
+        matEGlass->AddElement(atomB, 0.01863);
+        matEGlass->AddElement(atomMg, 0.01809);
+
+        G4Material *FR4 = new G4Material("FR4", 1.90 * g / cm3, 2);
+        FR4->AddMaterial(matEGlass, 60. * perCent);
+        FR4->AddMaterial(matDGEBA, 40. * perCent);
+
+        auto EffectivePCB = new G4Material("EffectivePCB", 2.6 * g / cm3, 2);
+        EffectivePCB->AddMaterial(matCu, 30. * perCent);
+        EffectivePCB->AddMaterial(FR4, 70. * perCent);
     }
 
     void BL10DetectorConstruction::SetGeometryParameters() {
@@ -121,7 +158,7 @@ namespace bl10sim {
 
         fWindowThickness = 1 * nm;
 
-        fJigWHSize = 2 * cm;
+        fJigVHSize = 2 * cm;
 
         fJigCenterHoleRadius = 2 * mm;
 
@@ -130,6 +167,48 @@ namespace bl10sim {
         fJigSpaceMiddleWidth     = 3 * mm;
         fJigSpaceMiddleLength    = 1 * mm;
         fJigSpaceHeight          = 6 * mm;
+
+        fJigToBoardSpace = 1.5 * cm;
+
+        fRECBETopWidth    = 20 * cm;
+        fRECBEThickness   = 2 * mm;
+        fRECBEMiddleWidth = 5.8 * cm;
+        fRECBELongHeight  = 17 * cm;
+        fRECBEShortHeight = 12 * cm;
+        fRECBEFPGAVSpace  = 6.2 * cm;
+        fRECBEFPGAHSpace  = 7.5 * cm;
+
+        fRECBEFPGASubstrateVHSize    = 2.6 * cm;
+        fRECBEFPGAHeatsinkThickness  = 0.5 * mm;
+        fRECBEFPGASubstrateThickness = 1.0 * mm;
+        fRECBEFPGADieThickness       = 0.2 * mm;
+        fRECBEFPGADieVHSize          = 1.0 * cm;
+
+        fMkIITopWidth    = 20 * cm;
+        fMkIIThickness   = 2 * mm;
+        fMkIIMiddleWidth = 6 * cm;
+        fMkIILongHeight  = 16.5 * cm;
+        fMkIIShortHeight = 10.2 * cm;
+        fMkIIFPGAVSpace  = 6. * cm;
+        fMkIIFPGAHSpace  = 8.2 * cm;
+
+        fMkIIFPGASubstrateVHSize    = 4.2 * cm;
+        fMKIIFPGAHeatsinkThickness  = 0.8 * mm;
+        fMkIIFPGASubstrateThickness = 1.0 * mm;
+        fMkIIFPGADieThickness       = 0.8 * mm;
+        fMkIIFPGADieVHSize          = 3.5 * cm;
+
+        fROESTIWidth      = 18.5 * cm;
+        fROESTIThickness  = 2 * mm;
+        fROESTIHeight     = 8 * cm;
+        fROESTIFPGAVSpace = 2.9 * cm;
+        fROESTIFPGAHSpace = 7.7 * cm;
+
+        fROESTIFPGADieVSize           = 1.2 * cm;
+        fROESTIFPGADieHSize           = 1.0 * cm;
+        fROESTIFPGASubstrateThickness = 1 * mm;
+        fROESTIFPGADieThickness       = 0.2 * mm;
+        fROESTIFPGASubstrateVHSize    = 2.6 * cm;
 
         fJigCount = 0;
     }
@@ -223,6 +302,50 @@ namespace bl10sim {
             ftJigSpacePoints.push_back(*i);
         for (auto i = jigSpaceLPoints.rbegin(); i != jigSpaceLPoints.rend(); ++i)
             ftJigSpacePoints.push_back(*i);
+
+        G4TwoVector nowRECBEPoint = {0, 0};
+
+        ftRECBEBoardPoints.clear();
+
+        nowRECBEPoint += {fRECBETopWidth / 2., 0};
+        ftRECBEBoardPoints.push_back(nowRECBEPoint);
+
+        nowRECBEPoint += {0, -fRECBEShortHeight};
+        ftRECBEBoardPoints.push_back(nowRECBEPoint);
+
+        nowRECBEPoint += {-fRECBEMiddleWidth, 0};
+        ftRECBEBoardPoints.push_back(nowRECBEPoint);
+
+        nowRECBEPoint.setY(-fRECBELongHeight);
+        ftRECBEBoardPoints.push_back(nowRECBEPoint);
+
+        nowRECBEPoint.setX(-fRECBETopWidth / 2.);
+        ftRECBEBoardPoints.push_back(nowRECBEPoint);
+
+        nowRECBEPoint.setY(0);
+        ftRECBEBoardPoints.push_back(nowRECBEPoint);
+
+        G4TwoVector nowMkIIPoint = {0, 0};
+
+        ftMkIIBoardPoints.clear();
+
+        nowMkIIPoint += {fMkIITopWidth / 2., 0};
+        ftMkIIBoardPoints.push_back(nowMkIIPoint);
+
+        nowMkIIPoint += {0, -fMkIIShortHeight};
+        ftMkIIBoardPoints.push_back(nowMkIIPoint);
+
+        nowMkIIPoint += {-fMkIIMiddleWidth, 0};
+        ftMkIIBoardPoints.push_back(nowMkIIPoint);
+
+        nowMkIIPoint.setY(-fMkIILongHeight);
+        ftMkIIBoardPoints.push_back(nowMkIIPoint);
+
+        nowMkIIPoint.setX(-fMkIITopWidth / 2.);
+        ftMkIIBoardPoints.push_back(nowMkIIPoint);
+
+        nowMkIIPoint.setY(0);
+        ftMkIIBoardPoints.push_back(nowMkIIPoint);
     }
 
     G4LogicalVolume *BL10DetectorConstruction::BuildIroncase() const {
@@ -920,20 +1043,21 @@ namespace bl10sim {
         holeSolidName += fJigCount;
         holeLVName += fJigCount;
 
-        G4Box *jigBox = new G4Box(envSolidName, fJigWHSize / 2., fJigWHSize / 2., jigLength / 2.);
+        G4Box *jigBox = new G4Box(envSolidName, fJigVHSize / 2., fJigVHSize / 2., jigLength / 2.);
         G4Tubs *jigHole =
             new G4Tubs(holeSolidName, 0, fJigCenterHoleRadius, jigLength / 2., 0, 360 * deg);
 
         G4LogicalVolume *jigLV     = new G4LogicalVolume(jigBox, aroundMaterial, envLVName);
         G4LogicalVolume *jigHoleLV = new G4LogicalVolume(jigHole, aroundMaterial, holeLVName);
+        jigLV->SetVisAttributes(G4VisAttributes::GetInvisible());
 
-        new G4PVPlacement(nullptr, {}, jigHoleLV, "JigHolePV", jigLV, false, 0, true);
+        new G4PVPlacement(nullptr, {}, jigHoleLV, "JigHolePV", jigLV, false, 0, fCheckOverlaps);
 
         G4ExtrudedSolid *spaceSolid =
             new G4ExtrudedSolid(spaceSolidName, ftJigSpacePoints, jigLength / 2.);
         G4LogicalVolume *spaceLV = new G4LogicalVolume(spaceSolid, jigMaterial, spaceLVName);
 
-        G4ThreeVector spaceTlate = {0, -fJigWHSize / 2., 0};
+        G4ThreeVector spaceTlate = {0, -fJigVHSize / 2., 0};
 
         G4RotationMatrix *rotMtx1 = new G4RotationMatrix();
         G4RotationMatrix *rotMtx2 = new G4RotationMatrix();
@@ -942,16 +1066,68 @@ namespace bl10sim {
         rotMtx2->rotateZ(180 * deg);
         rotMtx3->rotateZ(270 * deg);
 
-        new G4PVPlacement(nullptr, spaceTlate, spaceLV, "JigSpacePV", jigLV, true, 0, true);
+        new G4PVPlacement(nullptr, spaceTlate, spaceLV, "JigSpacePV", jigLV, true, 0,
+                          fCheckOverlaps);
         spaceTlate.rotateZ(-90 * deg);
-        new G4PVPlacement(rotMtx1, spaceTlate, spaceLV, "JigSpacePV", jigLV, true, 1, true);
+        new G4PVPlacement(rotMtx1, spaceTlate, spaceLV, "JigSpacePV", jigLV, true, 1,
+                          fCheckOverlaps);
         spaceTlate.rotateZ(-90 * deg);
-        new G4PVPlacement(rotMtx2, spaceTlate, spaceLV, "JigSpacePV", jigLV, true, 2, true);
+        new G4PVPlacement(rotMtx2, spaceTlate, spaceLV, "JigSpacePV", jigLV, true, 2,
+                          fCheckOverlaps);
         spaceTlate.rotateZ(-90 * deg);
-        new G4PVPlacement(rotMtx3, spaceTlate, spaceLV, "JigSpacePV", jigLV, true, 3, true);
+        new G4PVPlacement(rotMtx3, spaceTlate, spaceLV, "JigSpacePV", jigLV, true, 3,
+                          fCheckOverlaps);
 
         fJigCount++;
         return jigLV;
+    }
+
+    G4LogicalVolume *BL10DetectorConstruction::BuildMkII(G4Material *aroundMaterial) const {
+        G4Material *matPCB = G4Material::GetMaterial("EffectivePCB");
+        G4Material *matFR4 = G4Material::GetMaterial("FR4");
+        G4Material *matSi  = G4Material::GetMaterial("G4_Si");
+
+        G4double envelopeZLength = (fMkIIThickness + fMkIIFPGASubstrateThickness +
+                                    fMkIIFPGADieThickness + fMKIIFPGAHeatsinkThickness);
+
+        G4Box *envelopeBox = new G4Box("MkIIEnvelopeBox", fMkIITopWidth / 2., fMkIILongHeight / 2.,
+                                       envelopeZLength / 2.);
+        G4LogicalVolume *envelopeLV =
+            new G4LogicalVolume(envelopeBox, aroundMaterial, "MkIIEnvelopeLV");
+        envelopeLV->SetVisAttributes(G4VisAttributes::GetInvisible());
+
+        G4ExtrudedSolid *pcbSolid =
+            new G4ExtrudedSolid("MkIIPCBSolid", ftMkIIBoardPoints, fMkIIThickness / 2.);
+        G4LogicalVolume *pcbLV = new G4LogicalVolume(pcbSolid, matPCB, "MkIIPCBLV");
+
+        new G4PVPlacement(nullptr,
+                          {0, +fMkIILongHeight / 2., -envelopeZLength / 2. + fMkIIThickness / 2.},
+                          pcbLV, "MkIIPCBPV", envelopeLV, false, 0, fCheckOverlaps);
+
+        G4Box *mkIIFPGASubstrateBox =
+            new G4Box("MkIIFPGASubstrateBox", fMkIIFPGASubstrateVHSize / 2.,
+                      fMkIIFPGASubstrateVHSize / 2., fMkIIFPGASubstrateThickness / 2.);
+        G4LogicalVolume *mkIIFPGASubstrateLV =
+            new G4LogicalVolume(mkIIFPGASubstrateBox, matFR4, "MkIIFPGASubstrateLV");
+
+        G4ThreeVector fpgaSubstrateTlate;
+        fpgaSubstrateTlate = {-fMkIITopWidth / 2., fMkIILongHeight / 2.,
+                              -envelopeZLength / 2. + fMkIIThickness +
+                                  fMkIIFPGASubstrateThickness / 2.};
+        fpgaSubstrateTlate += {fMkIIFPGAHSpace, -fMkIIFPGAVSpace, 0};
+        new G4PVPlacement(nullptr, fpgaSubstrateTlate, mkIIFPGASubstrateLV, "MkIIFPGASubstratePV",
+                          envelopeLV, false, 0, fCheckOverlaps);
+
+        G4Box *mkIIFPGADieBox       = new G4Box("MkIIFPGADieBox", fMkIIFPGADieVHSize / 2.,
+                                                fMkIIFPGADieVHSize / 2., fMkIIFPGADieThickness / 2.);
+        G4LogicalVolume *mkIIFPGALV = new G4LogicalVolume(mkIIFPGADieBox, matSi, "MkIIFPGADieLV");
+
+        G4ThreeVector fpgaDieTlate = fpgaSubstrateTlate;
+        fpgaDieTlate += {0, 0, fMkIIFPGASubstrateThickness / 2. + fMkIIFPGADieThickness / 2.};
+        new G4PVPlacement(nullptr, fpgaDieTlate, mkIIFPGALV, "MkIIFPGADiePV", envelopeLV, false, 0,
+                          fCheckOverlaps);
+
+        return envelopeLV;
     }
 
     G4VPhysicalVolume *BL10DetectorConstruction::DefineVolumes() {
