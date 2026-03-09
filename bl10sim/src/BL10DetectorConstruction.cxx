@@ -116,7 +116,7 @@ namespace bl10sim {
 
         fSampleZPosFromWBCenter = 300 * mm;
 
-        fBeamWindowWidth  = 2 * cm;
+        fBeamWindowWidth  = 47 * mm;
         fBeamWindowHeight = 10 * cm;
 
         fWindowThickness = 1 * nm;
