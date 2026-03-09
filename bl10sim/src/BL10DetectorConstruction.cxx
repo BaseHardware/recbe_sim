@@ -1121,10 +1121,11 @@ namespace bl10sim {
             new G4LogicalVolume(fpgaSubstrateBox, matFR4, "MkIIFPGASubstrateLV");
 
         G4ThreeVector fpgaSubstrateTlate;
-        fpgaSubstrateTlate = {-fMkIITopWidth / 2., fMkIILongHeight / 2.,
+        fpgaSubstrateTlate = {fMkIITopWidth / 2. - fMkIIFPGASubstrateVHSize / 2.,
+                              fMkIILongHeight / 2. - fMkIIFPGASubstrateVHSize / 2.,
                               -envelopeZLength / 2. + fMkIIThickness +
                                   fMkIIFPGASubstrateThickness / 2.};
-        fpgaSubstrateTlate += {fMkIIFPGAHSpace, -fMkIIFPGAVSpace, 0};
+        fpgaSubstrateTlate += {-fMkIIFPGAHSpace, -fMkIIFPGAVSpace, 0};
         new G4PVPlacement(nullptr, fpgaSubstrateTlate, fpgaSubstrateLV, "MkIIFPGASubstratePV",
                           envelopeLV, false, 0, fCheckOverlaps);
 
@@ -1179,10 +1180,11 @@ namespace bl10sim {
             new G4LogicalVolume(fpgaSubstrateBox, matFR4, "RECBEFPGASubstrateLV");
 
         G4ThreeVector fpgaSubstrateTlate;
-        fpgaSubstrateTlate = {-fRECBETopWidth / 2., fRECBELongHeight / 2.,
+        fpgaSubstrateTlate = {fRECBETopWidth / 2. - fRECBEFPGASubstrateVHSize / 2.,
+                              fRECBELongHeight / 2. - fRECBEFPGASubstrateVHSize / 2.,
                               -envelopeZLength / 2. + fRECBEThickness +
                                   fRECBEFPGASubstrateThickness / 2.};
-        fpgaSubstrateTlate += {fRECBEFPGAHSpace, -fRECBEFPGAVSpace, 0};
+        fpgaSubstrateTlate += {-fRECBEFPGAHSpace, -fRECBEFPGAVSpace, 0};
         new G4PVPlacement(nullptr, fpgaSubstrateTlate, fpgaSubstrateLV, "RECBEFPGASubstratePV",
                           envelopeLV, false, 0, fCheckOverlaps);
 
@@ -1317,6 +1319,8 @@ namespace bl10sim {
         new G4PVPlacement(nullptr, envelopeTlate, detectorEnvelopeLV, "DetectorEnvelopePV", labLV,
                           false, 0, fCheckOverlaps);
 
+        auto a = BuildMkII(labMaterial);
+        new G4PVPlacement(nullptr, {}, a, "test", labLV, false, 0, fCheckOverlaps);
         // PlaceSamples(labLV, samplePosition);
 
         return ironcasePV;
