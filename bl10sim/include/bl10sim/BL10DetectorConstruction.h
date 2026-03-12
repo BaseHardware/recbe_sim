@@ -100,8 +100,6 @@ namespace bl10sim {
 
         void PlaceBeamWindow(G4LogicalVolume *labLV) const;
 
-        void PlaceSamples(G4LogicalVolume *labLV, const G4ThreeVector sampleTlate) const;
-
         void PlaceSimpleNeutronFluxDetectors(G4LogicalVolume *labLV) const;
 
         G4VPhysicalVolume *DefineVolumes() override;

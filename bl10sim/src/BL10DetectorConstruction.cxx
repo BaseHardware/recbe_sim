@@ -1093,19 +1093,6 @@ namespace bl10sim {
         return samplePosition;
     }
 
-    void BL10DetectorConstruction::PlaceSamples(G4LogicalVolume *labLV,
-                                                const G4ThreeVector sampleTlate) const {
-        G4Material *matPb = G4Material::GetMaterial("G4_Be");
-
-        G4Box *exampleBox          = new G4Box("ExampleBox", 10 * cm, 10 * cm, 10 * cm);
-        G4LogicalVolume *exampleLV = new G4LogicalVolume(exampleBox, matPb, "ExampleLV");
-
-        G4ThreeVector exampleTlate = sampleTlate;
-        exampleTlate += {0, 10 * cm, 0};
-        new G4PVPlacement(nullptr, exampleTlate, exampleLV, "ExamplePV", labLV, false, 0,
-                          fCheckOverlaps);
-    }
-
     void BL10DetectorConstruction::PlaceBeamWindow(G4LogicalVolume *labLV) const {
 
         G4Material *matAir = G4Material::GetMaterial("G4_AIR");
