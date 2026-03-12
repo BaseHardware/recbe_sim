@@ -3,10 +3,12 @@
 
 #include "simcore/DetectorConstruction.h"
 
+#include "G4RotationMatrix.hh"
 #include "G4ThreeVector.hh"
 #include "G4TwoVector.hh"
 #include "G4VUserDetectorConstruction.hh"
 
+#include <array>
 #include <vector>
 
 class G4VPhysicalVolume;
@@ -16,9 +18,39 @@ class G4Material;
 
 namespace bl10sim {
     class BL10DetectorConstruction : public simcore::DetectorConstruction {
+        struct FrameBoardComplexInfo {
+            G4LogicalVolume *fBoardLV;
+            G4Material *fEnvelopeMaterial;
+            G4double fNegativeXVJigLength;
+            G4double fPositiveXVJigLength;
+            G4double fBoardDistFromTop;
+            G4double fBoardHorizontalPos;
+            G4double fVJigToBoardSpace;
+
+            bool operator<(const FrameBoardComplexInfo &rhs) const {
+                if (fBoardLV != rhs.fBoardLV)
+                    return fBoardLV < rhs.fBoardLV;
+                else if (fEnvelopeMaterial != rhs.fEnvelopeMaterial)
+                    return fEnvelopeMaterial < rhs.fEnvelopeMaterial;
+                else if (fNegativeXVJigLength != rhs.fNegativeXVJigLength)
+                    return fNegativeXVJigLength < rhs.fNegativeXVJigLength;
+                else if (fPositiveXVJigLength < rhs.fPositiveXVJigLength)
+                    return fPositiveXVJigLength < rhs.fPositiveXVJigLength;
+                else if (fBoardDistFromTop < rhs.fBoardDistFromTop)
+                    return fBoardDistFromTop < rhs.fBoardDistFromTop;
+                else if (fBoardHorizontalPos < rhs.fBoardHorizontalPos)
+                    return fBoardHorizontalPos < rhs.fBoardHorizontalPos;
+                else
+                    return fVJigToBoardSpace < rhs.fVJigToBoardSpace;
+            }
+        };
+
       public:
         BL10DetectorConstruction();
-        ~BL10DetectorConstruction() override = default;
+        virtual ~BL10DetectorConstruction() override {
+            delete fmHoriJigRotMtx;
+            delete fmVertJigRotMtx;
+        };
 
       public:
         void ConstructSDandField() override;
@@ -28,6 +60,10 @@ namespace bl10sim {
 
         virtual void SetGeometryParameters();
         virtual void CalculateGeometrySubparameters();
+
+        void SetBL10RoomParameters();
+        void SetBoardParameters();
+        void SetJigFrameParameters();
 
         G4VSolid *BuildBoronResincaseSolid(G4bool) const;
         G4VSolid *BuildLabSolid(G4bool) const;
@@ -40,13 +76,20 @@ namespace bl10sim {
 
         G4LogicalVolume *BuildJig(G4double, G4Material *, G4Material *) const;
 
-        G4LogicalVolume *BuildMkII(G4Material *);
-        G4LogicalVolume *BuildRECBE(G4Material *);
-        G4LogicalVolume *BuildROESTI(G4Material *);
+        G4LogicalVolume *BuildMkII(G4Material *) const;
+        G4LogicalVolume *BuildRECBE(G4Material *) const;
+        G4LogicalVolume *BuildROESTI(G4Material *) const;
+
+        G4LogicalVolume *BuildFrameBoardComplex(const G4String &,
+                                                const FrameBoardComplexInfo &) const;
+
+        G4LogicalVolume *BuildFrame(G4Material *) const;
 
         void PlaceBeamWindow(G4LogicalVolume *labLV) const;
 
         void PlaceSamples(G4LogicalVolume *labLV, const G4ThreeVector sampleTlate) const;
+
+        void PlaceSimpleNeutronFluxDetectors(G4LogicalVolume* labLV) const;
 
         G4VPhysicalVolume *DefineVolumes() override;
 
@@ -74,7 +117,7 @@ namespace bl10sim {
         G4double fLabZLength;
         G4double fLabWidthBeamside;
         G4double fLabWidthDumpside;
-        G4double fLabFloorSpacing;
+        G4double fLabFloorSpace;
 
         G4double fExitwallDistance;
         G4double fExitwallThickness;
@@ -132,6 +175,8 @@ namespace bl10sim {
         G4double fWindowThickness;
 
         G4double fJigVHSize;
+        G4double fVJigType1Length;
+        G4double fVJigType2Length;
 
         G4double fJigCenterHoleRadius;
 
@@ -140,8 +185,6 @@ namespace bl10sim {
         G4double fJigSpaceMiddleWidth;
         G4double fJigSpaceMiddleLength;
         G4double fJigSpaceHeight;
-
-        G4double fJigToBoardSpace;
 
         G4double fRECBEThickness;
         G4double fRECBETopWidth;
@@ -157,6 +200,8 @@ namespace bl10sim {
         G4double fRECBEFPGADieThickness;
         G4double fRECBEFPGADieVHSize;
 
+        G4double fRECBEBoardTopHeight;
+
         G4double fMkIIThickness;
         G4double fMkIITopWidth;
         G4double fMkIIMiddleWidth;
@@ -171,6 +216,8 @@ namespace bl10sim {
         G4double fMkIIFPGADieThickness;
         G4double fMkIIFPGADieVHSize;
 
+        G4double fMkIIBoardTopHeight;
+
         G4double fROESTIThickness;
         G4double fROESTIWidth;
         G4double fROESTIHeight;
@@ -183,11 +230,25 @@ namespace bl10sim {
         G4double fROESTIFPGADieThickness;
         G4double fROESTIFPGASubstrateVHSize;
 
-        G4bool fMkIIBuilt;
-        G4bool fRECBEBuilt;
-        G4bool fROESTIBuilt;
+        G4double fROESTIBoardTopHeight;
 
-        mutable G4int fJigCount;
+        G4double fFrameWidth;
+        G4double fFrameLength;
+        G4double fFirstJigZOffset;
+
+        std::array<G4double, 8> fBoardZSpaces;
+        std::array<G4double, 9> fXPosVJigLengths;
+        std::array<G4double, 9> fXNegVJigLengths;
+        std::array<G4double, 9> fVJToBSpaces;
+        std::array<G4double, 9> fBoardDistFromTop;
+        std::array<G4double, 9> fBoardHoriOffsets;
+
+        mutable G4bool fMkIIBuilt;
+        mutable G4bool fRECBEBuilt;
+        mutable G4bool fROESTIBuilt;
+
+        mutable G4RotationMatrix *fmHoriJigRotMtx = nullptr;
+        mutable G4RotationMatrix *fmVertJigRotMtx = nullptr;
     };
 } // namespace bl10sim
 #endif

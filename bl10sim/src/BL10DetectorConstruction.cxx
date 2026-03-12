@@ -11,7 +11,6 @@
 #include "G4Material.hh"
 #include "G4NistManager.hh"
 #include "G4PVPlacement.hh"
-#include "G4RotationMatrix.hh"
 #include "G4SDManager.hh"
 #include "G4SubtractionSolid.hh"
 #include "G4SystemOfUnits.hh"
@@ -20,13 +19,15 @@
 #include "G4UnionSolid.hh"
 #include "G4VisAttributes.hh"
 
+#include <map>
 #include <vector>
 
 static const G4double booleanSolidTolerance = 200 * um;
 
 namespace bl10sim {
     BL10DetectorConstruction::BL10DetectorConstruction()
-        : fSimpleGeometry(false), fMkIIBuilt(false), fRECBEBuilt(false), fROESTIBuilt(false) {
+        : fSimpleGeometry(false), fMkIIBuilt(false), fRECBEBuilt(false), fROESTIBuilt(false),
+          fmHoriJigRotMtx(nullptr), fmVertJigRotMtx(nullptr) {
         SetGeometryParameters();
         CalculateGeometrySubparameters();
     }
@@ -82,6 +83,12 @@ namespace bl10sim {
     }
 
     void BL10DetectorConstruction::SetGeometryParameters() {
+        SetBL10RoomParameters();
+        SetBoardParameters();
+        SetJigFrameParameters();
+    }
+
+    void BL10DetectorConstruction::SetBL10RoomParameters() {
         fBeamYDistanceFromFloor = 180 * cm;
         fBeamXDistanceFromWall  = 75 * cm;
 
@@ -93,7 +100,7 @@ namespace bl10sim {
         fLabZLength       = 3.5 * m;
         fLabWidthBeamside = 1.9 * m;
         fLabWidthDumpside = 3.1 * m;
-        fLabFloorSpacing  = 25 * cm;
+        fLabFloorSpace    = 25 * cm;
 
         fExitwallDistance  = 60 * cm;
         fExitwallThickness = 50 * cm;
@@ -149,7 +156,9 @@ namespace bl10sim {
         fBeamWindowHeight = 10 * cm;
 
         fWindowThickness = 1 * nm;
+    }
 
+    void BL10DetectorConstruction::SetBoardParameters() {
         fJigVHSize = 2 * cm;
 
         fJigCenterHoleRadius = 2 * mm;
@@ -159,8 +168,6 @@ namespace bl10sim {
         fJigSpaceMiddleWidth     = 3 * mm;
         fJigSpaceMiddleLength    = 1 * mm;
         fJigSpaceHeight          = 6 * mm;
-
-        fJigToBoardSpace = 1.5 * cm;
 
         fRECBETopWidth    = 20 * cm;
         fRECBEThickness   = 2 * mm;
@@ -201,8 +208,77 @@ namespace bl10sim {
         fROESTIFPGASubstrateThickness = 1 * mm;
         fROESTIFPGADieThickness       = 0.2 * mm;
         fROESTIFPGASubstrateVHSize    = 2.6 * cm;
+    }
 
-        fJigCount = 0;
+    void BL10DetectorConstruction::SetJigFrameParameters() {
+        G4double vJigToBoardSpace = 1.5 * cm;
+
+        fVJigType1Length = 25 * cm;
+        fVJigType2Length = 35 * cm;
+
+        // Tekitou
+        fFrameWidth      = 30 * cm;
+        fFrameLength     = 100 * cm;
+        fFirstJigZOffset = 0 * mm;
+
+        fBoardZSpaces[0] = 47.1 * mm;
+        fBoardZSpaces[1] = 47.8 * mm;
+        fBoardZSpaces[2] = 51.4 * mm;
+        fBoardZSpaces[3] = 51.1 * mm;
+        fBoardZSpaces[4] = 46.0 * mm;
+        fBoardZSpaces[5] = 52.0 * mm;
+        fBoardZSpaces[6] = 51.0 * mm;
+        fBoardZSpaces[7] = 47.5 * mm;
+
+        fXNegVJigLengths[0] = fVJigType1Length;
+        fXNegVJigLengths[1] = fVJigType1Length;
+        fXNegVJigLengths[2] = fVJigType2Length;
+        fXNegVJigLengths[3] = fVJigType1Length;
+        fXNegVJigLengths[4] = fVJigType1Length;
+        fXNegVJigLengths[5] = fVJigType2Length;
+        fXNegVJigLengths[6] = fVJigType2Length;
+        fXNegVJigLengths[7] = fVJigType1Length;
+        fXNegVJigLengths[8] = fVJigType2Length;
+
+        fXPosVJigLengths[0] = fVJigType1Length;
+        fXPosVJigLengths[1] = fVJigType1Length;
+        fXPosVJigLengths[2] = fVJigType2Length;
+        fXPosVJigLengths[3] = fVJigType1Length;
+        fXPosVJigLengths[4] = fVJigType1Length;
+        fXPosVJigLengths[5] = fVJigType2Length;
+        fXPosVJigLengths[6] = fVJigType2Length;
+        fXPosVJigLengths[7] = fVJigType2Length;
+        fXPosVJigLengths[8] = fVJigType2Length;
+
+        fVJToBSpaces[0] = vJigToBoardSpace;
+        fVJToBSpaces[1] = vJigToBoardSpace;
+        fVJToBSpaces[2] = vJigToBoardSpace;
+        fVJToBSpaces[3] = vJigToBoardSpace;
+        fVJToBSpaces[4] = vJigToBoardSpace;
+        fVJToBSpaces[5] = vJigToBoardSpace;
+        fVJToBSpaces[6] = vJigToBoardSpace;
+        fVJToBSpaces[7] = vJigToBoardSpace;
+        fVJToBSpaces[8] = vJigToBoardSpace;
+
+        fBoardDistFromTop[0] = 0;
+        fBoardDistFromTop[1] = 0;
+        fBoardDistFromTop[2] = 0;
+        fBoardDistFromTop[3] = 0;
+        fBoardDistFromTop[4] = 0;
+        fBoardDistFromTop[5] = 0;
+        fBoardDistFromTop[6] = 0;
+        fBoardDistFromTop[7] = 0;
+        fBoardDistFromTop[8] = 0;
+
+        fBoardHoriOffsets[0] = 0;
+        fBoardHoriOffsets[1] = 0;
+        fBoardHoriOffsets[2] = 0;
+        fBoardHoriOffsets[3] = 0;
+        fBoardHoriOffsets[4] = 0;
+        fBoardHoriOffsets[5] = 0;
+        fBoardHoriOffsets[6] = 0;
+        fBoardHoriOffsets[7] = 0;
+        fBoardHoriOffsets[8] = 0;
     }
 
     void BL10DetectorConstruction::CalculateGeometrySubparameters() {
@@ -461,7 +537,7 @@ namespace bl10sim {
         // Adding addition +x for the thickness of boron-resin layer
         eCarverTlate += {fBoronResinThickness, 0, 0};
         // Move +y to make the spacing of lab at the floor with consideration of boolean tolerance
-        eCarverTlate += {0, fLabFloorSpacing + booleanSolidTolerance, 0};
+        eCarverTlate += {0, fLabFloorSpace + booleanSolidTolerance, 0};
 
         G4SubtractionSolid *brCaseWithExit = new G4SubtractionSolid(
             "BoronResinCaseSolid", carvedBRCase, exitpathCarver, nullptr, eCarverTlate);
@@ -498,25 +574,25 @@ namespace bl10sim {
 
         G4Trd *labFloorTrd =
             new G4Trd("LabFloorTrd", boronResinWidthBeamside / 2., boronResinWidthDumpside / 2.,
-                      fLabFloorSpacing / 2., fLabFloorSpacing / 2., boronResinZLength / 2.);
+                      fLabFloorSpace / 2., fLabFloorSpace / 2., boronResinZLength / 2.);
 
-        G4ThreeVector floorSpacingTlate = {0, 0, 0};
+        G4ThreeVector floorSpaceTlate = {0, 0, 0};
         // Moving the center of floor spaing to the bottom of lab
-        floorSpacingTlate += {0, -fLabHeight / 2., 0};
+        floorSpaceTlate += {0, -fLabHeight / 2., 0};
         // Insert the floor spacing to the lab
-        floorSpacingTlate += {0, fLabFloorSpacing / 2., 0};
+        floorSpaceTlate += {0, fLabFloorSpace / 2., 0};
 
         G4UnionSolid *labTrdWithFloor;
         if (simple) {
             labTrdWithFloor = new G4UnionSolid("LabFloorSolid", displacedLabTrd, labFloorTrd,
-                                               nullptr, floorSpacingTlate);
+                                               nullptr, floorSpaceTlate);
             return labTrdWithFloor;
         } else {
             // Compensating a tlanslation for the the iron case
-            floorSpacingTlate += {0, 0, labTrdZLength / 2. - boronResinZLength / 2.};
+            floorSpaceTlate += {0, 0, labTrdZLength / 2. - boronResinZLength / 2.};
 
             labTrdWithFloor =
-                new G4UnionSolid("LabFloorSolid", labTrd, labFloorTrd, nullptr, floorSpacingTlate);
+                new G4UnionSolid("LabFloorSolid", labTrd, labFloorTrd, nullptr, floorSpaceTlate);
         }
 
         G4double ewCarverBoxWidth =
@@ -574,7 +650,7 @@ namespace bl10sim {
         // Adding addition +x for the thickness of boron-resin layer
         eCarverTlate += {fBoronResinThickness, 0, 0};
         // Move +y to make the spacing of lab at the floor with consideration of boolean tolerance
-        eCarverTlate += {0, fLabFloorSpacing + booleanSolidTolerance, 0};
+        eCarverTlate += {0, fLabFloorSpace + booleanSolidTolerance, 0};
 
         G4SubtractionSolid *labWithExit = new G4SubtractionSolid(
             "LabWExitSolid", carvedLab, exitpathCarver, nullptr, eCarverTlate);
@@ -1019,6 +1095,30 @@ namespace bl10sim {
 
     G4LogicalVolume *BL10DetectorConstruction::BuildJig(G4double jigLength, G4Material *jigMaterial,
                                                         G4Material *aroundMaterial) const {
+        struct JigInformation {
+            G4double fLength;
+            G4Material *fMaterial;
+            G4Material *fEnvelopeMaterial;
+            bool operator<(const JigInformation &rhs) const {
+                if (fLength != rhs.fLength)
+                    return fLength < rhs.fLength;
+                else if (fMaterial != rhs.fMaterial)
+                    return fMaterial < rhs.fMaterial;
+                else
+                    return fEnvelopeMaterial < rhs.fEnvelopeMaterial;
+            }
+        };
+
+        JigInformation input = {jigLength, jigMaterial, aroundMaterial};
+
+        static std::map<JigInformation, G4LogicalVolume *> sJigLVCache;
+
+        auto findres = sJigLVCache.find(input);
+
+        if (findres != sJigLVCache.end()) return findres->second;
+
+        const G4int sJigCount = sJigLVCache.size();
+
         G4String envSolidName   = "JigBox_";
         G4String spaceSolidName = "JigSpaceSolid_";
         G4String holeSolidName  = "JigHoleSolid_";
@@ -1026,27 +1126,28 @@ namespace bl10sim {
         G4String spaceLVName    = "JigSpaceLV_";
         G4String holeLVName     = "JigHoleLV_";
 
-        envSolidName += fJigCount;
-        envLVName += fJigCount;
+        envSolidName += std::to_string(sJigCount);
+        envLVName += std::to_string(sJigCount);
 
-        spaceSolidName += fJigCount;
-        spaceLVName += fJigCount;
+        spaceSolidName += std::to_string(sJigCount);
+        spaceLVName += std::to_string(sJigCount);
 
-        holeSolidName += fJigCount;
-        holeLVName += fJigCount;
+        holeSolidName += std::to_string(sJigCount);
+        holeLVName += std::to_string(sJigCount);
 
         G4Box *jigBox = new G4Box(envSolidName, fJigVHSize / 2., fJigVHSize / 2., jigLength / 2.);
         G4Tubs *jigHole =
             new G4Tubs(holeSolidName, 0, fJigCenterHoleRadius, jigLength / 2., 0, 360 * deg);
 
-        G4LogicalVolume *jigLV     = new G4LogicalVolume(jigBox, aroundMaterial, envLVName);
-        G4LogicalVolume *jigHoleLV = new G4LogicalVolume(jigHole, aroundMaterial, holeLVName);
+        G4LogicalVolume *jigLV = new G4LogicalVolume(jigBox, input.fEnvelopeMaterial, envLVName);
+        G4LogicalVolume *jigHoleLV =
+            new G4LogicalVolume(jigHole, input.fEnvelopeMaterial, holeLVName);
 
         new G4PVPlacement(nullptr, {}, jigHoleLV, "JigHolePV", jigLV, false, 0, fCheckOverlaps);
 
         G4ExtrudedSolid *spaceSolid =
             new G4ExtrudedSolid(spaceSolidName, ftJigSpacePoints, jigLength / 2.);
-        G4LogicalVolume *spaceLV = new G4LogicalVolume(spaceSolid, jigMaterial, spaceLVName);
+        G4LogicalVolume *spaceLV = new G4LogicalVolume(spaceSolid, input.fMaterial, spaceLVName);
 
         G4ThreeVector spaceTlate = {0, -fJigVHSize / 2., 0};
 
@@ -1069,11 +1170,11 @@ namespace bl10sim {
         new G4PVPlacement(rotMtx3, spaceTlate, spaceLV, "JigSpacePV", jigLV, true, 3,
                           fCheckOverlaps);
 
-        fJigCount++;
+        sJigLVCache[input] = jigLV;
         return jigLV;
     }
 
-    G4LogicalVolume *BL10DetectorConstruction::BuildMkII(G4Material *aroundMaterial) {
+    G4LogicalVolume *BL10DetectorConstruction::BuildMkII(G4Material *aroundMaterial) const {
         if (fMkIIBuilt) {
             return G4LogicalVolumeStore::GetInstance()->GetVolume("MkIIEnvelopeLV");
         }
@@ -1137,7 +1238,7 @@ namespace bl10sim {
         return envelopeLV;
     }
 
-    G4LogicalVolume *BL10DetectorConstruction::BuildRECBE(G4Material *aroundMaterial) {
+    G4LogicalVolume *BL10DetectorConstruction::BuildRECBE(G4Material *aroundMaterial) const {
         if (fRECBEBuilt) {
             return G4LogicalVolumeStore::GetInstance()->GetVolume("RECBEEnvelopeLV");
         }
@@ -1201,7 +1302,7 @@ namespace bl10sim {
         return envelopeLV;
     }
 
-    G4LogicalVolume *BL10DetectorConstruction::BuildROESTI(G4Material *aroundMaterial) {
+    G4LogicalVolume *BL10DetectorConstruction::BuildROESTI(G4Material *aroundMaterial) const {
         if (fROESTIBuilt) {
             return G4LogicalVolumeStore::GetInstance()->GetVolume("ROESTIEnvelopeLV");
         }
@@ -1254,6 +1355,190 @@ namespace bl10sim {
         return envelopeLV;
     }
 
+    G4LogicalVolume *BL10DetectorConstruction::BuildFrame(G4Material *aroundMaterial) const {
+        G4Material *jigMaterial = G4Material::GetMaterial("Stainless_Steel");
+
+        G4double envelopeHeight  = std::max(fVJigType1Length, fVJigType2Length) + fJigVHSize * 2;
+        G4double envelopeWidth   = fFrameWidth;
+        G4double envelopeZLength = fFrameLength;
+
+        G4Box *envelopeBox = new G4Box("FrameEnvelopeBox", envelopeWidth / 2., envelopeHeight / 2.,
+                                       envelopeZLength / 2.);
+        G4LogicalVolume *envelopeLV =
+            new G4LogicalVolume(envelopeBox, aroundMaterial, "FrameEnvelopeLV");
+        envelopeLV->SetVisAttributes(G4VisAttributes::GetInvisible());
+
+        G4LogicalVolume *baseJigLV = BuildJig(fFrameLength, jigMaterial, aroundMaterial);
+
+        G4ThreeVector baseJig1Tlate{envelopeWidth / 2. - fJigVHSize / 2.,
+                                    -envelopeHeight / 2. + fJigVHSize / 2., 0};
+        G4ThreeVector baseJig2Tlate{-envelopeWidth / 2. + fJigVHSize / 2.,
+                                    -envelopeHeight / 2. + fJigVHSize / 2., 0};
+
+        new G4PVPlacement(nullptr, baseJig1Tlate, baseJigLV, "BaseJigPV", envelopeLV, true, 0,
+                          fCheckOverlaps);
+        new G4PVPlacement(nullptr, baseJig2Tlate, baseJigLV, "BaseJigPV", envelopeLV, true, 1,
+                          fCheckOverlaps);
+
+        G4RotationMatrix *hJigRotMtx = new G4RotationMatrix();
+        G4RotationMatrix *vJigRotMtx = new G4RotationMatrix();
+
+        hJigRotMtx->rotateY(90 * deg);
+        vJigRotMtx->rotateX(90 * deg);
+
+        G4double firstJigZPos = -envelopeZLength / 2. + fFirstJigZOffset;
+
+        G4double zPosSum = 0;
+
+        for (size_t i = 0; i < fBoardZSpaces.size() + 1; i++) {
+            if (i != 0) zPosSum += fBoardZSpaces[i - 1];
+            G4ThreeVector nowDisplace = {0, 0, zPosSum};
+
+            G4String fbcName;
+            FrameBoardComplexInfo nowFBCplx;
+            switch (i % 3) {
+                case 0:
+                    fbcName            = "Frame_ROESTI_";
+                    nowFBCplx.fBoardLV = BuildROESTI(aroundMaterial);
+                    break;
+                case 1:
+                    fbcName            = "Frame_RECBE_";
+                    nowFBCplx.fBoardLV = BuildRECBE(aroundMaterial);
+                    break;
+                case 2:
+                    fbcName            = "Frame_MkII_";
+                    nowFBCplx.fBoardLV = BuildMkII(aroundMaterial);
+                    break;
+            }
+            nowFBCplx.fEnvelopeMaterial    = aroundMaterial;
+            nowFBCplx.fNegativeXVJigLength = fXNegVJigLengths[i];
+            nowFBCplx.fPositiveXVJigLength = fXPosVJigLengths[i];
+            nowFBCplx.fBoardDistFromTop    = fBoardDistFromTop[i];
+            nowFBCplx.fBoardHorizontalPos  = fBoardHoriOffsets[i];
+            nowFBCplx.fVJigToBoardSpace    = fVJToBSpaces[i];
+
+            G4LogicalVolume *nowFBCLV = BuildFrameBoardComplex(fbcName, nowFBCplx);
+            G4Box *nowFBCBox          = dynamic_cast<G4Box *>(nowFBCLV->GetSolid());
+            if (nowFBCBox == nullptr) {
+                G4ExceptionDescription msg;
+                msg << "The type of envelope for the given geometry is not G4Box, which is not "
+                       "supported.";
+                G4Exception("BL10DetectorConstruction::BuildFrameBoardComplex", "BL10GeometryE0010",
+                            FatalException, msg);
+                return nullptr;
+            }
+            G4double nowFBCWidth   = nowFBCBox->GetXHalfLength() * 2.;
+            G4double nowFBCHeight  = nowFBCBox->GetYHalfLength() * 2.;
+            G4double nowFBCZLength = nowFBCBox->GetZHalfLength() * 2.;
+
+            G4ThreeVector nowFBCTlate = {0, -envelopeHeight / 2. + fJigVHSize + nowFBCHeight / 2.,
+                                         firstJigZPos + nowFBCZLength / 2. + zPosSum};
+
+            new G4PVPlacement(nullptr, nowFBCTlate, nowFBCLV, fbcName + "PV", envelopeLV, true, i,
+                              fCheckOverlaps);
+        }
+
+        return envelopeLV;
+    }
+
+    G4LogicalVolume *
+        BL10DetectorConstruction::BuildFrameBoardComplex(const G4String &cplxName,
+                                                         const FrameBoardComplexInfo &input) const {
+        static std::map<FrameBoardComplexInfo, G4LogicalVolume *> sFBCplxLVCache;
+
+        if (fmHoriJigRotMtx == nullptr) {
+            fmHoriJigRotMtx = new G4RotationMatrix();
+            fmVertJigRotMtx = new G4RotationMatrix();
+
+            fmHoriJigRotMtx->rotateY(90. * deg);
+            fmVertJigRotMtx->rotateX(90. * deg);
+        }
+
+        auto findres = sFBCplxLVCache.find(input);
+        if (findres != sFBCplxLVCache.end()) return findres->second;
+
+        G4Box *boardEnvelopeBox = dynamic_cast<G4Box *>(input.fBoardLV->GetSolid());
+        if (boardEnvelopeBox == nullptr) {
+            G4ExceptionDescription msg;
+            msg << "The type of envelope for the given geometry is not G4Box, which is not "
+                   "supported.";
+            G4Exception("BL10DetectorConstruction::BuildFrameBoardComplex", "BL10GeometryE0010",
+                        FatalException, msg);
+            return nullptr;
+        }
+
+        G4int nowcnt            = 0;
+        G4LogicalVolume *prevLV = nullptr;
+        while (true) {
+            G4String nowLVName = cplxName;
+            nowLVName += "EnvelopeLV_";
+            nowLVName += std::to_string(nowcnt);
+            prevLV = G4LogicalVolumeStore::GetInstance()->GetVolume(nowLVName, false);
+            if (prevLV == nullptr) {
+                break;
+            } else {
+                nowcnt++;
+            }
+        }
+        G4String postfix = "_";
+        postfix += std::to_string(nowcnt);
+
+        G4Material *jigMaterial = G4Material::GetMaterial("Stainless_Steel");
+
+        G4double boardWidth   = boardEnvelopeBox->GetXHalfLength() * 2;
+        G4double boardHeight  = boardEnvelopeBox->GetYHalfLength() * 2.;
+        G4double boardZLength = boardEnvelopeBox->GetZHalfLength() * 2.;
+
+        G4double envelopeWidth = fFrameWidth;
+        G4double envelopeHeight =
+            std::max(input.fNegativeXVJigLength, input.fPositiveXVJigLength) + fJigVHSize;
+        G4double envelopeZLength = fJigVHSize + input.fVJigToBoardSpace + boardZLength;
+
+        G4Box *envelopeBox = new G4Box(cplxName + "EnvelopeBox" + postfix, envelopeWidth / 2.,
+                                       envelopeHeight / 2., envelopeZLength / 2.);
+        G4LogicalVolume *envelopeLV = new G4LogicalVolume(envelopeBox, input.fEnvelopeMaterial,
+                                                          cplxName + "EnvelopeLV" + postfix);
+
+        G4LogicalVolume *hJigLV = BuildJig(fFrameWidth, jigMaterial, input.fEnvelopeMaterial);
+
+        G4ThreeVector hJigTlate = {0, -envelopeHeight / 2. + fJigVHSize / 2.,
+                                   -envelopeZLength / 2. + fJigVHSize / 2.};
+
+        new G4PVPlacement(fmHoriJigRotMtx, hJigTlate, hJigLV, "HorizontalJigPV", envelopeLV, false,
+                          0, fCheckOverlaps);
+
+        G4LogicalVolume *posXVJigLV =
+            BuildJig(input.fPositiveXVJigLength, jigMaterial, input.fEnvelopeMaterial);
+        G4LogicalVolume *negXVJigLV =
+            BuildJig(input.fNegativeXVJigLength, jigMaterial, input.fEnvelopeMaterial);
+
+        G4ThreeVector posXVJigTlate = {-envelopeWidth / 2. + fJigVHSize / 2.,
+                                       -envelopeHeight / 2. + fJigVHSize +
+                                           input.fPositiveXVJigLength / 2.,
+                                       -envelopeZLength / 2. + fJigVHSize / 2.};
+        G4ThreeVector negXVJigTlate = {envelopeWidth / 2. - fJigVHSize / 2.,
+                                       -envelopeHeight / 2. + fJigVHSize +
+                                           input.fNegativeXVJigLength / 2.,
+                                       -envelopeZLength / 2. + fJigVHSize / 2.};
+
+        new G4PVPlacement(fmVertJigRotMtx, posXVJigTlate, posXVJigLV, "PosXVerticalJigPV",
+                          envelopeLV, false, 0, fCheckOverlaps);
+        new G4PVPlacement(fmVertJigRotMtx, negXVJigTlate, negXVJigLV, "NegXVerticalJigPV",
+                          envelopeLV, false, 0, fCheckOverlaps);
+
+        G4double shortJigTopYPos;
+        if (input.fPositiveXVJigLength < input.fNegativeXVJigLength) {
+            shortJigTopYPos = posXVJigTlate.getY();
+        } else {
+            shortJigTopYPos = negXVJigTlate.getY();
+        }
+
+        G4ThreeVector boardTlate = {0, 0, envelopeZLength / 2. - boardZLength / 2.};
+
+        sFBCplxLVCache[input] = envelopeLV;
+        return envelopeLV;
+    }
+
     G4VPhysicalVolume *BL10DetectorConstruction::DefineVolumes() {
         std::string geomType = "bl10_";
         if (fSimpleGeometry) {
@@ -1273,6 +1558,15 @@ namespace bl10sim {
         G4LogicalVolume *wbLV        = BuildWorkbench();
         G4ThreeVector samplePosition = PlaceWorkbench(labLV, wbLV);
 
+        G4Material *labMaterial = labLV->GetMaterial();
+
+        G4LogicalVolume *a = BuildFrame(labMaterial);
+        new G4PVPlacement(nullptr, {}, a, "test", labLV, false, 0, fCheckOverlaps);
+
+        return ironcasePV;
+    }
+
+    void BL10DetectorConstruction::PlaceSimpleNeutronFluxDetectors(G4LogicalVolume *labLV) const {
         G4Material *labMaterial = labLV->GetMaterial();
 
         G4double detectorWidth     = 30 * cm;
@@ -1315,8 +1609,6 @@ namespace bl10sim {
 
         new G4PVPlacement(nullptr, envelopeTlate, detectorEnvelopeLV, "DetectorEnvelopePV", labLV,
                           false, 0, fCheckOverlaps);
-
-        return ironcasePV;
     }
 
     void BL10DetectorConstruction::ConstructSDandField() {
