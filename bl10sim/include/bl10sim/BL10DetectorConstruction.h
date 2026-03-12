@@ -19,16 +19,22 @@ class G4Material;
 namespace bl10sim {
     class BL10DetectorConstruction : public simcore::DetectorConstruction {
         struct FrameBoardComplexInfo {
+            G4String fBoardName;
             G4LogicalVolume *fBoardLV;
             G4Material *fEnvelopeMaterial;
             G4double fNegativeXVJigLength;
             G4double fPositiveXVJigLength;
             G4double fBoardDistFromTop;
-            G4double fBoardHorizontalPos;
-            G4double fVJigToBoardSpace;
+            G4double fBoardHoriOffset;
+            G4double fJigToBoardZSpace;
+            G4double fJigToBoardPosXSpace;
+            G4double fJigToBoardNegXSpace;
+            G4int fBoardCopyNo;
 
             bool operator<(const FrameBoardComplexInfo &rhs) const {
-                if (fBoardLV != rhs.fBoardLV)
+                if (fBoardName != rhs.fBoardName)
+                    return fBoardName < rhs.fBoardName;
+                else if (fBoardLV != rhs.fBoardLV)
                     return fBoardLV < rhs.fBoardLV;
                 else if (fEnvelopeMaterial != rhs.fEnvelopeMaterial)
                     return fEnvelopeMaterial < rhs.fEnvelopeMaterial;
@@ -38,11 +44,19 @@ namespace bl10sim {
                     return fPositiveXVJigLength < rhs.fPositiveXVJigLength;
                 else if (fBoardDistFromTop < rhs.fBoardDistFromTop)
                     return fBoardDistFromTop < rhs.fBoardDistFromTop;
-                else if (fBoardHorizontalPos < rhs.fBoardHorizontalPos)
-                    return fBoardHorizontalPos < rhs.fBoardHorizontalPos;
+                else if (fBoardHoriOffset < rhs.fBoardHoriOffset)
+                    return fBoardHoriOffset < rhs.fBoardHoriOffset;
+                else if (fJigToBoardZSpace != rhs.fJigToBoardZSpace)
+                    return fJigToBoardZSpace < rhs.fJigToBoardZSpace;
+                else if (fJigToBoardPosXSpace != rhs.fJigToBoardPosXSpace)
+                    return fJigToBoardPosXSpace < rhs.fJigToBoardPosXSpace;
+                else if (fJigToBoardNegXSpace != rhs.fJigToBoardNegXSpace)
+                    return fJigToBoardNegXSpace < rhs.fJigToBoardNegXSpace;
                 else
-                    return fVJigToBoardSpace < rhs.fVJigToBoardSpace;
+                    return fBoardCopyNo < rhs.fBoardCopyNo;
             }
+
+            G4String GetComplexName() const { return "Frame_" + fBoardName; }
         };
 
       public:
@@ -80,16 +94,15 @@ namespace bl10sim {
         G4LogicalVolume *BuildRECBE(G4Material *) const;
         G4LogicalVolume *BuildROESTI(G4Material *) const;
 
-        G4LogicalVolume *BuildFrameBoardComplex(const G4String &,
-                                                const FrameBoardComplexInfo &) const;
+        G4LogicalVolume *BuildFrameBoardComplex(const FrameBoardComplexInfo &) const;
 
-        G4LogicalVolume *BuildFrame(G4Material *) const;
+        G4LogicalVolume *BuildFrameBoards(G4Material *) const;
 
         void PlaceBeamWindow(G4LogicalVolume *labLV) const;
 
         void PlaceSamples(G4LogicalVolume *labLV, const G4ThreeVector sampleTlate) const;
 
-        void PlaceSimpleNeutronFluxDetectors(G4LogicalVolume* labLV) const;
+        void PlaceSimpleNeutronFluxDetectors(G4LogicalVolume *labLV) const;
 
         G4VPhysicalVolume *DefineVolumes() override;
 
@@ -236,12 +249,21 @@ namespace bl10sim {
         G4double fFrameLength;
         G4double fFirstJigZOffset;
 
+        G4double fTriangleBracketSize;
+
+        G4double fLShapeBracketWidth;
+        G4double fLShapeBracketHeight;
+        G4double fLShapeBracketLength;
+
         std::array<G4double, 8> fBoardZSpaces;
         std::array<G4double, 9> fXPosVJigLengths;
         std::array<G4double, 9> fXNegVJigLengths;
-        std::array<G4double, 9> fVJToBSpaces;
+        std::array<G4double, 9> fJigToBoardZSpaces;
+        std::array<G4double, 9> fJigToBoardWidthSpaces;
         std::array<G4double, 9> fBoardDistFromTop;
         std::array<G4double, 9> fBoardHoriOffsets;
+        std::array<G4double, 9> fBracketBoardPosXMargins;
+        std::array<G4double, 9> fBracketBoardNegXMargins;
 
         mutable G4bool fMkIIBuilt;
         mutable G4bool fRECBEBuilt;

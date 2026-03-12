@@ -211,15 +211,29 @@ namespace bl10sim {
     }
 
     void BL10DetectorConstruction::SetJigFrameParameters() {
-        G4double vJigToBoardSpace = 1.5 * cm;
+        // TODO: Correct these values with the measured ones
+        G4double jigToBoardZSpace = 15 * mm;
+
+        G4double bracketROESTIPosXMargin = -0.2 * mm;
+        G4double bracketROESTINegXMargin = 15 * mm;
+        G4double bracketRECBEPosXMargin  = 12 * mm;
+        G4double bracketRECBENegXMargin  = 12 * mm;
+        G4double bracketMkIIPosXMargin   = 10 * mm;
+        G4double bracketMkIINegXMargin   = 10 * mm;
+
+        fFirstJigZOffset = 0 * mm;
 
         fVJigType1Length = 25 * cm;
         fVJigType2Length = 35 * cm;
 
-        // Tekitou
-        fFrameWidth      = 30 * cm;
-        fFrameLength     = 100 * cm;
-        fFirstJigZOffset = 0 * mm;
+        fFrameWidth  = 30 * cm;
+        fFrameLength = 100 * cm;
+
+        fTriangleBracketSize = 1.5 * cm;
+
+        fLShapeBracketLength = 3.5 * cm; // jigToBoardZSpace + fJigVHSize
+        fLShapeBracketHeight = 0.9 * cm;
+        fLShapeBracketWidth  = 0.4 * cm;
 
         fBoardZSpaces[0] = 47.1 * mm;
         fBoardZSpaces[1] = 47.8 * mm;
@@ -250,15 +264,15 @@ namespace bl10sim {
         fXPosVJigLengths[7] = fVJigType2Length;
         fXPosVJigLengths[8] = fVJigType2Length;
 
-        fVJToBSpaces[0] = vJigToBoardSpace;
-        fVJToBSpaces[1] = vJigToBoardSpace;
-        fVJToBSpaces[2] = vJigToBoardSpace;
-        fVJToBSpaces[3] = vJigToBoardSpace;
-        fVJToBSpaces[4] = vJigToBoardSpace;
-        fVJToBSpaces[5] = vJigToBoardSpace;
-        fVJToBSpaces[6] = vJigToBoardSpace;
-        fVJToBSpaces[7] = vJigToBoardSpace;
-        fVJToBSpaces[8] = vJigToBoardSpace;
+        fJigToBoardZSpaces[0] = jigToBoardZSpace;
+        fJigToBoardZSpaces[1] = jigToBoardZSpace;
+        fJigToBoardZSpaces[2] = jigToBoardZSpace;
+        fJigToBoardZSpaces[3] = jigToBoardZSpace;
+        fJigToBoardZSpaces[4] = jigToBoardZSpace;
+        fJigToBoardZSpaces[5] = jigToBoardZSpace;
+        fJigToBoardZSpaces[6] = jigToBoardZSpace;
+        fJigToBoardZSpaces[7] = jigToBoardZSpace;
+        fJigToBoardZSpaces[8] = jigToBoardZSpace;
 
         fBoardDistFromTop[0] = 0;
         fBoardDistFromTop[1] = 0;
@@ -279,6 +293,26 @@ namespace bl10sim {
         fBoardHoriOffsets[6] = 0;
         fBoardHoriOffsets[7] = 0;
         fBoardHoriOffsets[8] = 0;
+
+        fBracketBoardPosXMargins[0] = bracketROESTIPosXMargin;
+        fBracketBoardPosXMargins[1] = bracketRECBEPosXMargin;
+        fBracketBoardPosXMargins[2] = bracketMkIIPosXMargin;
+        fBracketBoardPosXMargins[3] = bracketROESTIPosXMargin;
+        fBracketBoardPosXMargins[4] = bracketRECBEPosXMargin;
+        fBracketBoardPosXMargins[5] = bracketMkIIPosXMargin;
+        fBracketBoardPosXMargins[6] = bracketROESTIPosXMargin;
+        fBracketBoardPosXMargins[7] = bracketRECBEPosXMargin;
+        fBracketBoardPosXMargins[8] = bracketMkIIPosXMargin;
+
+        fBracketBoardNegXMargins[0] = bracketROESTINegXMargin;
+        fBracketBoardNegXMargins[1] = bracketRECBENegXMargin;
+        fBracketBoardNegXMargins[2] = bracketMkIINegXMargin;
+        fBracketBoardNegXMargins[3] = bracketROESTINegXMargin;
+        fBracketBoardNegXMargins[4] = bracketRECBENegXMargin;
+        fBracketBoardNegXMargins[5] = bracketMkIINegXMargin;
+        fBracketBoardNegXMargins[6] = bracketROESTINegXMargin;
+        fBracketBoardNegXMargins[7] = bracketRECBENegXMargin;
+        fBracketBoardNegXMargins[8] = bracketMkIINegXMargin;
     }
 
     void BL10DetectorConstruction::CalculateGeometrySubparameters() {
@@ -1355,7 +1389,7 @@ namespace bl10sim {
         return envelopeLV;
     }
 
-    G4LogicalVolume *BL10DetectorConstruction::BuildFrame(G4Material *aroundMaterial) const {
+    G4LogicalVolume *BL10DetectorConstruction::BuildFrameBoards(G4Material *aroundMaterial) const {
         G4Material *jigMaterial = G4Material::GetMaterial("Stainless_Steel");
 
         G4double envelopeHeight  = std::max(fVJigType1Length, fVJigType2Length) + fJigVHSize * 2;
@@ -1394,36 +1428,38 @@ namespace bl10sim {
             if (i != 0) zPosSum += fBoardZSpaces[i - 1];
             G4ThreeVector nowDisplace = {0, 0, zPosSum};
 
-            G4String fbcName;
             FrameBoardComplexInfo nowFBCplx;
             switch (i % 3) {
                 case 0:
-                    fbcName            = "Frame_ROESTI_";
-                    nowFBCplx.fBoardLV = BuildROESTI(aroundMaterial);
+                    nowFBCplx.fBoardName = "ROESTI";
+                    nowFBCplx.fBoardLV   = BuildROESTI(aroundMaterial);
                     break;
                 case 1:
-                    fbcName            = "Frame_RECBE_";
-                    nowFBCplx.fBoardLV = BuildRECBE(aroundMaterial);
+                    nowFBCplx.fBoardName = "RECBE";
+                    nowFBCplx.fBoardLV   = BuildRECBE(aroundMaterial);
                     break;
                 case 2:
-                    fbcName            = "Frame_MkII_";
-                    nowFBCplx.fBoardLV = BuildMkII(aroundMaterial);
+                    nowFBCplx.fBoardName = "MkII";
+                    nowFBCplx.fBoardLV   = BuildMkII(aroundMaterial);
                     break;
             }
             nowFBCplx.fEnvelopeMaterial    = aroundMaterial;
             nowFBCplx.fNegativeXVJigLength = fXNegVJigLengths[i];
             nowFBCplx.fPositiveXVJigLength = fXPosVJigLengths[i];
             nowFBCplx.fBoardDistFromTop    = fBoardDistFromTop[i];
-            nowFBCplx.fBoardHorizontalPos  = fBoardHoriOffsets[i];
-            nowFBCplx.fVJigToBoardSpace    = fVJToBSpaces[i];
+            nowFBCplx.fBoardHoriOffset     = fBoardHoriOffsets[i];
+            nowFBCplx.fJigToBoardZSpace    = fJigToBoardZSpaces[i];
+            nowFBCplx.fJigToBoardPosXSpace = fBracketBoardPosXMargins[i];
+            nowFBCplx.fJigToBoardNegXSpace = fBracketBoardNegXMargins[i];
+            nowFBCplx.fBoardCopyNo         = i / 3;
 
-            G4LogicalVolume *nowFBCLV = BuildFrameBoardComplex(fbcName, nowFBCplx);
+            G4LogicalVolume *nowFBCLV = BuildFrameBoardComplex(nowFBCplx);
             G4Box *nowFBCBox          = dynamic_cast<G4Box *>(nowFBCLV->GetSolid());
             if (nowFBCBox == nullptr) {
                 G4ExceptionDescription msg;
                 msg << "The type of envelope for the given geometry is not G4Box, which is not "
                        "supported.";
-                G4Exception("BL10DetectorConstruction::BuildFrameBoardComplex", "BL10GeometryE0010",
+                G4Exception("BL10DetectorConstruction::BuildFrameBoards", "BL10GeometryE0010",
                             FatalException, msg);
                 return nullptr;
             }
@@ -1434,17 +1470,18 @@ namespace bl10sim {
             G4ThreeVector nowFBCTlate = {0, -envelopeHeight / 2. + fJigVHSize + nowFBCHeight / 2.,
                                          firstJigZPos + nowFBCZLength / 2. + zPosSum};
 
-            new G4PVPlacement(nullptr, nowFBCTlate, nowFBCLV, fbcName + "PV", envelopeLV, true, i,
-                              fCheckOverlaps);
+            new G4PVPlacement(nullptr, nowFBCTlate, nowFBCLV, nowFBCplx.GetComplexName() + "_PV",
+                              envelopeLV, true, i / 3, fCheckOverlaps);
         }
 
         return envelopeLV;
     }
 
     G4LogicalVolume *
-        BL10DetectorConstruction::BuildFrameBoardComplex(const G4String &cplxName,
-                                                         const FrameBoardComplexInfo &input) const {
+        BL10DetectorConstruction::BuildFrameBoardComplex(const FrameBoardComplexInfo &input) const {
         static std::map<FrameBoardComplexInfo, G4LogicalVolume *> sFBCplxLVCache;
+        static G4LogicalVolume *sTriangleBracketLV = nullptr;
+        static G4LogicalVolume *sLShapeBracketLV   = nullptr;
 
         if (fmHoriJigRotMtx == nullptr) {
             fmHoriJigRotMtx = new G4RotationMatrix();
@@ -1467,11 +1504,28 @@ namespace bl10sim {
             return nullptr;
         }
 
+        G4Material *jigMaterial = G4Material::GetMaterial("Stainless_Steel");
+
+        if (sTriangleBracketLV == nullptr) {
+            G4Box *virtBracketBox = new G4Box("TriangleBracketBox", fJigVHSize / 2.,
+                                              fTriangleBracketSize / 2., fTriangleBracketSize / 2.);
+            sTriangleBracketLV =
+                new G4LogicalVolume(virtBracketBox, jigMaterial, "TriangleBracketLV");
+
+            G4Box *sLShapeBracketBox =
+                new G4Box("LShapeBracketBox", fLShapeBracketWidth / 2., fLShapeBracketHeight / 2.,
+                          fLShapeBracketLength / 2.);
+            sLShapeBracketLV =
+                new G4LogicalVolume(sLShapeBracketBox, jigMaterial, "LShapceBracketLV");
+        }
+
         G4int nowcnt            = 0;
         G4LogicalVolume *prevLV = nullptr;
+
+        G4String cplxName = input.GetComplexName();
         while (true) {
             G4String nowLVName = cplxName;
-            nowLVName += "EnvelopeLV_";
+            nowLVName += "_EnvelopeLV_";
             nowLVName += std::to_string(nowcnt);
             prevLV = G4LogicalVolumeStore::GetInstance()->GetVolume(nowLVName, false);
             if (prevLV == nullptr) {
@@ -1483,8 +1537,6 @@ namespace bl10sim {
         G4String postfix = "_";
         postfix += std::to_string(nowcnt);
 
-        G4Material *jigMaterial = G4Material::GetMaterial("Stainless_Steel");
-
         G4double boardWidth   = boardEnvelopeBox->GetXHalfLength() * 2;
         G4double boardHeight  = boardEnvelopeBox->GetYHalfLength() * 2.;
         G4double boardZLength = boardEnvelopeBox->GetZHalfLength() * 2.;
@@ -1492,12 +1544,13 @@ namespace bl10sim {
         G4double envelopeWidth = fFrameWidth;
         G4double envelopeHeight =
             std::max(input.fNegativeXVJigLength, input.fPositiveXVJigLength) + fJigVHSize;
-        G4double envelopeZLength = fJigVHSize + input.fVJigToBoardSpace + boardZLength;
+        G4double envelopeZLength = fJigVHSize + input.fJigToBoardZSpace + boardZLength;
 
-        G4Box *envelopeBox = new G4Box(cplxName + "EnvelopeBox" + postfix, envelopeWidth / 2.,
+        G4Box *envelopeBox = new G4Box(cplxName + "_EnvelopeBox" + postfix, envelopeWidth / 2.,
                                        envelopeHeight / 2., envelopeZLength / 2.);
         G4LogicalVolume *envelopeLV = new G4LogicalVolume(envelopeBox, input.fEnvelopeMaterial,
-                                                          cplxName + "EnvelopeLV" + postfix);
+                                                          cplxName + "_EnvelopeLV" + postfix);
+        envelopeLV->SetVisAttributes(G4VisAttributes::GetInvisible());
 
         G4LogicalVolume *hJigLV = BuildJig(fFrameWidth, jigMaterial, input.fEnvelopeMaterial);
 
@@ -1507,33 +1560,85 @@ namespace bl10sim {
         new G4PVPlacement(fmHoriJigRotMtx, hJigTlate, hJigLV, "HorizontalJigPV", envelopeLV, false,
                           0, fCheckOverlaps);
 
+        G4ThreeVector hJigVBXDisplace         = {envelopeWidth / 2. - fJigVHSize / 2., 0, 0};
+        G4ThreeVector hJigTriBracketBaseTlate = hJigTlate;
+
+        hJigTriBracketBaseTlate += {0, -fJigVHSize / 2. + fTriangleBracketSize / 2.,
+                                    fJigVHSize / 2. + fTriangleBracketSize / 2.};
+
+        new G4PVPlacement(nullptr, hJigTriBracketBaseTlate + hJigVBXDisplace, sTriangleBracketLV,
+                          "TriangleBracketPV", envelopeLV, true, 0, fCheckOverlaps);
+        new G4PVPlacement(nullptr, hJigTriBracketBaseTlate - hJigVBXDisplace, sTriangleBracketLV,
+                          "TriangleBracketPV", envelopeLV, true, 1, fCheckOverlaps);
+
+        G4double shortJigTopYPos = -envelopeHeight / 2. + fJigVHSize;
+
+        if (input.fPositiveXVJigLength < input.fNegativeXVJigLength) {
+            shortJigTopYPos += input.fPositiveXVJigLength;
+        } else {
+            shortJigTopYPos += input.fNegativeXVJigLength;
+        }
+
+        G4ThreeVector boardTlate = {
+            input.fBoardHoriOffset, shortJigTopYPos - boardHeight / 2. - input.fBoardDistFromTop,
+            -envelopeZLength / 2. + fJigVHSize + input.fJigToBoardZSpace + boardZLength / 2.};
+
+        new G4PVPlacement(nullptr, boardTlate, input.fBoardLV, input.fBoardName + "_PV", envelopeLV,
+                          true, input.fBoardCopyNo, fCheckOverlaps);
+
+        G4ThreeVector posLBracketTlate = boardTlate;
+        G4ThreeVector negLBracketTlate = boardTlate;
+
+        posLBracketTlate +=
+            {boardWidth / 2. + input.fJigToBoardPosXSpace - fLShapeBracketWidth / 2.,
+             boardHeight / 2. - fLShapeBracketHeight / 2.,
+             -boardZLength / 2. - fLShapeBracketLength / 2.};
+        negLBracketTlate +=
+            {-boardWidth / 2. - input.fJigToBoardNegXSpace + fLShapeBracketWidth / 2.,
+             boardHeight / 2. - fLShapeBracketHeight / 2.,
+             -boardZLength / 2. - fLShapeBracketLength / 2.};
+
+        new G4PVPlacement(nullptr, posLBracketTlate, sLShapeBracketLV, "LShapeBracketPV",
+                          envelopeLV, true, 0, fCheckOverlaps);
+        new G4PVPlacement(nullptr, negLBracketTlate, sLShapeBracketLV, "LShapeBracketPV",
+                          envelopeLV, true, 1, fCheckOverlaps);
+
+        G4ThreeVector posXVJigTlate = boardTlate;
+        G4ThreeVector negXVJigTlate = boardTlate;
+
+        posXVJigTlate.setY(0);
+        posXVJigTlate += {boardWidth / 2. + input.fJigToBoardPosXSpace + fJigVHSize / 2.,
+                          -envelopeHeight / 2. + fJigVHSize + input.fPositiveXVJigLength / 2.,
+                          -boardZLength / 2. - input.fJigToBoardZSpace - fJigVHSize / 2.};
+
+        negXVJigTlate.setY(0);
+        negXVJigTlate += {-boardWidth / 2. - input.fJigToBoardNegXSpace - fJigVHSize / 2.,
+                          -envelopeHeight / 2. + fJigVHSize + input.fNegativeXVJigLength / 2.,
+                          -boardZLength / 2. - input.fJigToBoardZSpace - fJigVHSize / 2.};
+
         G4LogicalVolume *posXVJigLV =
             BuildJig(input.fPositiveXVJigLength, jigMaterial, input.fEnvelopeMaterial);
         G4LogicalVolume *negXVJigLV =
             BuildJig(input.fNegativeXVJigLength, jigMaterial, input.fEnvelopeMaterial);
 
-        G4ThreeVector posXVJigTlate = {-envelopeWidth / 2. + fJigVHSize / 2.,
-                                       -envelopeHeight / 2. + fJigVHSize +
-                                           input.fPositiveXVJigLength / 2.,
-                                       -envelopeZLength / 2. + fJigVHSize / 2.};
-        G4ThreeVector negXVJigTlate = {envelopeWidth / 2. - fJigVHSize / 2.,
-                                       -envelopeHeight / 2. + fJigVHSize +
-                                           input.fNegativeXVJigLength / 2.,
-                                       -envelopeZLength / 2. + fJigVHSize / 2.};
+        new G4PVPlacement(fmVertJigRotMtx, posXVJigTlate, posXVJigLV, "VerticalJigPV",
+                          envelopeLV, true, 0, fCheckOverlaps);
+        new G4PVPlacement(fmVertJigRotMtx, negXVJigTlate, negXVJigLV, "VerticalJigPV",
+                          envelopeLV, true, 1, fCheckOverlaps);
 
-        new G4PVPlacement(fmVertJigRotMtx, posXVJigTlate, posXVJigLV, "PosXVerticalJigPV",
-                          envelopeLV, false, 0, fCheckOverlaps);
-        new G4PVPlacement(fmVertJigRotMtx, negXVJigTlate, negXVJigLV, "NegXVerticalJigPV",
-                          envelopeLV, false, 0, fCheckOverlaps);
+        G4ThreeVector posXTriBracketTlate = posXVJigTlate;
+        G4ThreeVector negXTriBracketTlate = negXVJigTlate;
 
-        G4double shortJigTopYPos;
-        if (input.fPositiveXVJigLength < input.fNegativeXVJigLength) {
-            shortJigTopYPos = posXVJigTlate.getY();
-        } else {
-            shortJigTopYPos = negXVJigTlate.getY();
-        }
+        posXTriBracketTlate += {-fJigVHSize / 2. - fTriangleBracketSize / 2., 0, 0};
+        posXTriBracketTlate += {0, -input.fPositiveXVJigLength / 2. + fTriangleBracketSize / 2., 0};
 
-        G4ThreeVector boardTlate = {0, 0, envelopeZLength / 2. - boardZLength / 2.};
+        negXTriBracketTlate += {fJigVHSize / 2. + fTriangleBracketSize / 2., 0, 0};
+        negXTriBracketTlate += {0, -input.fNegativeXVJigLength / 2. + fTriangleBracketSize / 2., 0};
+
+        new G4PVPlacement(fmHoriJigRotMtx, posXTriBracketTlate, sTriangleBracketLV,
+                          "TriangleBracketPV", envelopeLV, true, 2, fCheckOverlaps);
+        new G4PVPlacement(fmHoriJigRotMtx, negXTriBracketTlate, sTriangleBracketLV,
+                          "TriangleBracketPV", envelopeLV, true, 3, fCheckOverlaps);
 
         sFBCplxLVCache[input] = envelopeLV;
         return envelopeLV;
@@ -1560,8 +1665,8 @@ namespace bl10sim {
 
         G4Material *labMaterial = labLV->GetMaterial();
 
-        G4LogicalVolume *a = BuildFrame(labMaterial);
-        new G4PVPlacement(nullptr, {}, a, "test", labLV, false, 0, fCheckOverlaps);
+        G4LogicalVolume *a = BuildFrameBoards(labMaterial);
+        new G4PVPlacement(nullptr, {}, a, "Test", labLV, false, 0, fCheckOverlaps);
 
         return ironcasePV;
     }
