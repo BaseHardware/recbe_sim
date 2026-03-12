@@ -83,7 +83,7 @@ namespace bl10sim {
         G4VSolid *BuildLabSolid(G4bool) const;
 
         G4LogicalVolume *BuildIroncase() const;
-        G4LogicalVolume *FillIroncase(G4LogicalVolume *) const;
+        G4LogicalVolume *FillExperimentalRoom(G4LogicalVolume *) const;
 
         G4LogicalVolume *BuildWorkbench() const;
         G4ThreeVector PlaceWorkbench(G4LogicalVolume *, G4LogicalVolume *) const;
@@ -98,7 +98,7 @@ namespace bl10sim {
 
         G4LogicalVolume *BuildFrameBoards(G4Material *) const;
 
-        void PlaceBeamWindow(G4LogicalVolume *labLV) const;
+        void PlaceBasicComponents(G4LogicalVolume *labLV) const;
 
         void PlaceSimpleNeutronFluxDetectors(G4LogicalVolume *labLV) const;
 

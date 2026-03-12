@@ -692,7 +692,7 @@ namespace bl10sim {
         return labWithExit;
     }
 
-    G4LogicalVolume *BL10DetectorConstruction::FillIroncase(G4LogicalVolume *lv) const {
+    G4LogicalVolume *BL10DetectorConstruction::FillExperimentalRoom(G4LogicalVolume *lv) const {
         G4Material *matB4C = G4Material::GetMaterial("G4_BORON_CARBIDE");
         G4Material *matAir = G4Material::GetMaterial("G4_AIR");
 
@@ -708,6 +708,8 @@ namespace bl10sim {
         G4ThreeVector labTlate = {0, -fBoronResinThickness / 2., 0};
         new G4PVPlacement(nullptr, labTlate, labLV, "LabPV", boronResinLV, false, 0,
                           fCheckOverlaps);
+
+        PlaceBasicComponents(labLV);
 
         return labLV;
     }
@@ -1093,22 +1095,20 @@ namespace bl10sim {
         return samplePosition;
     }
 
-    void BL10DetectorConstruction::PlaceBeamWindow(G4LogicalVolume *labLV) const {
-
-        G4Material *matAir = G4Material::GetMaterial("G4_AIR");
+    void BL10DetectorConstruction::PlaceBasicComponents(G4LogicalVolume *labLV) const {
+        G4Material *labMaterial = labLV->GetMaterial();
 
         G4Box *windowBox = new G4Box("BeamWindowBox", fBeamWindowWidth / 2., fBeamWindowHeight / 2.,
                                      fWindowThickness / 2.);
-        G4LogicalVolume *windowLV = new G4LogicalVolume(windowBox, matAir, "BeamWindowLV");
+        G4LogicalVolume *windowLV = new G4LogicalVolume(windowBox, labMaterial, "BeamWindowLV");
 
         G4ThreeVector windowTlate = {0, 0, 0};
         // Move the beam window solid to the z-end of the lab
         windowTlate += {0, 0, -fLabZLength / 2. + fWindowThickness / 2.};
         // Move the beam window to the fBeamYDistanceFromFloor on the y-axis
-        windowTlate += {0, -fLabHeight / 2. + fBeamWindowHeight / 2. + fBeamYDistanceFromFloor, 0};
+        windowTlate += {0, -fLabHeight / 2. + fBeamYDistanceFromFloor, 0};
         // Move the beam window to the center of beamline
-        windowTlate +=
-            {fLabWidthBeamside / 2. - fBeamWindowWidth / 2. - fBeamXDistanceFromWall, 0, 0};
+        windowTlate += {fLabWidthBeamside / 2. - fBeamXDistanceFromWall, 0, 0};
 
         new G4PVPlacement(nullptr, windowTlate, windowLV, "BeamWindowPV", labLV, false, 0,
                           fCheckOverlaps);
@@ -1608,10 +1608,10 @@ namespace bl10sim {
         G4LogicalVolume *negXVJigLV =
             BuildJig(input.fNegativeXVJigLength, jigMaterial, input.fEnvelopeMaterial);
 
-        new G4PVPlacement(fmVertJigRotMtx, posXVJigTlate, posXVJigLV, "VerticalJigPV",
-                          envelopeLV, true, 0, fCheckOverlaps);
-        new G4PVPlacement(fmVertJigRotMtx, negXVJigTlate, negXVJigLV, "VerticalJigPV",
-                          envelopeLV, true, 1, fCheckOverlaps);
+        new G4PVPlacement(fmVertJigRotMtx, posXVJigTlate, posXVJigLV, "VerticalJigPV", envelopeLV,
+                          true, 0, fCheckOverlaps);
+        new G4PVPlacement(fmVertJigRotMtx, negXVJigTlate, negXVJigLV, "VerticalJigPV", envelopeLV,
+                          true, 1, fCheckOverlaps);
 
         G4ThreeVector posXTriBracketTlate = posXVJigTlate;
         G4ThreeVector negXTriBracketTlate = negXVJigTlate;
@@ -1644,8 +1644,7 @@ namespace bl10sim {
         G4VPhysicalVolume *ironcasePV = new G4PVPlacement(nullptr, {}, ironcaseLV, "WorldPV",
                                                           nullptr, false, 0, fCheckOverlaps);
 
-        G4LogicalVolume *labLV = FillIroncase(ironcaseLV);
-        PlaceBeamWindow(labLV);
+        G4LogicalVolume *labLV = FillExperimentalRoom(ironcaseLV);
 
         G4LogicalVolume *wbLV        = BuildWorkbench();
         G4ThreeVector samplePosition = PlaceWorkbench(labLV, wbLV);
