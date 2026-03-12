@@ -40,9 +40,9 @@ namespace bl10sim {
 
         G4LogicalVolume *BuildJig(G4double, G4Material *, G4Material *) const;
 
-        G4LogicalVolume *BuildMkII(G4Material *) const;
-        G4LogicalVolume *BuildRECBE(G4Material *) const;
-        G4LogicalVolume *BuildROESTI(G4Material *) const;
+        G4LogicalVolume *BuildMkII(G4Material *);
+        G4LogicalVolume *BuildRECBE(G4Material *);
+        G4LogicalVolume *BuildROESTI(G4Material *);
 
         void PlaceBeamWindow(G4LogicalVolume *labLV) const;
 
@@ -182,6 +182,10 @@ namespace bl10sim {
         G4double fROESTIFPGASubstrateThickness;
         G4double fROESTIFPGADieThickness;
         G4double fROESTIFPGASubstrateVHSize;
+
+        G4bool fMkIIBuilt;
+        G4bool fRECBEBuilt;
+        G4bool fROESTIBuilt;
 
         mutable G4int fJigCount;
     };

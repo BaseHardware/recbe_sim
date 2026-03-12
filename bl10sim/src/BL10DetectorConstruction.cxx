@@ -7,6 +7,7 @@
 #include "G4DisplacedSolid.hh"
 #include "G4ExtrudedSolid.hh"
 #include "G4LogicalVolume.hh"
+#include "G4LogicalVolumeStore.hh"
 #include "G4Material.hh"
 #include "G4NistManager.hh"
 #include "G4PVPlacement.hh"
@@ -24,7 +25,8 @@
 static const G4double booleanSolidTolerance = 200 * um;
 
 namespace bl10sim {
-    BL10DetectorConstruction::BL10DetectorConstruction() : fSimpleGeometry(false) {
+    BL10DetectorConstruction::BL10DetectorConstruction()
+        : fSimpleGeometry(false), fMkIIBuilt(false), fRECBEBuilt(false), fROESTIBuilt(false) {
         SetGeometryParameters();
         CalculateGeometrySubparameters();
     }
@@ -35,6 +37,9 @@ namespace bl10sim {
         nist->FindOrBuildMaterial("G4_Fe");
         nist->FindOrBuildMaterial("G4_Si");
         nist->FindOrBuildMaterial("G4_BORON_CARBIDE");
+
+        G4Material *matCu = nist->FindOrBuildMaterial("G4_Cu");
+        G4Material *matNi = nist->FindOrBuildMaterial("G4_Ni");
 
         // B4C material definition from the PHITS code for BL10.
         // Currently, commented out as we cannot believe this value
@@ -63,10 +68,6 @@ namespace bl10sim {
         G4Element *atomCa = nist->FindOrBuildElement("Ca");
         G4Element *atomB  = nist->FindOrBuildElement("B");
         G4Element *atomMg = nist->FindOrBuildElement("Mg");
-
-        // Copper from NIST DB
-        G4Material *matCu = nist->FindOrBuildMaterial("G4_Cu");
-        G4Material *matNi = nist->FindOrBuildMaterial("G4_Ni");
 
         G4Material *matDGEBA = new G4Material("DGEBA_Epoxy", 1.16 * g / cm3, 3);
         matDGEBA->AddElement(atomC, 21);
@@ -1058,7 +1059,6 @@ namespace bl10sim {
 
         G4LogicalVolume *jigLV     = new G4LogicalVolume(jigBox, aroundMaterial, envLVName);
         G4LogicalVolume *jigHoleLV = new G4LogicalVolume(jigHole, aroundMaterial, holeLVName);
-        jigLV->SetVisAttributes(G4VisAttributes::GetInvisible());
 
         new G4PVPlacement(nullptr, {}, jigHoleLV, "JigHolePV", jigLV, false, 0, fCheckOverlaps);
 
@@ -1091,7 +1091,11 @@ namespace bl10sim {
         return jigLV;
     }
 
-    G4LogicalVolume *BL10DetectorConstruction::BuildMkII(G4Material *aroundMaterial) const {
+    G4LogicalVolume *BL10DetectorConstruction::BuildMkII(G4Material *aroundMaterial) {
+        if (fMkIIBuilt) {
+            return G4LogicalVolumeStore::GetInstance()->GetVolume("MkIIEnvelopeLV");
+        }
+
         G4Material *matPCB = G4Material::GetMaterial("EffectivePCB");
         G4Material *matFR4 = G4Material::GetMaterial("FR4");
         G4Material *matSi  = G4Material::GetMaterial("G4_Si");
@@ -1147,10 +1151,15 @@ namespace bl10sim {
         new G4PVPlacement(nullptr, fpgaLidTlate, fpgaLidLV, "MkIIFPGALidPV", envelopeLV, false, 0,
                           fCheckOverlaps);
 
+        fMkIIBuilt = true;
         return envelopeLV;
     }
 
-    G4LogicalVolume *BL10DetectorConstruction::BuildRECBE(G4Material *aroundMaterial) const {
+    G4LogicalVolume *BL10DetectorConstruction::BuildRECBE(G4Material *aroundMaterial) {
+        if (fRECBEBuilt) {
+            return G4LogicalVolumeStore::GetInstance()->GetVolume("RECBEEnvelopeLV");
+        }
+
         G4Material *matPCB = G4Material::GetMaterial("EffectivePCB");
         G4Material *matFR4 = G4Material::GetMaterial("FR4");
         G4Material *matSi  = G4Material::GetMaterial("G4_Si");
@@ -1206,10 +1215,15 @@ namespace bl10sim {
         new G4PVPlacement(nullptr, fpgaLidTlate, fpgaLidLV, "RECBEFPGALidPV", envelopeLV, false, 0,
                           fCheckOverlaps);
 
+        fRECBEBuilt = true;
         return envelopeLV;
     }
 
-    G4LogicalVolume *BL10DetectorConstruction::BuildROESTI(G4Material *aroundMaterial) const {
+    G4LogicalVolume *BL10DetectorConstruction::BuildROESTI(G4Material *aroundMaterial) {
+        if (fROESTIBuilt) {
+            return G4LogicalVolumeStore::GetInstance()->GetVolume("ROESTIEnvelopeLV");
+        }
+
         G4Material *matPCB = G4Material::GetMaterial("EffectivePCB");
         G4Material *matFR4 = G4Material::GetMaterial("FR4");
         G4Material *matSi  = G4Material::GetMaterial("G4_Si");
@@ -1254,6 +1268,7 @@ namespace bl10sim {
         new G4PVPlacement(nullptr, fpgaDieTlate, fpgaLV, "ROESTIFPGADiePV", envelopeLV, false, 0,
                           fCheckOverlaps);
 
+        fROESTIBuilt = true;
         return envelopeLV;
     }
 
@@ -1319,20 +1334,18 @@ namespace bl10sim {
         new G4PVPlacement(nullptr, envelopeTlate, detectorEnvelopeLV, "DetectorEnvelopePV", labLV,
                           false, 0, fCheckOverlaps);
 
-        auto a = BuildMkII(labMaterial);
-        new G4PVPlacement(nullptr, {}, a, "test", labLV, false, 0, fCheckOverlaps);
-        // PlaceSamples(labLV, samplePosition);
-
         return ironcasePV;
     }
 
     void BL10DetectorConstruction::ConstructSDandField() {
-        G4String detectorSDName = "/SimpleSD";
+        G4String detectorSDName = "/FPGASD";
 
         simcore::TouchTriggerSD *ttsd = new simcore::TouchTriggerSD(detectorSDName);
         ttsd->SetRequireNonzeroEdep(false);
 
         G4SDManager::GetSDMpointer()->AddNewDetector(ttsd);
-        SetSensitiveDetector("DetectorLV", ttsd, true);
+        if (fMkIIBuilt) SetSensitiveDetector("MkIIFPGADieLV", ttsd, true);
+        if (fRECBEBuilt) SetSensitiveDetector("RECBEFPGADieLV", ttsd, true);
+        if (fROESTIBuilt) SetSensitiveDetector("ROESTIFPGADieLV", ttsd, true);
     }
 } // namespace bl10sim
