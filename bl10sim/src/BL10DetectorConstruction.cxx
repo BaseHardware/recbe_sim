@@ -871,34 +871,34 @@ namespace bl10sim {
         G4Material *frameMaterial = G4Material::GetMaterial("Stainless_Steel");
         G4Material *slitMaterial  = G4Material::GetMaterial("G4_BORON_CARBIDE");
 
-        G4Box *externalFrameBox = new G4Box("ExternalFrameBox", fESlitFrameWidth / 2.,
+        G4Box *externalFrameBox = new G4Box("RoomSlitExternalFrameBox", fESlitFrameWidth / 2.,
                                             fESlitFrameHeight / 2., fSlitFrameZLength / 2.);
         G4LogicalVolume *externalFrameLV =
-            new G4LogicalVolume(externalFrameBox, frameMaterial, "ExternalFrameLV");
+            new G4LogicalVolume(externalFrameBox, frameMaterial, "RoomSlitExternalFrameLV");
 
         G4Box *externalSpaceBox =
-            new G4Box("ExternalSpaceBox", fESlitFrameWidth / 2 - fESlitFrameThickness,
+            new G4Box("RoomSlitExternalSpaceBox", fESlitFrameWidth / 2 - fESlitFrameThickness,
                       fESlitFrameHeight / 2. - fESlitFrameThickness, fSlitFrameZLength / 2.);
         G4LogicalVolume *externalSpaceLV =
-            new G4LogicalVolume(externalSpaceBox, aroundMaterial, "ExternalSpaceLV");
+            new G4LogicalVolume(externalSpaceBox, aroundMaterial, "RoomSlitExternalSpaceLV");
 
-        new G4PVPlacement(nullptr, {}, externalSpaceLV, "ExternalSpacePV", externalFrameLV, false,
-                          0, fCheckOverlaps);
+        new G4PVPlacement(nullptr, {}, externalSpaceLV, "RoomSlitExternalSpacePV", externalFrameLV,
+                          false, 0, fCheckOverlaps);
 
-        G4Box *internalFrameBox = new G4Box("InternalFrameBox", fISlitFrameWidth / 2.,
+        G4Box *internalFrameBox = new G4Box("RoomSlitInternalFrameBox", fISlitFrameWidth / 2.,
                                             fISlitFrameHeight / 2., fSlitFrameZLength / 2.);
         G4LogicalVolume *internalFrameLV =
-            new G4LogicalVolume(internalFrameBox, frameMaterial, "InternalFrameLV");
-        new G4PVPlacement(nullptr, {}, internalFrameLV, "InternalFramePV", externalSpaceLV, false,
-                          0, fCheckOverlaps);
+            new G4LogicalVolume(internalFrameBox, frameMaterial, "RoomSlitInternalFrameLV");
+        new G4PVPlacement(nullptr, {}, internalFrameLV, "RoomSlitInternalFramePV", externalSpaceLV,
+                          false, 0, fCheckOverlaps);
 
         G4Box *internalSpaceBox =
-            new G4Box("InternalSpaceBox", fISlitFrameWidth / 2. - fISlitFrameThickness,
+            new G4Box("RoomSlitInternalSpaceBox", fISlitFrameWidth / 2. - fISlitFrameThickness,
                       fISlitFrameHeight / 2. - fISlitFrameThickness, fSlitFrameZLength / 2.);
         G4LogicalVolume *internalSpaceLV =
-            new G4LogicalVolume(internalSpaceBox, aroundMaterial, "InternalSpaceLV");
-        new G4PVPlacement(nullptr, {}, internalSpaceLV, "InternalSpacePV", internalFrameLV, false,
-                          0, fCheckOverlaps);
+            new G4LogicalVolume(internalSpaceBox, aroundMaterial, "RoomSlitInternalSpaceLV");
+        new G4PVPlacement(nullptr, {}, internalSpaceLV, "RoomSlitInternalSpacePV", internalFrameLV,
+                          false, 0, fCheckOverlaps);
 
         G4double slitVBoxWidth  = fISlitFrameWidth - 2 * fISlitFrameThickness - fSlitVSpace;
         G4double slitHBoxHeight = fISlitFrameHeight - 2 * fISlitFrameThickness - fSlitHSpace;
