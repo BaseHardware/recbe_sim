@@ -631,6 +631,10 @@ namespace bl10sim {
         G4Trd *labTrd = new G4Trd("LabTrd", labTrdWidthBeamside / 2., labTrdWidthDumpside / 2.,
                                   labTrdHeight / 2., labTrdHeight / 2., labTrdZLength / 2.);
 
+        G4Trd *labFeFlooringTrd =
+            new G4Trd("LabFeFlooringTrd", labTrdWidthBeamside / 2., labTrdWidthDumpside / 2.,
+                      fFeFlooringThickness / 2., fFeFlooringThickness / 2., labTrdZLength / 2.);
+
         // Copied from BuildBoronResincaseSolid()
         // (assuming beamside < dumpside)
         G4double boronResinZLength = fLabZLength + 2 * fBoronResinThickness + fIronThickness;
@@ -651,10 +655,6 @@ namespace bl10sim {
         G4Trd *labFloorTrd =
             new G4Trd("LabFloorTrd", boronResinWidthBeamside / 2., boronResinWidthDumpside / 2.,
                       fLabFloorSpace / 2., fLabFloorSpace / 2., boronResinZLength / 2.);
-
-        G4Trd *labFeFlooringTrd = new G4Trd("LabFeFlooringTrd", boronResinWidthBeamside / 2.,
-                                            boronResinWidthDumpside / 2., fFeFlooringThickness / 2.,
-                                            fFeFlooringThickness / 2., boronResinZLength / 2.);
 
         G4ThreeVector floorSpaceTlate = {0, 0, 0};
         // Moving the center of floor spaing to the bottom of lab
@@ -701,12 +701,11 @@ namespace bl10sim {
         ewCarverTlate += {0, 0, -fExitwallThickness / 2.};
 
         G4ThreeVector ltwfDisplacement = {0, 0, (fBoronResinThickness + fIronThickness) / 2.};
-        G4ThreeVector lfftDisplacement = ltwfDisplacement + floorTlateWOHeight;
 
         G4DisplacedSolid *displacedLTWF = new G4DisplacedSolid(
             "DisplacedLabFloorSolid", labTrdWithFloor, nullptr, ltwfDisplacement);
         G4DisplacedSolid *displacedLFFT = new G4DisplacedSolid(
-            "DisplacedLabFeFlooringTrd", labFeFlooringTrd, nullptr, lfftDisplacement);
+            "DisplacedLabFeFlooringTrd", labFeFlooringTrd, nullptr, ltwfDisplacement);
 
         G4SubtractionSolid *carvedLab = new G4SubtractionSolid(
             "LabWExitwallSSolid", displacedLTWF, exitwallCarverBox, nullptr, ewCarverTlate);
@@ -777,6 +776,7 @@ namespace bl10sim {
             new G4LogicalVolume(feFlooringSolid, matFe, "LabFlooringLV");
         new G4PVPlacement(nullptr, feFlooringTlate, feFlooringLV, "LabFlooringPV", labLV, false, 0,
                           fCheckOverlaps);
+        return labLV;
 
         G4Box *windowBox = new G4Box("BeamWindowBox", fBeamWindowWidth / 2., fBeamWindowHeight / 2.,
                                      fWindowThickness / 2.);
