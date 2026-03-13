@@ -548,6 +548,9 @@ namespace bl10sim {
 
         if (simple) return boronResinTrd;
 
+        G4DisplacedSolid *displacedBRTrd = new G4DisplacedSolid(
+            "BoronResinCaseDisplacedTrd", boronResinTrd, nullptr, {0, 0, fIronThickness / 2.});
+
         G4double ewCarverBoxWidth =
             fExitwallWidth - fExitwallBRDepth + fBoronResinThickness + booleanSolidTolerance * 2;
         G4double ewCarverBoxHeight    = fLabHeight + booleanSolidTolerance;
@@ -575,14 +578,11 @@ namespace bl10sim {
                                   (fExitwallDistance + fExitwallBRDepth + fBoronResinThickness),
                           0, 0};
         // Put the carver box to the innerside of room with consideration of tolerance.
-        ewCarverTlate += {ewCarverBoxWidth / 2. - booleanSolidTolerance, 0, 0};
+        ewCarverTlate += {ewCarverBoxWidth / 2. - 2 * booleanSolidTolerance, 0, 0};
         // Move the box to the center of exitwall
         ewCarverTlate += {0, 0, -fExitwallThickness / 2. + fExitwallBRDepth};
         // Make the carver cling to the bottom
         ewCarverTlate += {0, -fBoronResinThickness / 2. - booleanSolidTolerance / 2., 0};
-
-        G4DisplacedSolid *displacedBRTrd = new G4DisplacedSolid(
-            "BoronResinCaseDisplacedTrd", boronResinTrd, nullptr, {0, 0, fIronThickness / 2.});
 
         G4SubtractionSolid *carvedBRCase =
             new G4SubtractionSolid("BoronResinCaseWExitwallSSolid", displacedBRTrd,
@@ -606,7 +606,7 @@ namespace bl10sim {
         // Move +z to the +z-end of the Boron-resin solid with consideration of boolean tolerance
         eCarverTlate += {0, 0, boronResinZLength / 2. + booleanSolidTolerance / 2.};
         // Insert carver to -z to make the boron-resin+iron shield region
-        eCarverTlate += {0, 0, -exitpathCarverZLength / 2.};
+        eCarverTlate += {0, 0, -fIronThickness / 2.};
         // Move +x to make the exit path with consideration of boolean tolerance
         eCarverTlate += {fExitpathWidth / 2. + booleanSolidTolerance / 2., 0, 0};
         // Adding addition +x for the thickness of boron-resin layer
@@ -627,6 +627,14 @@ namespace bl10sim {
         G4double labTrdWidthBeamside = fLabWidthBeamside;
         G4double labTrdWidthDumpside =
             fLabWidthDumpside + ftLabWidthSlope * (fBoronResinThickness + fIronThickness);
+
+        if (booleanSolidTolerance >= fLabFloorSpace) {
+            G4ExceptionDescription msg;
+            msg << "The tolerance of boolean solids is too large (> fLabFloorSpace[="
+                << fLabFloorSpace / cm << " cm])!! The resultant solid may be inaccurate.";
+            G4Exception("BL10DetectorConstruction::BuildLabSolids", "BL10GeometryE0001",
+                        JustWarning, msg);
+        }
 
         G4Trd *labTrd = new G4Trd("LabTrd", labTrdWidthBeamside / 2., labTrdWidthDumpside / 2.,
                                   labTrdHeight / 2., labTrdHeight / 2., labTrdZLength / 2.);
@@ -664,16 +672,16 @@ namespace bl10sim {
 
         G4UnionSolid *labTrdWithFloor;
         if (simple) {
-            labTrdWithFloor = new G4UnionSolid("LabFloorSolid", displacedLabTrd, labFloorTrd,
-                                               nullptr, floorSpaceTlate);
+            labTrdWithFloor =
+                new G4UnionSolid("LabFloorSolid", labTrd, labFloorTrd, nullptr, floorSpaceTlate);
             feFlooringSolid = labFeFlooringTrd;
             return labTrdWithFloor;
         } else {
             // Compensating a tlanslation for the the iron case
             floorSpaceTlate += {0, 0, labTrdZLength / 2. - boronResinZLength / 2.};
 
-            labTrdWithFloor =
-                new G4UnionSolid("LabFloorSolid", labTrd, labFloorTrd, nullptr, floorSpaceTlate);
+            labTrdWithFloor = new G4UnionSolid("LabFloorSolid", displacedLabTrd, labFloorTrd,
+                                               nullptr, floorSpaceTlate);
         }
 
         G4double ewCarverBoxWidth =
@@ -731,7 +739,7 @@ namespace bl10sim {
         // Move +z to the +z-end of the labTrd solid with consideration of boolean tolerance
         eCarverTlate += {0, 0, labTrdZLength / 2. + booleanSolidTolerance / 2.};
         // Insert carver to -z to make the boron-resin+iron shield region
-        eCarverTlate += {0, 0, -exitpathCarverZLength / 2.};
+        eCarverTlate += {0, 0, -(fBoronResinThickness + fIronThickness) / 2.};
         // Move +x to make the exit path with consideration of boolean tolerance
         eCarverTlate += {fExitpathWidth / 2. + booleanSolidTolerance / 2., 0, 0};
         // Adding addition +x for the thickness of boron-resin layer
