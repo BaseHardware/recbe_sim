@@ -83,10 +83,17 @@ namespace bl10sim {
         G4VSolid *BuildLabSolid(G4bool) const;
 
         G4LogicalVolume *BuildIroncase() const;
-        G4LogicalVolume *FillExperimentalRoom(G4LogicalVolume *) const;
+        G4LogicalVolume *FillExperimentalRoom(G4LogicalVolume *ironcaseLV,
+                                              G4ThreeVector &workbenchCenter,
+                                              G4ThreeVector &wbCenterOnBeamAxis) const;
 
-        G4LogicalVolume *BuildWorkbench() const;
-        G4ThreeVector PlaceWorkbench(G4LogicalVolume *, G4LogicalVolume *) const;
+        G4LogicalVolume *BuildWorkbench(G4Material *aroundMaterial) const;
+        G4ThreeVector PlaceWorkbench(G4LogicalVolume *labLV) const;
+
+        void PlaceRoomSlit(G4LogicalVolume *labLV, const G4ThreeVector &smplPos) const;
+        G4LogicalVolume *BuildRoomSlit(G4Material *aroundMaterial) const;
+        G4LogicalVolume *BuildRoomSlitStand(G4Material *aroundMaterial) const;
+        G4LogicalVolume *BuildRoomSlitUpperStand(G4Material *aroundMaterial) const;
 
         G4LogicalVolume *BuildJig(G4double, G4Material *, G4Material *) const;
 
@@ -96,9 +103,7 @@ namespace bl10sim {
 
         G4LogicalVolume *BuildFrameBoardComplex(const FrameBoardComplexInfo &) const;
 
-        G4LogicalVolume *BuildFrameBoards(G4Material *) const;
-
-        void PlaceBasicComponents(G4LogicalVolume *labLV) const;
+        G4LogicalVolume *BuildFrameAndBoards(G4Material *) const;
 
         void PlaceSimpleNeutronFluxDetectors(G4LogicalVolume *labLV) const;
 
@@ -178,12 +183,38 @@ namespace bl10sim {
 
         G4double fWBZDistanceFromWall;
 
-        G4double fSampleZPosFromWBCenter;
-
         G4double fBeamWindowWidth;
         G4double fBeamWindowHeight;
 
         G4double fWindowThickness;
+
+        G4double fSlitFrameZLength;
+
+        G4double fESlitFrameWidth;
+        G4double fESlitFrameHeight;
+
+        G4double fISlitFrameWidth;
+        G4double fISlitFrameHeight;
+
+        G4double fESlitFrameThickness;
+        G4double fISlitFrameThickness;
+
+        G4double fSlitVSpace;
+        G4double fSlitHSpace;
+        G4double fSlitHVZSpace;
+
+        G4double fSlitThickness;
+        G4double fSlitZDistFromWall;
+
+        G4double fSlitStandHeight;
+        G4double fSlitStandWidth;
+        G4double fSlitStandZLength;
+        G4double fSlitStandThickness;
+
+        G4double fSlitUStandHeight;
+        G4double fSlitUStandZLength;
+        G4double fSlitUStandWidth;
+        G4double fSlitUStandThickness;
 
         G4double fJigVHSize;
         G4double fVJigType1Length;

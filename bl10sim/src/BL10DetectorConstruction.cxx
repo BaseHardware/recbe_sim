@@ -150,12 +150,38 @@ namespace bl10sim {
 
         fWBZDistanceFromWall = 10 * cm;
 
-        fSampleZPosFromWBCenter = 300 * mm;
-
         fBeamWindowWidth  = 47 * mm;
         fBeamWindowHeight = 10 * cm;
 
         fWindowThickness = 1 * nm;
+
+        fSlitFrameZLength = 10 * cm;
+
+        fESlitFrameWidth  = 50 * cm;
+        fESlitFrameHeight = 50 * cm;
+
+        fISlitFrameWidth  = 40 * cm;
+        fISlitFrameHeight = 40 * cm;
+
+        fESlitFrameThickness = 1.5 * cm;
+        fISlitFrameThickness = 1.5 * cm;
+
+        fSlitVSpace   = 10 * cm;
+        fSlitHSpace   = 10 * cm;
+        fSlitHVZSpace = 3 * cm;
+
+        fSlitThickness     = 0.5 * cm;
+        fSlitZDistFromWall = 17.5 * cm;
+
+        fSlitStandHeight    = 35 * cm;
+        fSlitStandWidth     = 60 * cm;
+        fSlitStandZLength   = 22 * cm;
+        fSlitStandThickness = 1 * mm;
+
+        fSlitUStandHeight    = 13 * cm;
+        fSlitUStandZLength   = 15 * cm;
+        fSlitUStandWidth     = 80 * cm;
+        fSlitUStandThickness = 2 * cm;
     }
 
     void BL10DetectorConstruction::SetBoardParameters() {
@@ -692,7 +718,10 @@ namespace bl10sim {
         return labWithExit;
     }
 
-    G4LogicalVolume *BL10DetectorConstruction::FillExperimentalRoom(G4LogicalVolume *lv) const {
+    G4LogicalVolume *
+        BL10DetectorConstruction::FillExperimentalRoom(G4LogicalVolume *ironcaseLV,
+                                                       G4ThreeVector &workbenchCenter,
+                                                       G4ThreeVector &wbCenterOnBeamAxis) const {
         G4Material *matB4C = G4Material::GetMaterial("G4_BORON_CARBIDE");
         G4Material *matAir = G4Material::GetMaterial("G4_AIR");
 
@@ -700,8 +729,8 @@ namespace bl10sim {
             BuildBoronResincaseSolid(fSimpleGeometry), matB4C, "BoronResinCaseLV");
         G4ThreeVector boronResinTlate = {
             0, -(fFloorThickness + fIronThickness) / 2. + fFloorThickness, 0};
-        new G4PVPlacement(nullptr, boronResinTlate, boronResinLV, "BoronResinCasePV", lv, false, 0,
-                          fCheckOverlaps);
+        new G4PVPlacement(nullptr, boronResinTlate, boronResinLV, "BoronResinCasePV", ironcaseLV,
+                          false, 0, fCheckOverlaps);
 
         G4LogicalVolume *labLV =
             new G4LogicalVolume(BuildLabSolid(fSimpleGeometry), matAir, "LabLV");
@@ -709,20 +738,155 @@ namespace bl10sim {
         new G4PVPlacement(nullptr, labTlate, labLV, "LabPV", boronResinLV, false, 0,
                           fCheckOverlaps);
 
-        PlaceBasicComponents(labLV);
+        G4Box *windowBox = new G4Box("BeamWindowBox", fBeamWindowWidth / 2., fBeamWindowHeight / 2.,
+                                     fWindowThickness / 2.);
+        G4LogicalVolume *windowLV = new G4LogicalVolume(windowBox, matAir, "BeamWindowLV");
+
+        G4ThreeVector windowTlate = {0, 0, 0};
+        // Move the beam window solid to the z-end of the lab
+        windowTlate += {0, 0, -fLabZLength / 2. + fWindowThickness / 2.};
+        // Move the beam window to the fBeamYDistanceFromFloor on the y-axis
+        windowTlate += {0, -fLabHeight / 2. + fBeamYDistanceFromFloor, 0};
+        // Move the beam window to the center of beamline
+        windowTlate += {fLabWidthBeamside / 2. - fBeamXDistanceFromWall, 0, 0};
+
+        new G4PVPlacement(nullptr, windowTlate, windowLV, "BeamWindowPV", labLV, false, 0,
+                          fCheckOverlaps);
+
+        workbenchCenter = PlaceWorkbench(labLV);
+        PlaceRoomSlit(labLV, workbenchCenter);
+        wbCenterOnBeamAxis = workbenchCenter;
+        wbCenterOnBeamAxis.setX(windowTlate.getX());
+        wbCenterOnBeamAxis.setY(windowTlate.getY());
 
         return labLV;
     }
 
-    G4LogicalVolume *BL10DetectorConstruction::BuildWorkbench() const {
-        G4Material *matAir = G4Material::GetMaterial("G4_AIR");
-        G4Material *matSS  = G4Material::GetMaterial("Stainless_Steel");
-        G4Material *matFe  = G4Material::GetMaterial("G4_Fe");
+    G4LogicalVolume *BL10DetectorConstruction::BuildRoomSlit(G4Material *aroundMaterial) const {
+        G4Material *frameMaterial = G4Material::GetMaterial("Stainless_Steel");
+        G4Material *slitMaterial  = G4Material::GetMaterial("G4_BORON_CARBIDE");
+
+        G4Box *externalFrameBox = new G4Box("ExternalFrameBox", fESlitFrameWidth / 2.,
+                                            fESlitFrameHeight / 2., fSlitFrameZLength / 2.);
+        G4LogicalVolume *externalFrameLV =
+            new G4LogicalVolume(externalFrameBox, frameMaterial, "ExternalFrameLV");
+
+        G4Box *externalSpaceBox =
+            new G4Box("ExternalSpaceBox", fESlitFrameWidth / 2 - fESlitFrameThickness,
+                      fESlitFrameHeight / 2. - fESlitFrameThickness, fSlitFrameZLength / 2.);
+        G4LogicalVolume *externalSpaceLV =
+            new G4LogicalVolume(externalSpaceBox, aroundMaterial, "ExternalSpaceLV");
+
+        new G4PVPlacement(nullptr, {}, externalSpaceLV, "ExternalSpacePV", externalFrameLV, false,
+                          0, fCheckOverlaps);
+
+        G4Box *internalFrameBox = new G4Box("InternalFrameBox", fISlitFrameWidth / 2.,
+                                            fISlitFrameHeight / 2., fSlitFrameZLength / 2.);
+        G4LogicalVolume *internalFrameLV =
+            new G4LogicalVolume(internalFrameBox, frameMaterial, "InternalFrameLV");
+        new G4PVPlacement(nullptr, {}, internalFrameLV, "InternalFramePV", externalSpaceLV, false,
+                          0, fCheckOverlaps);
+
+        G4Box *internalSpaceBox =
+            new G4Box("InternalSpaceBox", fISlitFrameWidth / 2. - fISlitFrameThickness,
+                      fISlitFrameHeight / 2. - fISlitFrameThickness, fSlitFrameZLength / 2.);
+        G4LogicalVolume *internalSpaceLV =
+            new G4LogicalVolume(internalSpaceBox, aroundMaterial, "InternalSpaceLV");
+        new G4PVPlacement(nullptr, {}, internalSpaceLV, "InternalSpacePV", internalFrameLV, false,
+                          0, fCheckOverlaps);
+
+        G4double slitVBoxWidth  = fISlitFrameWidth - 2 * fISlitFrameThickness - fSlitVSpace;
+        G4double slitHBoxHeight = fISlitFrameHeight - 2 * fISlitFrameThickness - fSlitHSpace;
+
+        G4Box *slitVerticalBox =
+            new G4Box("RoomSlitVerticalBox", slitVBoxWidth / 4.,
+                      fISlitFrameHeight / 2. - fISlitFrameThickness, fSlitThickness / 2.);
+        G4LogicalVolume *slitVerticalLV =
+            new G4LogicalVolume(slitVerticalBox, slitMaterial, "RoomSlitVerticalLV");
+
+        G4ThreeVector slitVTlatePosX = {fISlitFrameWidth / 2. - fISlitFrameThickness -
+                                            slitVBoxWidth / 4.,
+                                        0, fSlitThickness / 2. + fSlitHVZSpace / 2.};
+        G4ThreeVector slitVTlateNegX = {-fISlitFrameWidth / 2. + fISlitFrameThickness +
+                                            slitVBoxWidth / 4.,
+                                        0, fSlitThickness / 2. + fSlitHVZSpace / 2.};
+
+        new G4PVPlacement(nullptr, slitVTlatePosX, slitVerticalLV, "RoomSlitVerticalPV",
+                          internalSpaceLV, true, 0, fCheckOverlaps);
+        new G4PVPlacement(nullptr, slitVTlateNegX, slitVerticalLV, "RoomSlitVerticalPV",
+                          internalSpaceLV, true, 1, fCheckOverlaps);
+
+        G4Box *slitHorizontalBox =
+            new G4Box("RoomSlitHorizontalBox", fISlitFrameWidth / 2. - fISlitFrameThickness,
+                      slitHBoxHeight / 4., fSlitThickness / 2.);
+
+        G4LogicalVolume *slitHorizontalLV =
+            new G4LogicalVolume(slitHorizontalBox, slitMaterial, "RoomSlitHorizontalLV");
+
+        G4ThreeVector slitHTlatePosX = {
+            0, fISlitFrameHeight / 2. - fISlitFrameThickness - slitHBoxHeight / 4,
+            -fSlitThickness / 2. - fSlitHVZSpace / 2.};
+        G4ThreeVector slitHTlateNegX = {
+            0, -fISlitFrameHeight / 2. + fISlitFrameThickness + slitHBoxHeight / 4,
+            -fSlitThickness / 2. - fSlitHVZSpace / 2.};
+
+        new G4PVPlacement(nullptr, slitHTlatePosX, slitHorizontalLV, "RoomSlitHorizontalPV",
+                          internalSpaceLV, true, 0, fCheckOverlaps);
+        new G4PVPlacement(nullptr, slitHTlateNegX, slitHorizontalLV, "RoomSlitHorizontalPV",
+                          internalSpaceLV, true, 1, fCheckOverlaps);
+
+        return externalFrameLV;
+    }
+
+    G4LogicalVolume *
+        BL10DetectorConstruction::BuildRoomSlitStand(G4Material *aroundMaterial) const {
+        G4Material *matFe = G4Material::GetMaterial("G4_Fe");
+
+        G4Box *slitStandBox          = new G4Box("RoomSlitStandBox", fSlitStandWidth / 2.,
+                                                 fSlitStandHeight / 2., fSlitStandZLength / 2.);
+        G4LogicalVolume *slitStandLV = new G4LogicalVolume(slitStandBox, matFe, "RoomSlitStandLV");
+
+        G4Box *slitStandSpaceBox =
+            new G4Box("RoomSlitStandSpaceBox", fSlitStandWidth / 2. - fSlitStandThickness,
+                      fSlitStandHeight / 2. - fSlitStandThickness,
+                      fSlitStandZLength / 2. - fSlitStandThickness);
+
+        G4LogicalVolume *slitStandSpaceLV =
+            new G4LogicalVolume(slitStandSpaceBox, aroundMaterial, "RoomSlitStandSpaceLV");
+        new G4PVPlacement(nullptr, {}, slitStandSpaceLV, "RoomSlitStandSpacePV", slitStandLV, false,
+                          0, fCheckOverlaps);
+
+        return slitStandLV;
+    }
+    G4LogicalVolume *
+        BL10DetectorConstruction::BuildRoomSlitUpperStand(G4Material *aroundMaterial) const {
+        G4Material *matSS = G4Material::GetMaterial("Stainless_Steel");
+
+        G4Box *slitUpperStandBox = new G4Box("RoomSlitUpperStandBox", fSlitUStandWidth / 2.,
+                                             fSlitUStandHeight / 2., fSlitUStandZLength / 2.);
+        G4LogicalVolume *slitUpperStandLV =
+            new G4LogicalVolume(slitUpperStandBox, matSS, "RoomSlitUpperStandLV");
+
+        G4Box *slitUpperStandSpaceBox =
+            new G4Box("RoomSlitUpperStandBox", fSlitUStandWidth / 2. - fSlitUStandThickness,
+                      fSlitUStandHeight / 2. - fSlitUStandThickness,
+                      fSlitUStandZLength / 2. - fSlitUStandThickness);
+
+        G4LogicalVolume *slitUpperStandSpaceLV = new G4LogicalVolume(
+            slitUpperStandSpaceBox, aroundMaterial, "RoomSlitUpperStandSpaceLV");
+        new G4PVPlacement(nullptr, {}, slitUpperStandSpaceLV, "RoomSlitUpperStandPV",
+                          slitUpperStandLV, false, 0, fCheckOverlaps);
+        return slitUpperStandLV;
+    }
+
+    G4LogicalVolume *BL10DetectorConstruction::BuildWorkbench(G4Material *aroundMaterial) const {
+        G4Material *matSS = G4Material::GetMaterial("Stainless_Steel");
+        G4Material *matFe = G4Material::GetMaterial("G4_Fe");
 
         G4Box *envelopeBox = new G4Box("WorkbenchEnvelopeBox", ftWBEnvelopeWidth / 2.,
                                        ftWBEnvelopeHeight / 2., ftWBEnvelopeZLength / 2.);
         G4LogicalVolume *envelopeLV =
-            new G4LogicalVolume(envelopeBox, matAir, "WorkbenchEnvelopeLV");
+            new G4LogicalVolume(envelopeBox, aroundMaterial, "WorkbenchEnvelopeLV");
 
         G4Box *plateBox          = new G4Box("WBPlateBox", fWorkbenchPlateWidth / 2.,
                                              fWorkbenchPlateThickness / 2., fWorkbenchPlateLength / 2.);
@@ -1047,9 +1211,10 @@ namespace bl10sim {
         return envelopeLV;
     }
 
-    G4ThreeVector BL10DetectorConstruction::PlaceWorkbench(G4LogicalVolume *labLV,
-                                                           G4LogicalVolume *wbLV) const {
+    G4ThreeVector BL10DetectorConstruction::PlaceWorkbench(G4LogicalVolume *labLV) const {
         G4Material *matFe = G4Material::GetMaterial("G4_Fe");
+
+        G4LogicalVolume *wbLV = BuildWorkbench(labLV->GetMaterial());
 
         G4ThreeVector wbTlate = {0, 0, 0};
 
@@ -1090,27 +1255,35 @@ namespace bl10sim {
         new G4PVPlacement(wbBoltRotMtx, wbTlate - wbBoltXTlate + wbBoltYTlate - wbBoltZTlate,
                           wbBoltLV, "WBLevelingBoltPV", labLV, true, 3, fCheckOverlaps);
 
-        G4ThreeVector samplePosition{0, ftWBEnvelopeHeight / 2., fSampleZPosFromWBCenter};
-        samplePosition += wbTlate;
-        return samplePosition;
+        G4ThreeVector workbenchCenter{0, ftWBEnvelopeHeight / 2., 0};
+        workbenchCenter += wbTlate;
+        return workbenchCenter;
     }
 
-    void BL10DetectorConstruction::PlaceBasicComponents(G4LogicalVolume *labLV) const {
+    void BL10DetectorConstruction::PlaceRoomSlit(G4LogicalVolume *labLV,
+                                                 const G4ThreeVector &smplPos) const {
         G4Material *labMaterial = labLV->GetMaterial();
 
-        G4Box *windowBox = new G4Box("BeamWindowBox", fBeamWindowWidth / 2., fBeamWindowHeight / 2.,
-                                     fWindowThickness / 2.);
-        G4LogicalVolume *windowLV = new G4LogicalVolume(windowBox, labMaterial, "BeamWindowLV");
+        G4LogicalVolume *roomSlitLV       = BuildRoomSlit(labMaterial);
+        G4LogicalVolume *slitStandLV      = BuildRoomSlitStand(labMaterial);
+        G4LogicalVolume *slitUpperStandLV = BuildRoomSlitUpperStand(labMaterial);
 
-        G4ThreeVector windowTlate = {0, 0, 0};
-        // Move the beam window solid to the z-end of the lab
-        windowTlate += {0, 0, -fLabZLength / 2. + fWindowThickness / 2.};
-        // Move the beam window to the fBeamYDistanceFromFloor on the y-axis
-        windowTlate += {0, -fLabHeight / 2. + fBeamYDistanceFromFloor, 0};
-        // Move the beam window to the center of beamline
-        windowTlate += {fLabWidthBeamside / 2. - fBeamXDistanceFromWall, 0, 0};
+        G4ThreeVector slitStandTlate = smplPos;
+        slitStandTlate.setX(0);
 
-        new G4PVPlacement(nullptr, windowTlate, windowLV, "BeamWindowPV", labLV, false, 0,
+        slitStandTlate += {fLabWidthBeamside / 2. - fBeamXDistanceFromWall, fSlitStandHeight / 2.,
+                           -fWorkbenchPlateLength / 2. + fSlitStandZLength / 2.};
+        new G4PVPlacement(nullptr, slitStandTlate, slitStandLV, "RoomSlitStandPV", labLV, false, 0,
+                          fCheckOverlaps);
+
+        G4ThreeVector roomSlitUpperStandTlate = slitStandTlate;
+        roomSlitUpperStandTlate += {0, fSlitStandHeight / 2. + fSlitUStandHeight / 2., 0};
+        new G4PVPlacement(nullptr, roomSlitUpperStandTlate, slitUpperStandLV,
+                          "RoomSlitUpperStandPV", labLV, false, 0, fCheckOverlaps);
+
+        G4ThreeVector roomSlitTlate = roomSlitUpperStandTlate;
+        roomSlitTlate += {0, fSlitUStandHeight / 2. + fESlitFrameHeight / 2., 0};
+        new G4PVPlacement(nullptr, roomSlitTlate, roomSlitLV, "RoomSlitPV", labLV, false, 0,
                           fCheckOverlaps);
     }
 
@@ -1376,17 +1549,18 @@ namespace bl10sim {
         return envelopeLV;
     }
 
-    G4LogicalVolume *BL10DetectorConstruction::BuildFrameBoards(G4Material *aroundMaterial) const {
+    G4LogicalVolume *
+        BL10DetectorConstruction::BuildFrameAndBoards(G4Material *aroundMaterial) const {
         G4Material *jigMaterial = G4Material::GetMaterial("Stainless_Steel");
 
         G4double envelopeHeight  = std::max(fVJigType1Length, fVJigType2Length) + fJigVHSize * 2;
         G4double envelopeWidth   = fFrameWidth;
         G4double envelopeZLength = fFrameLength;
 
-        G4Box *envelopeBox = new G4Box("FrameEnvelopeBox", envelopeWidth / 2., envelopeHeight / 2.,
-                                       envelopeZLength / 2.);
+        G4Box *envelopeBox = new G4Box("FrameBoardsEnvelopeBox", envelopeWidth / 2.,
+                                       envelopeHeight / 2., envelopeZLength / 2.);
         G4LogicalVolume *envelopeLV =
-            new G4LogicalVolume(envelopeBox, aroundMaterial, "FrameEnvelopeLV");
+            new G4LogicalVolume(envelopeBox, aroundMaterial, "FrameBoardsEnvelopeLV");
         envelopeLV->SetVisAttributes(G4VisAttributes::GetInvisible());
 
         G4LogicalVolume *baseJigLV = BuildJig(fFrameLength, jigMaterial, aroundMaterial);
@@ -1446,11 +1620,10 @@ namespace bl10sim {
                 G4ExceptionDescription msg;
                 msg << "The type of envelope for the given geometry is not G4Box, which is not "
                        "supported.";
-                G4Exception("BL10DetectorConstruction::BuildFrameBoards", "BL10GeometryE0010",
+                G4Exception("BL10DetectorConstruction::BuildFrameAndBoards", "BL10GeometryE0010",
                             FatalException, msg);
                 return nullptr;
             }
-            G4double nowFBCWidth   = nowFBCBox->GetXHalfLength() * 2.;
             G4double nowFBCHeight  = nowFBCBox->GetYHalfLength() * 2.;
             G4double nowFBCZLength = nowFBCBox->GetZHalfLength() * 2.;
 
@@ -1640,19 +1813,20 @@ namespace bl10sim {
         }
         simcore::MetadataManager::GetInstance().SetGeometryType(geomType);
 
+        G4ThreeVector workbenchCenter, wbCenterOnBeamAxis;
+
         G4LogicalVolume *ironcaseLV   = BuildIroncase();
         G4VPhysicalVolume *ironcasePV = new G4PVPlacement(nullptr, {}, ironcaseLV, "WorldPV",
                                                           nullptr, false, 0, fCheckOverlaps);
 
-        G4LogicalVolume *labLV = FillExperimentalRoom(ironcaseLV);
-
-        G4LogicalVolume *wbLV        = BuildWorkbench();
-        G4ThreeVector samplePosition = PlaceWorkbench(labLV, wbLV);
+        G4LogicalVolume *labLV =
+            FillExperimentalRoom(ironcaseLV, workbenchCenter, wbCenterOnBeamAxis);
 
         G4Material *labMaterial = labLV->GetMaterial();
 
-        G4LogicalVolume *a = BuildFrameBoards(labMaterial);
-        new G4PVPlacement(nullptr, {}, a, "Test", labLV, false, 0, fCheckOverlaps);
+        G4LogicalVolume *expSetup = BuildFrameAndBoards(labMaterial);
+        new G4PVPlacement(nullptr, wbCenterOnBeamAxis, expSetup, "FrameBoardsPV", labLV, false, 0,
+                          fCheckOverlaps);
 
         return ironcasePV;
     }
