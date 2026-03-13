@@ -36,7 +36,7 @@
 // ROESTI는 L자 브라켓 세 개로 고정된거 같음. 어떻게 된건지 조사
 // 지그 아래쪽 바 길이 및 뒷쪽 고정바 길이/위치
 
-static const G4double booleanSolidTolerance = 200 * um;
+static const G4double booleanSolidTolerance = 24 * cm;
 
 namespace bl10sim {
     BL10DetectorConstruction::BL10DetectorConstruction()
@@ -108,7 +108,7 @@ namespace bl10sim {
         fBeamXDistanceFromWall  = 75 * cm;
 
         fBoronResinThickness = 20 * cm;
-        fIronThickness       = 10 * cm;
+        fIronThickness       = 30 * cm;
         fFloorThickness      = 10 * cm;
         fFeFlooringThickness = 7 * cm;
 
@@ -558,8 +558,9 @@ namespace bl10sim {
         G4DisplacedSolid *displacedBRTrd = new G4DisplacedSolid(
             "BoronResinCaseDisplacedTrd", boronResinTrd, nullptr, {0, 0, fIronThickness / 2.});
 
-        G4double ewCarverBoxWidth =
-            fExitwallWidth - fExitwallBRDepth + fBoronResinThickness + booleanSolidTolerance * 2;
+        G4double ewCarverBoxWidth = (fExitwallWidth - ftLabWidthSlope / 2. * fExitwallBRDepth) +
+                                    fBoronResinThickness - fExitwallBRDepth +
+                                    booleanSolidTolerance * 2;
         G4double ewCarverBoxHeight    = fLabHeight + booleanSolidTolerance;
         G4double ewCarverBoxThickness = fExitwallThickness - 2 * fExitwallBRDepth;
 
@@ -580,9 +581,9 @@ namespace bl10sim {
         // Move the center to the +z edge of exitwall iron shield (inside the boron-resin shield)
         ewCarverTlate += {0, 0, -fExitwallDistance - fExitwallBRDepth - fBoronResinThickness};
         // Move the center to the x-border of exitwall
-        ewCarverTlate += {-boronResinWidthDumpside / 2. +
+        ewCarverTlate += {-boronResinWidthAtOrigDumpBoundary / 2. +
                               ftLabWidthSlope / 2. *
-                                  (fExitwallDistance + fExitwallBRDepth + fBoronResinThickness),
+                                  (fExitwallBRDepth + fExitwallDistance + fBoronResinThickness),
                           0, 0};
         // Put the carver box to the innerside of room with consideration of tolerance.
         ewCarverTlate += {ewCarverBoxWidth / 2. - 2 * booleanSolidTolerance, 0, 0};
