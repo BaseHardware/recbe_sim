@@ -22,6 +22,20 @@
 #include <map>
 #include <vector>
 
+// TODO list:
+// 빔덤프 구현할 것
+// TODO measurement:
+// 빔 구멍에서 잭까지 얼마나 떨어져있는가?
+// 잭의 끝이랑 프레임의 끝은 일치하는가? 그렇지 않다면 얼마나 떨어져있는가?
+// 작업대 (Workbench) 높이. (작업대 높이에서 빔 구멍까지의 거리가 시뮬이랑 맞는지 확인하기 위함.)
+// 빔 구멍 크기
+// 오른쪽 벽에서부터 빔 구멍 '중심' 까지의 거리
+// 바닥에서부터 빔 구멍 '중심' 까지의 거리
+// 잭 높이
+// 잭 크기
+// ROESTI는 L자 브라켓 세 개로 고정된거 같음. 어떻게 된건지 조사
+// 지그 아래쪽 바 길이 및 뒷쪽 고정바 길이/위치
+
 static const G4double booleanSolidTolerance = 200 * um;
 
 namespace bl10sim {
@@ -95,6 +109,7 @@ namespace bl10sim {
         fBoronResinThickness = 20 * cm;
         fIronThickness       = 10 * cm;
         fFloorThickness      = 10 * cm;
+        fFeFlooringThickness = 7 * cm;
 
         fLabHeight        = 3.0 * m;
         fLabZLength       = 3.5 * m;
@@ -155,33 +170,33 @@ namespace bl10sim {
 
         fWindowThickness = 1 * nm;
 
+        // Resolved
         fSlitFrameZLength = 10 * cm;
 
-        fESlitFrameWidth  = 50 * cm;
-        fESlitFrameHeight = 50 * cm;
-
+        fESlitFrameWidth  = 52 * cm;
+        fESlitFrameHeight = 52 * cm;
         fISlitFrameWidth  = 40 * cm;
         fISlitFrameHeight = 40 * cm;
 
-        fESlitFrameThickness = 1.5 * cm;
-        fISlitFrameThickness = 1.5 * cm;
-
-        fSlitVSpace   = 10 * cm;
-        fSlitHSpace   = 10 * cm;
-        fSlitHVZSpace = 3 * cm;
+        fESlitFrameThickness = 2 * cm;
+        fISlitFrameThickness = 2 * cm;
 
         fSlitThickness     = 0.5 * cm;
         fSlitZDistFromWall = 17.5 * cm;
 
-        fSlitStandHeight    = 35 * cm;
-        fSlitStandWidth     = 60 * cm;
-        fSlitStandZLength   = 22 * cm;
+        fSlitHVZSpace = 4 * cm;
+        fSlitVSpace   = 10 * cm;
+        fSlitHSpace   = 10 * cm;
+
+        fSlitStandHeight    = 30 * cm;
+        fSlitStandWidth     = 56 * cm;
+        fSlitStandZLength   = 25 * cm;
         fSlitStandThickness = 1 * mm;
 
-        fSlitUStandHeight    = 13 * cm;
-        fSlitUStandZLength   = 15 * cm;
-        fSlitUStandWidth     = 80 * cm;
-        fSlitUStandThickness = 2 * cm;
+        fSlitUStandHeight    = 10 * cm;
+        fSlitUStandZLength   = 17.5 * cm;
+        fSlitUStandWidth     = 75 * cm;
+        fSlitUStandThickness = 3 * cm;
     }
 
     void BL10DetectorConstruction::SetBoardParameters() {
@@ -605,7 +620,8 @@ namespace bl10sim {
         return brCaseWithExit;
     }
 
-    G4VSolid *BL10DetectorConstruction::BuildLabSolid(G4bool simple) const {
+    G4VSolid *BL10DetectorConstruction::BuildLabSolids(G4bool simple,
+                                                       G4VSolid *&feFlooringSolid) const {
         G4double labTrdZLength       = fLabZLength + fBoronResinThickness + fIronThickness;
         G4double labTrdHeight        = fLabHeight - booleanSolidTolerance;
         G4double labTrdWidthBeamside = fLabWidthBeamside;
@@ -636,6 +652,10 @@ namespace bl10sim {
             new G4Trd("LabFloorTrd", boronResinWidthBeamside / 2., boronResinWidthDumpside / 2.,
                       fLabFloorSpace / 2., fLabFloorSpace / 2., boronResinZLength / 2.);
 
+        G4Trd *labFeFlooringTrd = new G4Trd("LabFeFlooringTrd", boronResinWidthBeamside / 2.,
+                                            boronResinWidthDumpside / 2., fFeFlooringThickness / 2.,
+                                            fFeFlooringThickness / 2., boronResinZLength / 2.);
+
         G4ThreeVector floorSpaceTlate = {0, 0, 0};
         // Moving the center of floor spaing to the bottom of lab
         floorSpaceTlate += {0, -fLabHeight / 2., 0};
@@ -646,6 +666,7 @@ namespace bl10sim {
         if (simple) {
             labTrdWithFloor = new G4UnionSolid("LabFloorSolid", displacedLabTrd, labFloorTrd,
                                                nullptr, floorSpaceTlate);
+            feFlooringSolid = labFeFlooringTrd;
             return labTrdWithFloor;
         } else {
             // Compensating a tlanslation for the the iron case
@@ -654,6 +675,8 @@ namespace bl10sim {
             labTrdWithFloor =
                 new G4UnionSolid("LabFloorSolid", labTrd, labFloorTrd, nullptr, floorSpaceTlate);
         }
+        G4ThreeVector floorTlateWOHeight = floorSpaceTlate;
+        floorTlateWOHeight.setY(0);
 
         G4double ewCarverBoxWidth =
             fExitwallWidth + fBoronResinThickness + booleanSolidTolerance * 2;
@@ -677,12 +700,19 @@ namespace bl10sim {
         // Move the box to the center of exitwall
         ewCarverTlate += {0, 0, -fExitwallThickness / 2.};
 
-        G4DisplacedSolid *displacedLTWF =
-            new G4DisplacedSolid("DisplacedLabFloorSolid", labTrdWithFloor, nullptr,
-                                 {0, 0, (fBoronResinThickness + fIronThickness) / 2.});
+        G4ThreeVector ltwfDisplacement = {0, 0, (fBoronResinThickness + fIronThickness) / 2.};
+        G4ThreeVector lfftDisplacement = ltwfDisplacement + floorTlateWOHeight;
+
+        G4DisplacedSolid *displacedLTWF = new G4DisplacedSolid(
+            "DisplacedLabFloorSolid", labTrdWithFloor, nullptr, ltwfDisplacement);
+        G4DisplacedSolid *displacedLFFT = new G4DisplacedSolid(
+            "DisplacedLabFeFlooringTrd", labFeFlooringTrd, nullptr, lfftDisplacement);
 
         G4SubtractionSolid *carvedLab = new G4SubtractionSolid(
             "LabWExitwallSSolid", displacedLTWF, exitwallCarverBox, nullptr, ewCarverTlate);
+        G4SubtractionSolid *carvedFeFlooringSolid =
+            new G4SubtractionSolid("LabFeFlooringWExitwallSSolid", displacedLFFT, exitwallCarverBox,
+                                   nullptr, ewCarverTlate);
 
         G4double exitpathCarverHeight = fLabHeight + 2 * booleanSolidTolerance;
         G4double exitpathCarverZLength =
@@ -714,6 +744,8 @@ namespace bl10sim {
 
         G4SubtractionSolid *labWithExit = new G4SubtractionSolid(
             "LabWExitSolid", carvedLab, exitpathCarver, nullptr, eCarverTlate);
+        feFlooringSolid = new G4SubtractionSolid("LabFeFlooringWExitSolid", carvedFeFlooringSolid,
+                                                 exitpathCarver, nullptr, eCarverTlate);
 
         return labWithExit;
     }
@@ -724,6 +756,7 @@ namespace bl10sim {
                                                        G4ThreeVector &wbCenterOnBeamAxis) const {
         G4Material *matB4C = G4Material::GetMaterial("G4_BORON_CARBIDE");
         G4Material *matAir = G4Material::GetMaterial("G4_AIR");
+        G4Material *matFe  = G4Material::GetMaterial("G4_Fe");
 
         G4LogicalVolume *boronResinLV = new G4LogicalVolume(
             BuildBoronResincaseSolid(fSimpleGeometry), matB4C, "BoronResinCaseLV");
@@ -732,10 +765,17 @@ namespace bl10sim {
         new G4PVPlacement(nullptr, boronResinTlate, boronResinLV, "BoronResinCasePV", ironcaseLV,
                           false, 0, fCheckOverlaps);
 
+        G4VSolid *feFlooringSolid;
         G4LogicalVolume *labLV =
-            new G4LogicalVolume(BuildLabSolid(fSimpleGeometry), matAir, "LabLV");
+            new G4LogicalVolume(BuildLabSolids(fSimpleGeometry, feFlooringSolid), matAir, "LabLV");
         G4ThreeVector labTlate = {0, -fBoronResinThickness / 2., 0};
         new G4PVPlacement(nullptr, labTlate, labLV, "LabPV", boronResinLV, false, 0,
+                          fCheckOverlaps);
+
+        G4ThreeVector feFlooringTlate = {0, -fLabHeight / 2. + fFeFlooringThickness / 2., 0};
+        G4LogicalVolume *feFlooringLV =
+            new G4LogicalVolume(feFlooringSolid, matFe, "LabFlooringLV");
+        new G4PVPlacement(nullptr, feFlooringTlate, feFlooringLV, "LabFlooringPV", labLV, false, 0,
                           fCheckOverlaps);
 
         G4Box *windowBox = new G4Box("BeamWindowBox", fBeamWindowWidth / 2., fBeamWindowHeight / 2.,
@@ -1221,7 +1261,7 @@ namespace bl10sim {
         // Move the workbench to the center of beamline
         wbTlate += {+fLabWidthBeamside / 2. - fBeamXDistanceFromWall, 0, 0};
         // Move the workbench to the earth
-        wbTlate += {0, -fLabHeight / 2. + ftWBEnvelopeHeight / 2., 0};
+        wbTlate += {0, -fLabHeight / 2. + fFeFlooringThickness + ftWBEnvelopeHeight / 2., 0};
         // Move the workbench to the beamside wall of lab
         wbTlate += {0, 0, -fLabZLength / 2. + ftWBEnvelopeZLength / 2};
         // Move the workbench to match the distance from wall
@@ -1880,7 +1920,7 @@ namespace bl10sim {
         G4String detectorSDName = "/FPGASD";
 
         simcore::TouchTriggerSD *ttsd = new simcore::TouchTriggerSD(detectorSDName);
-        ttsd->SetRequireNonzeroEdep(false);
+        ttsd->SetRequireNonzeroEdep(true);
 
         G4SDManager::GetSDMpointer()->AddNewDetector(ttsd);
         if (fMkIIBuilt) SetSensitiveDetector("MkIIFPGADieLV", ttsd, true);

@@ -79,8 +79,8 @@ namespace bl10sim {
         void SetBoardParameters();
         void SetJigFrameParameters();
 
-        G4VSolid *BuildBoronResincaseSolid(G4bool) const;
-        G4VSolid *BuildLabSolid(G4bool) const;
+        G4VSolid *BuildBoronResincaseSolid(G4bool simple) const;
+        G4VSolid *BuildLabSolids(G4bool simple, G4VSolid *&feFloorSolid) const;
 
         G4LogicalVolume *BuildIroncase() const;
         G4LogicalVolume *FillExperimentalRoom(G4LogicalVolume *ironcaseLV,
@@ -128,6 +128,7 @@ namespace bl10sim {
         G4double fBoronResinThickness;
         G4double fIronThickness;
         G4double fFloorThickness;
+        G4double fFeFlooringThickness;
 
         G4double fLabHeight;
         G4double fLabZLength;
