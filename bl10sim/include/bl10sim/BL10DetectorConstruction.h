@@ -95,6 +95,8 @@ namespace bl10sim {
         G4LogicalVolume *BuildRoomSlitStand(G4Material *aroundMaterial) const;
         G4LogicalVolume *BuildRoomSlitUpperStand(G4Material *aroundMaterial) const;
 
+        G4LogicalVolume* BuildBeamductPipe(const G4String& namePrefix, G4double length) const;
+
         G4LogicalVolume *BuildJig(G4double, G4Material *, G4Material *) const;
 
         G4LogicalVolume *BuildMkII(G4Material *) const;
@@ -142,6 +144,12 @@ namespace bl10sim {
         G4double fExitwallBRDepth;
 
         G4double fExitpathWidth;
+
+        G4double fBeamductPipeORadius;
+        G4double fBeamductPipeIRadius;
+        G4double fBeamductProtrusionLength;
+        G4double fBeamductEndplateRadius;
+        G4double fBeamductEndplateThickness;
 
         G4double fWorkbenchPlateWidth;
         G4double fWorkbenchPlateLength;

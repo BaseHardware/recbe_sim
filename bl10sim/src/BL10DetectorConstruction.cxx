@@ -52,6 +52,7 @@ namespace bl10sim {
         nist->FindOrBuildMaterial("G4_Fe");
         nist->FindOrBuildMaterial("G4_Si");
         nist->FindOrBuildMaterial("G4_BORON_CARBIDE");
+        nist->FindOrBuildMaterial("G4_Galactic");
 
         G4Material *matCu = nist->FindOrBuildMaterial("G4_Cu");
         G4Material *matNi = nist->FindOrBuildMaterial("G4_Ni");
@@ -123,6 +124,12 @@ namespace bl10sim {
         fExitwallBRDepth   = 10 * cm;
 
         fExitpathWidth = 60 * cm;
+
+        fBeamductPipeORadius       = 16 * cm;
+        fBeamductPipeIRadius       = 13.5 * cm;
+        fBeamductProtrusionLength  = 12 * cm;
+        fBeamductEndplateRadius    = 18 * cm;
+        fBeamductEndplateThickness = 0.5 * cm;
 
         fWorkbenchPlateWidth     = 1000 * mm;
         fWorkbenchPlateLength    = 2000 * mm;
@@ -762,6 +769,7 @@ namespace bl10sim {
         G4Material *matB4C = G4Material::GetMaterial("G4_BORON_CARBIDE");
         G4Material *matAir = G4Material::GetMaterial("G4_AIR");
         G4Material *matFe  = G4Material::GetMaterial("G4_Fe");
+        G4Material *matSS  = G4Material::GetMaterial("Stainless_Steel");
 
         G4LogicalVolume *boronResinLV = new G4LogicalVolume(
             BuildBoronResincaseSolid(fSimpleGeometry), matB4C, "BoronResinCaseLV");
@@ -782,7 +790,6 @@ namespace bl10sim {
             new G4LogicalVolume(feFlooringSolid, matFe, "LabFlooringLV");
         new G4PVPlacement(nullptr, feFlooringTlate, feFlooringLV, "LabFlooringPV", labLV, false, 0,
                           fCheckOverlaps);
-        return labLV;
 
         G4Box *windowBox = new G4Box("BeamWindowBox", fBeamWindowWidth / 2., fBeamWindowHeight / 2.,
                                      fWindowThickness / 2.);
@@ -799,6 +806,34 @@ namespace bl10sim {
         new G4PVPlacement(nullptr, windowTlate, windowLV, "BeamWindowPV", labLV, false, 0,
                           fCheckOverlaps);
 
+        G4ThreeVector iDuctTlate = windowTlate + labTlate + boronResinTlate;
+        iDuctTlate.setZ(fLabZLength / 2. + fBoronResinThickness + fIronThickness / 2.);
+        G4LogicalVolume *iDuctLV = BuildBeamductPipe("Ironcase", fIronThickness);
+        new G4PVPlacement(nullptr, iDuctTlate, iDuctLV, "IroncaseBeamductPipePV", ironcaseLV, false,
+                          0, fCheckOverlaps);
+
+        G4ThreeVector brDuctTlate = windowTlate + labTlate;
+        brDuctTlate.setZ(fLabZLength / 2. + fBoronResinThickness / 2.);
+        G4LogicalVolume *brDuctLV = BuildBeamductPipe("BoronResin", fBoronResinThickness);
+        new G4PVPlacement(nullptr, brDuctTlate, brDuctLV, "BoronResinBeamductPV", boronResinLV,
+                          false, 0, fCheckOverlaps);
+
+        G4ThreeVector lDuctTlate = windowTlate;
+        lDuctTlate.setZ(fLabZLength / 2. - fBeamductProtrusionLength / 2.);
+        G4LogicalVolume *lDuctLV = BuildBeamductPipe("Lab", fBeamductProtrusionLength);
+        new G4PVPlacement(nullptr, lDuctTlate, lDuctLV, "LabBeamductPV", labLV, false, 0,
+                          fCheckOverlaps);
+
+        G4ThreeVector lDuctEndplateTlate = lDuctTlate;
+        lDuctEndplateTlate +=
+            {0, 0, -fBeamductProtrusionLength / 2. - fBeamductEndplateThickness / 2.};
+        G4Tubs *lDuctEndplateTubs = new G4Tubs("LabBeamductEndplateTub", 0, fBeamductEndplateRadius,
+                                               fBeamductEndplateThickness / 2., 0, 360 * deg);
+        G4LogicalVolume *lDuctEndplateLV =
+            new G4LogicalVolume(lDuctEndplateTubs, matSS, "LabBeamductEndplateLV");
+        new G4PVPlacement(nullptr, lDuctEndplateTlate, lDuctEndplateLV, "LabBeamductEndplatePV",
+                          labLV, false, 0, fCheckOverlaps);
+
         workbenchCenter = PlaceWorkbench(labLV);
         PlaceRoomSlit(labLV, workbenchCenter);
         wbCenterOnBeamAxis = workbenchCenter;
@@ -806,6 +841,29 @@ namespace bl10sim {
         wbCenterOnBeamAxis.setY(windowTlate.getY());
 
         return labLV;
+    }
+
+    G4LogicalVolume *BL10DetectorConstruction::BuildBeamductPipe(const G4String &namePrefix,
+                                                                 G4double length) const {
+        G4LogicalVolume *ductLV =
+            G4LogicalVolumeStore::GetInstance()->GetVolume(namePrefix + "BeamductPipeLV", false);
+        if (ductLV != nullptr) return ductLV;
+
+        G4Material *matSS  = G4Material::GetMaterial("Stainless_Steel");
+        G4Material *matVac = G4Material::GetMaterial("G4_Galactic");
+
+        G4Tubs *ductPipeTub = new G4Tubs(namePrefix + "BeamductPipeTub", 0, fBeamductPipeORadius,
+                                         length / 2., 0, 360 * deg);
+        ductLV = new G4LogicalVolume(ductPipeTub, matSS, namePrefix + "BeamductPipeLV");
+
+        G4Tubs *ductVacuumTub = new G4Tubs(namePrefix + "BeamductVacuumTub", 0,
+                                           fBeamductPipeIRadius, length / 2., 0, 360 * deg);
+        G4LogicalVolume *ductVacuumLV =
+            new G4LogicalVolume(ductVacuumTub, matVac, namePrefix + "BeamductVacuumLV");
+        new G4PVPlacement(nullptr, {}, ductVacuumLV, namePrefix + "BeamductVacuumPV", ductLV, false,
+                          0, fCheckOverlaps);
+
+        return ductLV;
     }
 
     G4LogicalVolume *BL10DetectorConstruction::BuildRoomSlit(G4Material *aroundMaterial) const {
@@ -1871,8 +1929,8 @@ namespace bl10sim {
         G4Material *labMaterial = labLV->GetMaterial();
 
         G4LogicalVolume *expSetup = BuildFrameAndBoards(labMaterial);
-        new G4PVPlacement(nullptr, wbCenterOnBeamAxis, expSetup, "FrameBoardsPV", labLV, false, 0,
-                          fCheckOverlaps);
+        new G4PVPlacement(nullptr, wbCenterOnBeamAxis, expSetup, "ExperimentalSetupPV", labLV,
+                          false, 0, fCheckOverlaps);
 
         return ironcasePV;
     }
