@@ -675,8 +675,6 @@ namespace bl10sim {
             labTrdWithFloor =
                 new G4UnionSolid("LabFloorSolid", labTrd, labFloorTrd, nullptr, floorSpaceTlate);
         }
-        G4ThreeVector floorTlateWOHeight = floorSpaceTlate;
-        floorTlateWOHeight.setY(0);
 
         G4double ewCarverBoxWidth =
             fExitwallWidth + fBoronResinThickness + booleanSolidTolerance * 2;
