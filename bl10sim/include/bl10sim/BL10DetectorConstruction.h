@@ -62,8 +62,8 @@ namespace bl10sim {
       public:
         BL10DetectorConstruction();
         virtual ~BL10DetectorConstruction() override {
-            delete fmHoriJigRotMtx;
-            delete fmVertJigRotMtx;
+            delete ftSimpleRotMtxX90Deg;
+            delete ftSimpleRotMtxY90Deg;
         };
 
       public:
@@ -95,7 +95,7 @@ namespace bl10sim {
         G4LogicalVolume *BuildRoomSlitStand(G4Material *aroundMaterial) const;
         G4LogicalVolume *BuildRoomSlitUpperStand(G4Material *aroundMaterial) const;
 
-        G4LogicalVolume* BuildBeamductPipe(const G4String& namePrefix, G4double length) const;
+        G4LogicalVolume *BuildBeamductPipe(const G4String &namePrefix, G4double length) const;
 
         G4LogicalVolume *BuildJig(G4double, G4Material *, G4Material *) const;
 
@@ -113,6 +113,9 @@ namespace bl10sim {
 
       private:
         G4bool fSimpleGeometry;
+
+        G4RotationMatrix *ftSimpleRotMtxY90Deg;
+        G4RotationMatrix *ftSimpleRotMtxX90Deg;
 
         G4double ftLabWidthSlope;
         G4double ftWBEnvelopeWidth;
@@ -285,7 +288,13 @@ namespace bl10sim {
 
         G4double fFrameWidth;
         G4double fFrameLength;
+        G4double fRearFrameLength;
         G4double fFirstJigZOffset;
+
+        G4double fJackWidth;
+        G4double fJackZLength;
+        G4double fJackHeight;
+        G4double fJackThickness;
 
         G4double fTriangleBracketSize;
 
@@ -306,9 +315,6 @@ namespace bl10sim {
         mutable G4bool fMkIIBuilt;
         mutable G4bool fRECBEBuilt;
         mutable G4bool fROESTIBuilt;
-
-        mutable G4RotationMatrix *fmHoriJigRotMtx = nullptr;
-        mutable G4RotationMatrix *fmVertJigRotMtx = nullptr;
     };
 } // namespace bl10sim
 #endif

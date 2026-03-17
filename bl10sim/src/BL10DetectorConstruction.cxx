@@ -22,28 +22,19 @@
 #include <map>
 #include <vector>
 
-// TODO list:
-// 빔덤프 구현할 것
-// TODO measurement:
-// 빔 구멍에서 잭까지 얼마나 떨어져있는가?
-// 잭의 끝이랑 프레임의 끝은 일치하는가? 그렇지 않다면 얼마나 떨어져있는가?
-// 작업대 (Workbench) 높이. (작업대 높이에서 빔 구멍까지의 거리가 시뮬이랑 맞는지 확인하기 위함.)
-// 빔 구멍 크기
-// 오른쪽 벽에서부터 빔 구멍 '중심' 까지의 거리
-// 바닥에서부터 빔 구멍 '중심' 까지의 거리
-// 잭 높이
-// 잭 크기
-// ROESTI는 L자 브라켓 세 개로 고정된거 같음. 어떻게 된건지 조사
-// 지그 아래쪽 바 길이 및 뒷쪽 고정바 길이/위치
-
-static const G4double booleanSolidTolerance = 24 * cm;
+static const G4double booleanSolidTolerance = 5 * cm;
 
 namespace bl10sim {
     BL10DetectorConstruction::BL10DetectorConstruction()
-        : fSimpleGeometry(false), fMkIIBuilt(false), fRECBEBuilt(false), fROESTIBuilt(false),
-          fmHoriJigRotMtx(nullptr), fmVertJigRotMtx(nullptr) {
+        : fSimpleGeometry(false), fMkIIBuilt(false), fRECBEBuilt(false), fROESTIBuilt(false) {
         SetGeometryParameters();
         CalculateGeometrySubparameters();
+
+        ftSimpleRotMtxX90Deg = new G4RotationMatrix();
+        ftSimpleRotMtxY90Deg = new G4RotationMatrix();
+
+        ftSimpleRotMtxX90Deg->rotateX(90 * deg);
+        ftSimpleRotMtxY90Deg->rotateY(90 * deg);
     }
 
     void BL10DetectorConstruction::DefineMaterials() {
@@ -152,8 +143,8 @@ namespace bl10sim {
         fWBPipeEndplate2Length   = 320 * mm;
         fWBPipeEndplate3Length   = 155 * mm;
 
-        fWBVertPipeLength     = 900 * mm;
-        fWBZDiagPipeLength    = 950 * mm;
+        fWBVertPipeLength     = 1000 * mm;
+        fWBZDiagPipeLength    = 1000 * mm;
         fWBXDiagPipeLength    = 630 * mm;
         fWBVertPipeRadius     = 115 * mm / 2.;
         fWBZDiagPipeRadius    = 65 * mm / 2.;
@@ -162,8 +153,8 @@ namespace bl10sim {
         fWBZDiagPipeThickness = 3 * mm;
         fWBXDiagPipeThickness = 3 * mm;
 
-        fWBZDiagPipeAngle     = 45 * deg;
-        fWBXDiagPipeAngle     = 30 * deg;
+        fWBZDiagPipeAngle     = 40 * deg;
+        fWBXDiagPipeAngle     = 20 * deg;
         fWBZDiagPipeYDistance = 55 * mm;
         fWBXDiagPipeYDistance = 190 * mm;
 
@@ -195,7 +186,7 @@ namespace bl10sim {
         fSlitVSpace   = 10 * cm;
         fSlitHSpace   = 10 * cm;
 
-        fSlitStandHeight    = 30 * cm;
+        fSlitStandHeight    = 20 * cm;
         fSlitStandWidth     = 56 * cm;
         fSlitStandZLength   = 25 * cm;
         fSlitStandThickness = 1 * mm;
@@ -271,11 +262,17 @@ namespace bl10sim {
 
         fFirstJigZOffset = 0 * mm;
 
-        fVJigType1Length = 25 * cm;
-        fVJigType2Length = 35 * cm;
+        fVJigType1Length = 30 * cm;
+        fVJigType2Length = 34 * cm;
 
-        fFrameWidth  = 30 * cm;
-        fFrameLength = 100 * cm;
+        fFrameWidth      = 30 * cm;
+        fFrameLength     = 80 * cm;
+        fRearFrameLength = 75 * cm;
+
+        fJackWidth     = 40 * cm;
+        fJackZLength   = 75 * cm;
+        fJackHeight    = 36 * cm;
+        fJackThickness = 2 * mm;
 
         fTriangleBracketSize = 1.5 * cm;
 
@@ -636,7 +633,7 @@ namespace bl10sim {
         G4double labTrdWidthDumpside =
             fLabWidthDumpside + ftLabWidthSlope * (fBoronResinThickness + fIronThickness);
 
-        if (booleanSolidTolerance >= fLabFloorSpace) {
+        if (booleanSolidTolerance >= fLabFloorSpace / 2.) {
             G4ExceptionDescription msg;
             msg << "The tolerance of boolean solids is too large (> fLabFloorSpace[="
                 << fLabFloorSpace / cm << " cm])!! The resultant solid may be inaccurate.";
@@ -1034,12 +1031,9 @@ namespace bl10sim {
         G4ThreeVector xMinussideZHBeamTlate = xPlussideZHBeamTlate;
         xMinussideZHBeamTlate[G4ThreeVector::X] *= -1;
 
-        G4RotationMatrix *xSupportHBeamRotMtx = new G4RotationMatrix();
-        xSupportHBeamRotMtx->rotateY(90 * deg);
-
-        new G4PVPlacement(xSupportHBeamRotMtx, beamsideYHBeamTlate, xSupportHBeamLV,
+        new G4PVPlacement(ftSimpleRotMtxY90Deg, beamsideYHBeamTlate, xSupportHBeamLV,
                           "WBXSupportHBeamPV", envelopeLV, true, 0, fCheckOverlaps);
-        new G4PVPlacement(xSupportHBeamRotMtx, dumpsideYHBeamTlate, xSupportHBeamLV,
+        new G4PVPlacement(ftSimpleRotMtxY90Deg, dumpsideYHBeamTlate, xSupportHBeamLV,
                           "WBXSupportHBeamPV", envelopeLV, true, 1, fCheckOverlaps);
         new G4PVPlacement(nullptr, xPlussideZHBeamTlate, zSupportHBeamLV, "WBZSuppoerHBeamPV",
                           envelopeLV, true, 0, fCheckOverlaps);
@@ -1102,17 +1096,14 @@ namespace bl10sim {
         G4ThreeVector vpDumpsideTlate = {0, 0,
                                          ftWBEnvelopeZLength / 2. - fWBPipeEndplate1Length / 2.};
 
-        G4RotationMatrix *wbVertPipeRotMtx = new G4RotationMatrix();
-        wbVertPipeRotMtx->rotateX(90 * deg);
-
-        new G4PVPlacement(wbVertPipeRotMtx, vpXTlate + vpYTlate + vpBeamsideTlate, wbVertPipeLV,
+        new G4PVPlacement(ftSimpleRotMtxX90Deg, vpXTlate + vpYTlate + vpBeamsideTlate, wbVertPipeLV,
                           "WBVertPipePV", envelopeLV, true, 0, fCheckOverlaps);
-        new G4PVPlacement(wbVertPipeRotMtx, -vpXTlate + vpYTlate + vpBeamsideTlate, wbVertPipeLV,
-                          "WBVertPipePV", envelopeLV, true, 1, fCheckOverlaps);
-        new G4PVPlacement(wbVertPipeRotMtx, vpXTlate + vpYTlate + vpDumpsideTlate, wbVertPipeLV,
+        new G4PVPlacement(ftSimpleRotMtxX90Deg, -vpXTlate + vpYTlate + vpBeamsideTlate,
+                          wbVertPipeLV, "WBVertPipePV", envelopeLV, true, 1, fCheckOverlaps);
+        new G4PVPlacement(ftSimpleRotMtxX90Deg, vpXTlate + vpYTlate + vpDumpsideTlate, wbVertPipeLV,
                           "WBVertPipePV", envelopeLV, true, 2, fCheckOverlaps);
-        new G4PVPlacement(wbVertPipeRotMtx, -vpXTlate + vpYTlate + vpDumpsideTlate, wbVertPipeLV,
-                          "WBVertPipePV", envelopeLV, true, 3, fCheckOverlaps);
+        new G4PVPlacement(ftSimpleRotMtxX90Deg, -vpXTlate + vpYTlate + vpDumpsideTlate,
+                          wbVertPipeLV, "WBVertPipePV", envelopeLV, true, 3, fCheckOverlaps);
 
         G4ThreeVector bottomEndplateXTlate = vpTopEndplateXTlate;
         G4ThreeVector bottomEndplateYTlate = {
@@ -1154,35 +1145,32 @@ namespace bl10sim {
         zdpBottomEndplateDumpsideTlate +=
             {0, 0, -fWBVertPipeRadius - fWBPipeEndplateThickness / 2.};
 
-        G4RotationMatrix *zdpBottomRotMtx = new G4RotationMatrix();
-        zdpBottomRotMtx->rotateX(90 * deg);
-
         new G4PVPlacement(
-            zdpBottomRotMtx,
+            ftSimpleRotMtxX90Deg,
             zdpBottomEndplateXTlate + zdpBottomEndplateYTlate + zdpBottomEndplateBeamsideTlate,
             wbPipeEndplate3LV, "WBZDiagPipeBotEndplatePV", envelopeLV, true, 0, fCheckOverlaps);
         new G4PVPlacement(
-            zdpBottomRotMtx,
+            ftSimpleRotMtxX90Deg,
             -zdpBottomEndplateXTlate + zdpBottomEndplateYTlate + zdpBottomEndplateBeamsideTlate,
             wbPipeEndplate3LV, "WBZDiagPipeBotEndplatePV", envelopeLV, true, 1, fCheckOverlaps);
         new G4PVPlacement(
-            zdpBottomRotMtx,
+            ftSimpleRotMtxX90Deg,
             zdpBottomEndplateXTlate + zdpBottomEndplateYTlate + zdpBottomEndplateDumpsideTlate,
             wbPipeEndplate3LV, "WBZDiagPipeBotEndplatePV", envelopeLV, true, 2, fCheckOverlaps);
         new G4PVPlacement(
-            zdpBottomRotMtx,
+            ftSimpleRotMtxX90Deg,
             -zdpBottomEndplateXTlate + zdpBottomEndplateYTlate + zdpBottomEndplateDumpsideTlate,
             wbPipeEndplate3LV, "WBZDiagPipeBotEndplatePV", envelopeLV, true, 3, fCheckOverlaps);
 
-        G4ThreeVector zdpBeamsideTlate = {0, fWBZDiagPipeLength / 2. + fWBZDiagPipeRadius * 1.5, 0};
-        G4ThreeVector zdpDumpsideTlate = {0, fWBZDiagPipeLength / 2. + fWBZDiagPipeRadius * 1.5, 0};
+        G4ThreeVector zdpBeamsideTlate = {0, fWBZDiagPipeLength / 2. + fWBZDiagPipeRadius * 3, 0};
+        G4ThreeVector zdpDumpsideTlate = {0, fWBZDiagPipeLength / 2. + fWBZDiagPipeRadius * 3, 0};
         zdpBeamsideTlate.rotateX(fWBZDiagPipeAngle);
         zdpDumpsideTlate.rotateX(-fWBZDiagPipeAngle);
 
         G4RotationMatrix *zdpBeamsideRotMtx = new G4RotationMatrix();
-        zdpBeamsideRotMtx->rotateX(fWBZDiagPipeAngle);
+        zdpBeamsideRotMtx->rotateX(90 * deg - fWBZDiagPipeAngle);
         G4RotationMatrix *zdpDumpsideRotMtx = new G4RotationMatrix();
-        zdpDumpsideRotMtx->rotateX(-fWBZDiagPipeAngle);
+        zdpDumpsideRotMtx->rotateX(-(90 * deg - fWBZDiagPipeAngle));
 
         new G4PVPlacement(zdpBeamsideRotMtx,
                           zdpBottomEndplateXTlate + zdpBottomEndplateYTlate +
@@ -1258,10 +1246,10 @@ namespace bl10sim {
             -xdpBottomEndplateXTlate + xdpBottomEndplateYTlate + xdpBottomEndplateDumpsideTlate,
             wbPipeEndplate3LV, "WBXDiagPipeBotEndplatePV", envelopeLV, true, 3, fCheckOverlaps);
 
-        G4ThreeVector xdpXPlussideTlate = {0, fWBXDiagPipeLength / 2. + fWBXDiagPipeRadius * 2.5,
+        G4ThreeVector xdpXPlussideTlate = {0, fWBXDiagPipeLength / 2. + fWBXDiagPipeRadius * 3.5,
                                            0};
         xdpXPlussideTlate.rotateZ(-fWBXDiagPipeAngle);
-        G4ThreeVector xdpXMinussideTlate = {0, fWBXDiagPipeLength / 2. + fWBXDiagPipeRadius * 2.5,
+        G4ThreeVector xdpXMinussideTlate = {0, fWBXDiagPipeLength / 2. + fWBXDiagPipeRadius * 3.5,
                                             0};
         xdpXMinussideTlate.rotateZ(fWBXDiagPipeAngle);
 
@@ -1339,9 +1327,6 @@ namespace bl10sim {
             "WBLevelingBoltSolid", ftLevelingBoltPoints, fWBLevelingBoltThickness / 2.);
         G4LogicalVolume *wbBoltLV = new G4LogicalVolume(wbBoltSolid, matFe, "WBLevelingBoltLV");
 
-        G4RotationMatrix *wbBoltRotMtx = new G4RotationMatrix();
-        wbBoltRotMtx->rotateX(90 * deg);
-
         G4ThreeVector wbBoltXTlate = {-ftWBEnvelopeWidth / 2. + fWBLevelingBoltSize / 2. +
                                           fWorkbenchPlateOuterMargin + fWorkbenchPlateInnerMargin,
                                       0, 0};
@@ -1351,14 +1336,18 @@ namespace bl10sim {
                                       -ftWBEnvelopeZLength / 2. + fWBLevelingBoltSize / 2. +
                                           fWorkbenchPlateOuterMargin + fWorkbenchPlateInnerMargin};
 
-        new G4PVPlacement(wbBoltRotMtx, wbTlate + wbBoltXTlate + wbBoltYTlate + wbBoltZTlate,
-                          wbBoltLV, "WBLevelingBoltPV", labLV, true, 0, fCheckOverlaps);
-        new G4PVPlacement(wbBoltRotMtx, wbTlate - wbBoltXTlate + wbBoltYTlate + wbBoltZTlate,
-                          wbBoltLV, "WBLevelingBoltPV", labLV, true, 1, fCheckOverlaps);
-        new G4PVPlacement(wbBoltRotMtx, wbTlate + wbBoltXTlate + wbBoltYTlate - wbBoltZTlate,
-                          wbBoltLV, "WBLevelingBoltPV", labLV, true, 2, fCheckOverlaps);
-        new G4PVPlacement(wbBoltRotMtx, wbTlate - wbBoltXTlate + wbBoltYTlate - wbBoltZTlate,
-                          wbBoltLV, "WBLevelingBoltPV", labLV, true, 3, fCheckOverlaps);
+        new G4PVPlacement(ftSimpleRotMtxX90Deg,
+                          wbTlate + wbBoltXTlate + wbBoltYTlate + wbBoltZTlate, wbBoltLV,
+                          "WBLevelingBoltPV", labLV, true, 0, fCheckOverlaps);
+        new G4PVPlacement(ftSimpleRotMtxX90Deg,
+                          wbTlate - wbBoltXTlate + wbBoltYTlate + wbBoltZTlate, wbBoltLV,
+                          "WBLevelingBoltPV", labLV, true, 1, fCheckOverlaps);
+        new G4PVPlacement(ftSimpleRotMtxX90Deg,
+                          wbTlate + wbBoltXTlate + wbBoltYTlate - wbBoltZTlate, wbBoltLV,
+                          "WBLevelingBoltPV", labLV, true, 2, fCheckOverlaps);
+        new G4PVPlacement(ftSimpleRotMtxX90Deg,
+                          wbTlate - wbBoltXTlate + wbBoltYTlate - wbBoltZTlate, wbBoltLV,
+                          "WBLevelingBoltPV", labLV, true, 3, fCheckOverlaps);
 
         G4ThreeVector workbenchCenter{0, ftWBEnvelopeHeight / 2., 0};
         workbenchCenter += wbTlate;
@@ -1656,6 +1645,10 @@ namespace bl10sim {
 
     G4LogicalVolume *
         BL10DetectorConstruction::BuildFrameAndBoards(G4Material *aroundMaterial) const {
+        G4LogicalVolume *fbeLV =
+            G4LogicalVolumeStore::GetInstance()->GetVolume("FrameBoardsEnvelopeLV", false);
+        if (fbeLV != nullptr) return fbeLV;
+
         G4Material *jigMaterial = G4Material::GetMaterial("Stainless_Steel");
 
         G4double envelopeHeight  = std::max(fVJigType1Length, fVJigType2Length) + fJigVHSize * 2;
@@ -1679,12 +1672,6 @@ namespace bl10sim {
                           fCheckOverlaps);
         new G4PVPlacement(nullptr, baseJig2Tlate, baseJigLV, "BaseJigPV", envelopeLV, true, 1,
                           fCheckOverlaps);
-
-        G4RotationMatrix *hJigRotMtx = new G4RotationMatrix();
-        G4RotationMatrix *vJigRotMtx = new G4RotationMatrix();
-
-        hJigRotMtx->rotateY(90 * deg);
-        vJigRotMtx->rotateX(90 * deg);
 
         G4double firstJigZPos = -envelopeZLength / 2. + fFirstJigZOffset;
 
@@ -1747,14 +1734,6 @@ namespace bl10sim {
         static std::map<FrameBoardComplexInfo, G4LogicalVolume *> sFBCplxLVCache;
         static G4LogicalVolume *sTriangleBracketLV = nullptr;
         static G4LogicalVolume *sLShapeBracketLV   = nullptr;
-
-        if (fmHoriJigRotMtx == nullptr) {
-            fmHoriJigRotMtx = new G4RotationMatrix();
-            fmVertJigRotMtx = new G4RotationMatrix();
-
-            fmHoriJigRotMtx->rotateY(90. * deg);
-            fmVertJigRotMtx->rotateX(90. * deg);
-        }
 
         auto findres = sFBCplxLVCache.find(input);
         if (findres != sFBCplxLVCache.end()) return findres->second;
@@ -1822,8 +1801,8 @@ namespace bl10sim {
         G4ThreeVector hJigTlate = {0, -envelopeHeight / 2. + fJigVHSize / 2.,
                                    -envelopeZLength / 2. + fJigVHSize / 2.};
 
-        new G4PVPlacement(fmHoriJigRotMtx, hJigTlate, hJigLV, "HorizontalJigPV", envelopeLV, false,
-                          0, fCheckOverlaps);
+        new G4PVPlacement(ftSimpleRotMtxY90Deg, hJigTlate, hJigLV, "HorizontalJigPV", envelopeLV,
+                          false, 0, fCheckOverlaps);
 
         G4ThreeVector hJigVBXDisplace         = {envelopeWidth / 2. - fJigVHSize / 2., 0, 0};
         G4ThreeVector hJigTriBracketBaseTlate = hJigTlate;
@@ -1886,10 +1865,10 @@ namespace bl10sim {
         G4LogicalVolume *negXVJigLV =
             BuildJig(input.fNegativeXVJigLength, jigMaterial, input.fEnvelopeMaterial);
 
-        new G4PVPlacement(fmVertJigRotMtx, posXVJigTlate, posXVJigLV, "VerticalJigPV", envelopeLV,
-                          true, 0, fCheckOverlaps);
-        new G4PVPlacement(fmVertJigRotMtx, negXVJigTlate, negXVJigLV, "VerticalJigPV", envelopeLV,
-                          true, 1, fCheckOverlaps);
+        new G4PVPlacement(ftSimpleRotMtxX90Deg, posXVJigTlate, posXVJigLV, "VerticalJigPV",
+                          envelopeLV, true, 0, fCheckOverlaps);
+        new G4PVPlacement(ftSimpleRotMtxX90Deg, negXVJigTlate, negXVJigLV, "VerticalJigPV",
+                          envelopeLV, true, 1, fCheckOverlaps);
 
         G4ThreeVector posXTriBracketTlate = posXVJigTlate;
         G4ThreeVector negXTriBracketTlate = negXVJigTlate;
@@ -1900,9 +1879,9 @@ namespace bl10sim {
         negXTriBracketTlate += {fJigVHSize / 2. + fTriangleBracketSize / 2., 0, 0};
         negXTriBracketTlate += {0, -input.fNegativeXVJigLength / 2. + fTriangleBracketSize / 2., 0};
 
-        new G4PVPlacement(fmHoriJigRotMtx, posXTriBracketTlate, sTriangleBracketLV,
+        new G4PVPlacement(ftSimpleRotMtxY90Deg, posXTriBracketTlate, sTriangleBracketLV,
                           "TriangleBracketPV", envelopeLV, true, 2, fCheckOverlaps);
-        new G4PVPlacement(fmHoriJigRotMtx, negXTriBracketTlate, sTriangleBracketLV,
+        new G4PVPlacement(ftSimpleRotMtxY90Deg, negXTriBracketTlate, sTriangleBracketLV,
                           "TriangleBracketPV", envelopeLV, true, 3, fCheckOverlaps);
 
         sFBCplxLVCache[input] = envelopeLV;
@@ -1927,11 +1906,51 @@ namespace bl10sim {
         G4LogicalVolume *labLV =
             FillExperimentalRoom(ironcaseLV, workbenchCenter, wbCenterOnBeamAxis);
 
+        G4Material *matFe       = G4Material::GetMaterial("G4_Fe");
+        G4Material *jigMaterial = G4Material::GetMaterial("Stainless_Steel");
         G4Material *labMaterial = labLV->GetMaterial();
 
+        G4Box *jackBox = new G4Box("JackBox", fJackWidth / 2., fJackHeight / 2., fJackZLength / 2.);
+        G4LogicalVolume *jackLV = new G4LogicalVolume(jackBox, matFe, "JackLV");
+
+        G4Box *jackISpaceBox =
+            new G4Box("JackInnerSpaceBox", fJackWidth / 2. - fJackThickness,
+                      fJackHeight / 2. - fJackThickness, fJackZLength / 2. - fJackThickness);
+        G4LogicalVolume *jackISpaceLV =
+            new G4LogicalVolume(jackISpaceBox, labMaterial, "JackInnerSpaceLV");
+        new G4PVPlacement(nullptr, {}, jackISpaceLV, "JackInnerSpacePV", jackLV, false, 0,
+                          fCheckOverlaps);
+
+        G4ThreeVector jackTlate = workbenchCenter;
+        jackTlate += {0, fJackHeight / 2., 0};
+        new G4PVPlacement(nullptr, jackTlate, jackLV, "JackPV", labLV, false, 0, fCheckOverlaps);
+
         G4LogicalVolume *expSetup = BuildFrameAndBoards(labMaterial);
-        new G4PVPlacement(nullptr, wbCenterOnBeamAxis, expSetup, "ExperimentalSetupPV", labLV,
-                          false, 0, fCheckOverlaps);
+        G4Box *expEnvBox          = dynamic_cast<G4Box *>(expSetup->GetSolid());
+        if (expEnvBox == nullptr) {
+            G4ExceptionDescription msg;
+            msg << "The type of envelope for the given geometry is not G4Box, which is not "
+                   "supported.";
+            G4Exception("BL10DetectorConstruction::DefineVolumes", "BL10GeometryE0010",
+                        FatalException, msg);
+            return nullptr;
+        }
+
+        G4double setupEnvHeight  = expEnvBox->GetYHalfLength() * 2.;
+        G4double setupEnvZLength = expEnvBox->GetZHalfLength() * 2.;
+
+        G4ThreeVector setupTlate = jackTlate;
+        setupTlate += {0, fJackHeight / 2. + setupEnvHeight / 2.,
+                       fJackZLength / 2. - setupEnvZLength / 2. - fJigVHSize};
+        new G4PVPlacement(nullptr, setupTlate, expSetup, "ExperimentalSetupPV", labLV, false, 0,
+                          fCheckOverlaps);
+
+        G4LogicalVolume *baseRareJigLV = BuildJig(fRearFrameLength, jigMaterial, labMaterial);
+        G4ThreeVector baseRareJigTlate = setupTlate;
+        baseRareJigTlate +=
+            {0, -setupEnvHeight / 2. + fJigVHSize / 2., setupEnvZLength / 2. + fJigVHSize / 2.};
+        new G4PVPlacement(ftSimpleRotMtxY90Deg, baseRareJigTlate, baseRareJigLV, "BaseJigPV", labLV,
+                          true, 2, fCheckOverlaps);
 
         return ironcasePV;
     }
