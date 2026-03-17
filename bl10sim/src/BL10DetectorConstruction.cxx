@@ -1888,10 +1888,10 @@ namespace bl10sim {
         G4ThreeVector baseJig2Tlate{-envelopeWidth / 2. + fJigVHSize / 2.,
                                     -envelopeHeight / 2. + fJigVHSize / 2., 0};
 
-        new G4PVPlacement(nullptr, baseJig1Tlate, baseJigLV, "BaseJigPV", envelopeLV, true, 0,
-                          fCheckOverlaps);
-        new G4PVPlacement(nullptr, baseJig2Tlate, baseJigLV, "BaseJigPV", envelopeLV, true, 1,
-                          fCheckOverlaps);
+        new G4PVPlacement(nullptr, baseJig1Tlate, baseJigLV, "BaseJigEnvelopePV", envelopeLV, true,
+                          0, fCheckOverlaps);
+        new G4PVPlacement(nullptr, baseJig2Tlate, baseJigLV, "BaseJigEnvelopePV", envelopeLV, true,
+                          1, fCheckOverlaps);
 
         G4double firstJigZPos = -envelopeZLength / 2. + fFirstJigZOffset;
 
@@ -1943,8 +1943,9 @@ namespace bl10sim {
             G4ThreeVector nowFBCTlate = {0, -envelopeHeight / 2. + fJigVHSize + nowFBCHeight / 2.,
                                          firstJigZPos + nowFBCZLength / 2. + zPosSum};
 
-            new G4PVPlacement(nullptr, nowFBCTlate, nowFBCLV, nowFBCplx.GetComplexName() + "_PV",
-                              envelopeLV, true, i / 3, fCheckOverlaps);
+            new G4PVPlacement(nullptr, nowFBCTlate, nowFBCLV,
+                              nowFBCplx.GetComplexName() + "_EnvelopePV", envelopeLV, true, i / 3,
+                              fCheckOverlaps);
         }
 
         return envelopeLV;
@@ -2183,8 +2184,8 @@ namespace bl10sim {
         G4ThreeVector baseRearJigTlate = setupTlate;
         baseRearJigTlate +=
             {0, -setupEnvHeight / 2. + fJigVHSize / 2., setupEnvZLength / 2. + fJigVHSize / 2.};
-        new G4PVPlacement(ftSimpleRotMtxY90Deg, baseRearJigTlate, baseRearJigLV, "RearBaseJigPV", labLV,
-                          true, 2, fCheckOverlaps);
+        new G4PVPlacement(ftSimpleRotMtxY90Deg, baseRearJigTlate, baseRearJigLV, "RearBaseJigPV",
+                          labLV, false, 0, fCheckOverlaps);
 
         G4ThreeVector jackTlate = setupTlate;
         jackTlate += {0, -setupEnvHeight / 2. - fJackHeight / 2., 0};
