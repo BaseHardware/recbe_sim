@@ -2179,11 +2179,11 @@ namespace bl10sim {
         new G4PVPlacement(nullptr, setupTlate, expSetup, "ExperimentalSetupPV", labLV, false, 0,
                           fCheckOverlaps);
 
-        G4LogicalVolume *baseRareJigLV = BuildJig(fRearFrameLength, jigMaterial, labMaterial);
-        G4ThreeVector baseRareJigTlate = setupTlate;
-        baseRareJigTlate +=
+        G4LogicalVolume *baseRearJigLV = BuildJig(fRearFrameLength, jigMaterial, labMaterial);
+        G4ThreeVector baseRearJigTlate = setupTlate;
+        baseRearJigTlate +=
             {0, -setupEnvHeight / 2. + fJigVHSize / 2., setupEnvZLength / 2. + fJigVHSize / 2.};
-        new G4PVPlacement(ftSimpleRotMtxY90Deg, baseRareJigTlate, baseRareJigLV, "BaseJigPV", labLV,
+        new G4PVPlacement(ftSimpleRotMtxY90Deg, baseRearJigTlate, baseRearJigLV, "RearBaseJigPV", labLV,
                           true, 2, fCheckOverlaps);
 
         G4ThreeVector jackTlate = setupTlate;
