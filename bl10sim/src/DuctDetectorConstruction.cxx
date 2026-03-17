@@ -29,11 +29,11 @@ namespace bl10sim {
 
     G4VPhysicalVolume *DuctDetectorConstruction::DefineVolumes() {
         G4double dl1 = 230 * cm;
-        G4double dl2 = 3600 * cm;
+        G4double dl2 = 930 * cm;
 
         G4double srcDuctDistance = dl1;
 
-        G4double ductThick    = 3 * cm;
+        G4double ductThick    = 30 * cm;
         G4double ductLength   = (dl2 - dl1);
         G4double ductWindowXY = 10 * cm;
 

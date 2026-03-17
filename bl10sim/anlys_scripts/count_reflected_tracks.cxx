@@ -19,8 +19,8 @@ void count_reflected_tracks(const char *infile_path = "./simout.root") {
     TClonesArray *tcaStep, *tcaTrack;
     tcaStep = tcaTrack = nullptr;
 
-    pTree->SetBranchAddress("Step", &tcaStep);
-    pTree->SetBranchAddress("Track", &tcaTrack);
+    pTree->SetBranchAddress("Steps", &tcaStep);
+    pTree->SetBranchAddress("Tracks", &tcaTrack);
 
     int error_tracks      = 0;
     int reflected_tracks  = 0;
