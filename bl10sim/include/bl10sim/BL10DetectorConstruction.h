@@ -106,9 +106,9 @@ namespace bl10sim {
         G4LogicalVolume *BuildJig(G4double jigLength, G4Material *jigMaterial,
                                   G4Material *aroundMaterial) const;
 
-        G4LogicalVolume *BuildMkII(G4Material *aroundMaterial) const;
-        G4LogicalVolume *BuildRECBE(G4Material *aroundMaterial) const;
-        G4LogicalVolume *BuildROESTI(G4Material *aroundMaterial) const;
+        G4LogicalVolume *BuildMkII(G4Material *aroundMaterial, G4int copyNo) const;
+        G4LogicalVolume *BuildRECBE(G4Material *aroundMaterial, G4int copyNo) const;
+        G4LogicalVolume *BuildROESTI(G4Material *aroundMaterial, G4int copyNo) const;
 
         G4LogicalVolume *BuildFrameBoardComplex(const FrameBoardComplexInfo &input) const;
 
