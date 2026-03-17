@@ -103,17 +103,20 @@ namespace bl10sim {
 
         G4LogicalVolume *BuildBeamductPipe(const G4String &namePrefix, G4double length) const;
 
-        G4LogicalVolume *BuildJig(G4double, G4Material *, G4Material *) const;
+        G4LogicalVolume *BuildJig(G4double jigLength, G4Material *jigMaterial,
+                                  G4Material *aroundMaterial) const;
 
-        G4LogicalVolume *BuildMkII(G4Material *) const;
-        G4LogicalVolume *BuildRECBE(G4Material *) const;
-        G4LogicalVolume *BuildROESTI(G4Material *) const;
+        G4LogicalVolume *BuildMkII(G4Material *aroundMaterial) const;
+        G4LogicalVolume *BuildRECBE(G4Material *aroundMaterial) const;
+        G4LogicalVolume *BuildROESTI(G4Material *aroundMaterial) const;
 
-        G4LogicalVolume *BuildFrameBoardComplex(const FrameBoardComplexInfo &) const;
+        G4LogicalVolume *BuildFrameBoardComplex(const FrameBoardComplexInfo &input) const;
 
-        G4LogicalVolume *BuildFrameAndBoards(G4Material *) const;
+        G4LogicalVolume *BuildFrameAndBoards(G4Material *aroundMaterial) const;
 
         void PlaceSimpleNeutronFluxDetectors(G4LogicalVolume *labLV) const;
+
+        bool FindLVAndAddSD(const G4String &name, G4VSensitiveDetector *sd);
 
         G4VPhysicalVolume *DefineVolumes() override;
 
@@ -323,10 +326,6 @@ namespace bl10sim {
         std::array<G4double, 9> fBracketBoardNegXMargins;
         std::array<G4double, 9> fPosXBracketYOffset;
         std::array<G4double, 9> fNegXBracketYOffset;
-
-        mutable G4bool fMkIIBuilt;
-        mutable G4bool fRECBEBuilt;
-        mutable G4bool fROESTIBuilt;
     };
 } // namespace bl10sim
 #endif

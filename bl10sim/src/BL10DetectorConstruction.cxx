@@ -164,8 +164,7 @@ G4ThreeVector PrintLastFPGATlate(G4LogicalVolume *target, const G4String &lastBo
 }
 
 namespace bl10sim {
-    BL10DetectorConstruction::BL10DetectorConstruction()
-        : fSimpleGeometry(false), fMkIIBuilt(false), fRECBEBuilt(false), fROESTIBuilt(false) {
+    BL10DetectorConstruction::BL10DetectorConstruction() : fSimpleGeometry(false) {
         SetGeometryParameters();
         CalculateGeometrySubparameters();
 
@@ -1634,8 +1633,11 @@ namespace bl10sim {
     }
 
     G4LogicalVolume *BL10DetectorConstruction::BuildMkII(G4Material *aroundMaterial) const {
-        if (fMkIIBuilt) {
-            return G4LogicalVolumeStore::GetInstance()->GetVolume("MkIIEnvelopeLV");
+        G4LogicalVolume *envelopeLV =
+            G4LogicalVolumeStore::GetInstance()->GetVolume("MkIIEnvelopeLV", false);
+
+        if (envelopeLV != nullptr) {
+            return envelopeLV;
         }
 
         G4Material *matPCB = G4Material::GetMaterial("EffectivePCB");
@@ -1648,8 +1650,7 @@ namespace bl10sim {
 
         G4Box *envelopeBox = new G4Box("MkIIEnvelopeBox", fMkIITopWidth / 2., fMkIILongHeight / 2.,
                                        envelopeZLength / 2.);
-        G4LogicalVolume *envelopeLV =
-            new G4LogicalVolume(envelopeBox, aroundMaterial, "MkIIEnvelopeLV");
+        envelopeLV         = new G4LogicalVolume(envelopeBox, aroundMaterial, "MkIIEnvelopeLV");
         envelopeLV->SetVisAttributes(G4VisAttributes::GetInvisible());
 
         G4ExtrudedSolid *pcbSolid =
@@ -1693,13 +1694,15 @@ namespace bl10sim {
         new G4PVPlacement(nullptr, fpgaLidTlate, fpgaLidLV, "MkIIFPGALidPV", envelopeLV, false, 0,
                           fCheckOverlaps);
 
-        fMkIIBuilt = true;
         return envelopeLV;
     }
 
     G4LogicalVolume *BL10DetectorConstruction::BuildRECBE(G4Material *aroundMaterial) const {
-        if (fRECBEBuilt) {
-            return G4LogicalVolumeStore::GetInstance()->GetVolume("RECBEEnvelopeLV");
+        G4LogicalVolume *envelopeLV =
+            G4LogicalVolumeStore::GetInstance()->GetVolume("RECBEEnvelopeLV", false);
+
+        if (envelopeLV != nullptr) {
+            return envelopeLV;
         }
 
         G4Material *matPCB = G4Material::GetMaterial("EffectivePCB");
@@ -1712,8 +1715,7 @@ namespace bl10sim {
 
         G4Box *envelopeBox = new G4Box("RECBEEnvelopeBox", fRECBETopWidth / 2.,
                                        fRECBELongHeight / 2., envelopeZLength / 2.);
-        G4LogicalVolume *envelopeLV =
-            new G4LogicalVolume(envelopeBox, aroundMaterial, "RECBEEnvelopeLV");
+        envelopeLV         = new G4LogicalVolume(envelopeBox, aroundMaterial, "RECBEEnvelopeLV");
         envelopeLV->SetVisAttributes(G4VisAttributes::GetInvisible());
 
         G4ExtrudedSolid *pcbSolid =
@@ -1756,14 +1758,15 @@ namespace bl10sim {
         fpgaLidTlate += {0, 0, fRECBEFPGADieThickness / 2. + fMkIIFPGALidThickness / 2.};
         new G4PVPlacement(nullptr, fpgaLidTlate, fpgaLidLV, "RECBEFPGALidPV", envelopeLV, false, 0,
                           fCheckOverlaps);
-
-        fRECBEBuilt = true;
         return envelopeLV;
     }
 
     G4LogicalVolume *BL10DetectorConstruction::BuildROESTI(G4Material *aroundMaterial) const {
-        if (fROESTIBuilt) {
-            return G4LogicalVolumeStore::GetInstance()->GetVolume("ROESTIEnvelopeLV");
+        G4LogicalVolume *envelopeLV =
+            G4LogicalVolumeStore::GetInstance()->GetVolume("ROESTIEnvelopeLV", false);
+
+        if (envelopeLV != nullptr) {
+            return envelopeLV;
         }
 
         G4Material *matPCB = G4Material::GetMaterial("EffectivePCB");
@@ -1775,8 +1778,7 @@ namespace bl10sim {
 
         G4Box *envelopeBox = new G4Box("ROESTIEnvelopeBox", fROESTIWidth / 2., fROESTIHeight / 2.,
                                        envelopeZLength / 2.);
-        G4LogicalVolume *envelopeLV =
-            new G4LogicalVolume(envelopeBox, aroundMaterial, "ROESTIEnvelopeLV");
+        envelopeLV         = new G4LogicalVolume(envelopeBox, aroundMaterial, "ROESTIEnvelopeLV");
         envelopeLV->SetVisAttributes(G4VisAttributes::GetInvisible());
 
         G4Box *pcbBox =
@@ -1810,7 +1812,6 @@ namespace bl10sim {
         new G4PVPlacement(nullptr, fpgaDieTlate, fpgaLV, "ROESTIFPGADiePV", envelopeLV, false, 0,
                           fCheckOverlaps);
 
-        fROESTIBuilt = true;
         return envelopeLV;
     }
 
@@ -2199,8 +2200,18 @@ namespace bl10sim {
         ttsd->SetRequireNonzeroEdep(true);
 
         G4SDManager::GetSDMpointer()->AddNewDetector(ttsd);
-        if (fMkIIBuilt) SetSensitiveDetector("MkIIFPGADieLV", ttsd, true);
-        if (fRECBEBuilt) SetSensitiveDetector("RECBEFPGADieLV", ttsd, true);
-        if (fROESTIBuilt) SetSensitiveDetector("ROESTIFPGADieLV", ttsd, true);
+        FindLVAndAddSD("MkIIFPGADieLV", ttsd);
+        FindLVAndAddSD("RECBEFPGADieLV", ttsd);
+        FindLVAndAddSD("ROESTIFPGADieLV", ttsd);
+    }
+
+    bool BL10DetectorConstruction::FindLVAndAddSD(const G4String &name, G4VSensitiveDetector *sd) {
+        G4LogicalVolume *testres = G4LogicalVolumeStore::GetInstance()->GetVolume(name);
+        if (testres != nullptr) {
+            SetSensitiveDetector(testres, sd);
+            return true;
+        } else {
+            return false;
+        }
     }
 } // namespace bl10sim
