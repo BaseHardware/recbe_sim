@@ -304,8 +304,8 @@ namespace bl10sim {
 
         fWBZDistanceFromWall = 10 * cm;
 
-        fBeamWindowWidth  = 47 * mm;
-        fBeamWindowHeight = 10 * cm;
+        fBeamWindowWidth  = 114 * mm;
+        fBeamWindowHeight = 114 * mm;
 
         fWindowThickness = 1 * nm;
 
@@ -323,8 +323,8 @@ namespace bl10sim {
         fSlitZDistFromWall = 17.5 * cm;
 
         fSlitHVZSpace = 4 * cm;
-        fSlitVSpace   = 10 * cm;
-        fSlitHSpace   = 10 * cm;
+        fSlitVSpace   = 105 * mm;
+        fSlitHSpace   = 105 * mm;
 
         fSlitStandHeight    = 20 * cm;
         fSlitStandWidth     = 56 * cm;

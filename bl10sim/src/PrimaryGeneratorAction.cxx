@@ -45,9 +45,9 @@ namespace bl10sim {
 
         fMessenger = new PrimaryGeneratorMessenger(this);
 
-        fDuctLength = 12.5 * m;
-        fDuctEnterX = 10 * cm;
-        fDuctEnterY = 10 * cm;
+        fDuctLength = 5.5 * m;
+        fDuctEnterX = 105 * mm;
+        fDuctEnterY = 105 * mm;
 
         fEGenerator   = new LethargyEnergyGenerator();
         fFluxFilename = "./data/at_ductexit.txt";
