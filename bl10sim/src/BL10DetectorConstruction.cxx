@@ -1711,7 +1711,7 @@ namespace bl10sim {
         G4Material *matLid = G4Material::GetMaterial("FPGALid");
 
         G4double envelopeZLength = (fRECBEThickness + fRECBEFPGASubstrateThickness +
-                                    fRECBEFPGADieThickness + fMkIIFPGALidThickness);
+                                    fRECBEFPGADieThickness + fRECBEFPGALidThickness);
 
         G4Box *envelopeBox = new G4Box("RECBEEnvelopeBox", fRECBETopWidth / 2.,
                                        fRECBELongHeight / 2., envelopeZLength / 2.);
@@ -1751,11 +1751,11 @@ namespace bl10sim {
                           fCheckOverlaps);
 
         G4Box *fpgaLidBox          = new G4Box("RECBEFPGALidBox", fRECBEFPGASubstrateVHSize / 2.,
-                                               fRECBEFPGASubstrateVHSize / 2., fMkIIFPGALidThickness / 2.);
+                                               fRECBEFPGASubstrateVHSize / 2., fRECBEFPGALidThickness / 2.);
         G4LogicalVolume *fpgaLidLV = new G4LogicalVolume(fpgaLidBox, matLid, "RECBEFPGALidLV");
 
         G4ThreeVector fpgaLidTlate = fpgaDieTlate;
-        fpgaLidTlate += {0, 0, fRECBEFPGADieThickness / 2. + fMkIIFPGALidThickness / 2.};
+        fpgaLidTlate += {0, 0, fRECBEFPGADieThickness / 2. + fRECBEFPGALidThickness / 2.};
         new G4PVPlacement(nullptr, fpgaLidTlate, fpgaLidLV, "RECBEFPGALidPV", envelopeLV, false, 0,
                           fCheckOverlaps);
         return envelopeLV;
@@ -1773,8 +1773,8 @@ namespace bl10sim {
         G4Material *matFR4 = G4Material::GetMaterial("FR4");
         G4Material *matSi  = G4Material::GetMaterial("G4_Si");
 
-        G4double envelopeZLength = (fROESTIThickness + fROESTIFPGASubstrateThickness +
-                                    fROESTIFPGADieThickness + fMkIIFPGALidThickness);
+        G4double envelopeZLength =
+            (fROESTIThickness + fROESTIFPGASubstrateThickness + fROESTIFPGADieThickness);
 
         G4Box *envelopeBox = new G4Box("ROESTIEnvelopeBox", fROESTIWidth / 2., fROESTIHeight / 2.,
                                        envelopeZLength / 2.);
