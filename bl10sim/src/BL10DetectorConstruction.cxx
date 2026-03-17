@@ -260,6 +260,15 @@ namespace bl10sim {
         G4double bracketMkIIPosXMargin   = 10 * mm;
         G4double bracketMkIINegXMargin   = 10 * mm;
 
+        G4double auxBracketROESTIPosXYOffset = -7.0 * cm;
+        G4double auxBracketROESTINegXYOffset = 0;
+        G4double auxBracketRECBEPosXYOffset  = 0;
+        G4double auxBracketRECBENegXYOffset  = -5.0 * cm;
+        G4double auxBracketMkII1PosXYOffset  = -6.0 * cm;
+        G4double auxBracketMkII1NegXYOffset  = 0;
+        G4double auxBracketMkII2PosXYOffset  = 0;
+        G4double auxBracketMkII2NegXYOffset  = -6.0 * cm;
+
         fFirstJigZOffset = 0 * mm;
 
         fVJigType1Length = 30 * cm;
@@ -277,7 +286,7 @@ namespace bl10sim {
         fTriangleBracketSize = 1.5 * cm;
 
         fLShapeBracketLength = 3.5 * cm; // jigToBoardZSpace + fJigVHSize
-        fLShapeBracketHeight = 0.9 * cm;
+        fLShapeBracketHeight = 1.0 * cm;
         fLShapeBracketWidth  = 0.4 * cm;
 
         fBoardZSpaces[0] = 47.1 * mm;
@@ -358,6 +367,26 @@ namespace bl10sim {
         fBracketBoardNegXMargins[6] = bracketROESTINegXMargin;
         fBracketBoardNegXMargins[7] = bracketRECBENegXMargin;
         fBracketBoardNegXMargins[8] = bracketMkIINegXMargin;
+
+        fPosXBracketYOffset[0] = auxBracketROESTIPosXYOffset;
+        fPosXBracketYOffset[1] = auxBracketRECBEPosXYOffset;
+        fPosXBracketYOffset[2] = auxBracketMkII1PosXYOffset;
+        fPosXBracketYOffset[3] = auxBracketROESTIPosXYOffset;
+        fPosXBracketYOffset[4] = auxBracketRECBEPosXYOffset;
+        fPosXBracketYOffset[5] = auxBracketMkII1PosXYOffset;
+        fPosXBracketYOffset[6] = auxBracketROESTIPosXYOffset;
+        fPosXBracketYOffset[7] = auxBracketRECBEPosXYOffset;
+        fPosXBracketYOffset[8] = auxBracketMkII2PosXYOffset;
+
+        fNegXBracketYOffset[0] = auxBracketROESTINegXYOffset;
+        fNegXBracketYOffset[1] = auxBracketRECBENegXYOffset;
+        fNegXBracketYOffset[2] = auxBracketMkII1NegXYOffset;
+        fNegXBracketYOffset[3] = auxBracketROESTINegXYOffset;
+        fNegXBracketYOffset[4] = auxBracketRECBENegXYOffset;
+        fNegXBracketYOffset[5] = auxBracketMkII1NegXYOffset;
+        fNegXBracketYOffset[6] = auxBracketROESTINegXYOffset;
+        fNegXBracketYOffset[7] = auxBracketRECBENegXYOffset;
+        fNegXBracketYOffset[8] = auxBracketMkII2NegXYOffset;
     }
 
     void BL10DetectorConstruction::CalculateGeometrySubparameters() {
@@ -1704,6 +1733,8 @@ namespace bl10sim {
             nowFBCplx.fJigToBoardZSpace    = fJigToBoardZSpaces[i];
             nowFBCplx.fJigToBoardPosXSpace = fBracketBoardPosXMargins[i];
             nowFBCplx.fJigToBoardNegXSpace = fBracketBoardNegXMargins[i];
+            nowFBCplx.fPosXAuxJigYOffset   = fPosXBracketYOffset[i];
+            nowFBCplx.fNegXAuxJigYOffset   = fNegXBracketYOffset[i];
             nowFBCplx.fBoardCopyNo         = i / 3;
 
             G4LogicalVolume *nowFBCLV = BuildFrameBoardComplex(nowFBCplx);
@@ -1846,6 +1877,20 @@ namespace bl10sim {
                           envelopeLV, true, 0, fCheckOverlaps);
         new G4PVPlacement(nullptr, negLBracketTlate, sLShapeBracketLV, "LShapeBracketPV",
                           envelopeLV, true, 1, fCheckOverlaps);
+
+        int nowLBCopyNum = 2;
+        if (input.fPosXAuxJigYOffset != 0) {
+            G4ThreeVector auxLBracketTlate = posLBracketTlate;
+            auxLBracketTlate += {0, input.fPosXAuxJigYOffset, 0};
+            new G4PVPlacement(nullptr, auxLBracketTlate, sLShapeBracketLV, "LShapeBracketPV",
+                              envelopeLV, true, nowLBCopyNum++, fCheckOverlaps);
+        }
+        if (input.fNegXAuxJigYOffset != 0) {
+            G4ThreeVector auxLBracketTlate = negLBracketTlate;
+            auxLBracketTlate += {0, input.fNegXAuxJigYOffset, 0};
+            new G4PVPlacement(nullptr, auxLBracketTlate, sLShapeBracketLV, "LShapeBracketPV",
+                              envelopeLV, true, nowLBCopyNum++, fCheckOverlaps);
+        }
 
         G4ThreeVector posXVJigTlate = boardTlate;
         G4ThreeVector negXVJigTlate = boardTlate;

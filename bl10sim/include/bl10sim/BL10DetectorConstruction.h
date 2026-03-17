@@ -29,6 +29,8 @@ namespace bl10sim {
             G4double fJigToBoardZSpace;
             G4double fJigToBoardPosXSpace;
             G4double fJigToBoardNegXSpace;
+            G4double fPosXAuxJigYOffset;
+            G4double fNegXAuxJigYOffset;
             G4int fBoardCopyNo;
 
             bool operator<(const FrameBoardComplexInfo &rhs) const {
@@ -52,6 +54,10 @@ namespace bl10sim {
                     return fJigToBoardPosXSpace < rhs.fJigToBoardPosXSpace;
                 else if (fJigToBoardNegXSpace != rhs.fJigToBoardNegXSpace)
                     return fJigToBoardNegXSpace < rhs.fJigToBoardNegXSpace;
+                else if (fPosXAuxJigYOffset != rhs.fPosXAuxJigYOffset)
+                    return fPosXAuxJigYOffset < rhs.fPosXAuxJigYOffset;
+                else if (fNegXAuxJigYOffset != rhs.fNegXAuxJigYOffset)
+                    return fNegXAuxJigYOffset < rhs.fNegXAuxJigYOffset;
                 else
                     return fBoardCopyNo < rhs.fBoardCopyNo;
             }
@@ -311,6 +317,8 @@ namespace bl10sim {
         std::array<G4double, 9> fBoardHoriOffsets;
         std::array<G4double, 9> fBracketBoardPosXMargins;
         std::array<G4double, 9> fBracketBoardNegXMargins;
+        std::array<G4double, 9> fPosXBracketYOffset;
+        std::array<G4double, 9> fNegXBracketYOffset;
 
         mutable G4bool fMkIIBuilt;
         mutable G4bool fRECBEBuilt;
