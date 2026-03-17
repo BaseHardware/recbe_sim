@@ -60,6 +60,9 @@ namespace simobj {
         void SetCopyNumber(int a) { fCopyNo = a; }
         int GetCopyNumber() const { return fCopyNo; }
 
+        void SetEnvelopeCopyNumber(int a) { fEnvelopeCopyNo = a; }
+        int GetEnvelopeCopyNumber() const { return fEnvelopeCopyNo; }
+
         void Print(Option_t *option = "") const override;
 
       private:
@@ -72,6 +75,7 @@ namespace simobj {
         TString fProcessName;
         TString fVolumeName;
         int fCopyNo;
+        int fEnvelopeCopyNo;
 
         ClassDefOverride(simobj::Step, 1)
     };

@@ -38,7 +38,7 @@ void dump_tracks() {
         cout << "Track #" << idx_track + 1 << ": " << nowtrk->GetName() << endl;
         size_t nStep = nowtrk->GetNStep();
         cout << " Step#         X          Y          Z           KineE         dEStep             "
-                "    Volume        CopyNo     Process  #daug"
+                "    Volume        CopyNo       EnvCopyNo   Process  #daug"
              << endl;
 
         for (size_t idx_step = 0; idx_step < nStep; idx_step++) {
@@ -51,7 +51,8 @@ void dump_tracks() {
                  << "  " << setw(9) << nowstep->GetY() << "  " << setw(9) << nowstep->GetZ() << "  "
                  << setw(12) << nowstep->GetKineticEnergy() << "  " << setw(13)
                  << nowstep->GetDepositedEnergy() << "  " << setw(20) << nowstep->GetVolumeName()
-                 << "  " << setw(9) << nowstep->GetCopyNumber() << setw(13) << " "
+                 << "  " << setw(9) << nowstep->GetCopyNumber() << setw(9)
+                 << nowstep->GetEnvelopeCopyNumber() << " " << setw(13) << " "
                  << nowstep->GetProcessName() << "  " << nowstep->GetNDaughters() << endl;
         }
     }
