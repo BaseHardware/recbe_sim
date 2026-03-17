@@ -147,6 +147,8 @@ namespace bl10sim {
         G4double fLabWidthDumpside;
         G4double fLabFloorSpace;
 
+        G4double fStdSmplZPosFromBeamwall;
+
         G4double fExitwallDistance;
         G4double fExitwallThickness;
         G4double fExitwallWidth;
@@ -307,6 +309,8 @@ namespace bl10sim {
         G4double fLShapeBracketWidth;
         G4double fLShapeBracketHeight;
         G4double fLShapeBracketLength;
+
+        G4double fLastFPGAZOffsetFromStdSmplPos;
 
         std::array<G4double, 8> fBoardZSpaces;
         std::array<G4double, 9> fXPosVJigLengths;

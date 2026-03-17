@@ -19,10 +19,149 @@
 #include "G4UnionSolid.hh"
 #include "G4VisAttributes.hh"
 
+#include <limits>
 #include <map>
 #include <vector>
 
 static const G4double booleanSolidTolerance = 5 * cm;
+
+G4VPhysicalVolume *FindDaughterPVWithName(G4LogicalVolume *lv, const G4String &name,
+                                          G4bool perfect = false) {
+    for (size_t i = 0; i < lv->GetNoDaughters(); i++) {
+        G4VPhysicalVolume *nowDaug = lv->GetDaughter(i);
+        if ((!perfect && nowDaug->GetName().find(name) != nowDaug->GetName().npos) ||
+            (perfect && nowDaug->GetName() == name)) {
+            return nowDaug;
+        }
+    }
+    return nullptr;
+}
+
+G4ThreeVector GetTlateToFPGADie(G4LogicalVolume *target) {
+    G4ThreeVector retval;
+    G4LogicalVolume *nowBoardLV = nullptr;
+    for (size_t i = 0; i < target->GetNoDaughters(); i++) {
+        G4VPhysicalVolume *nowDaug = target->GetDaughter(i);
+        if (nowDaug->GetName().find("_PV") != nowDaug->GetName().npos) {
+            nowBoardLV = nowDaug->GetLogicalVolume();
+            retval += nowDaug->GetTranslation();
+            break;
+        }
+    }
+
+    if (nowBoardLV == nullptr) {
+        G4cout << "Finding Board PV failed" << G4endl;
+        return {};
+    }
+
+    G4VPhysicalVolume *diePV = nullptr;
+    for (size_t i = 0; i < nowBoardLV->GetNoDaughters(); i++) {
+        G4VPhysicalVolume *nowDaug = nowBoardLV->GetDaughter(i);
+        if (nowDaug->GetName().find("FPGADiePV") != nowDaug->GetName().npos) {
+            retval += nowDaug->GetTranslation();
+            diePV = nowDaug;
+            break;
+        }
+    }
+    if (diePV == nullptr) {
+        G4cout << "Finding FPGADie PV failed" << G4endl;
+        return {};
+    }
+
+    return retval;
+}
+
+void PrintBoardAlignmentParameters(G4LogicalVolume *target) {
+    using namespace std;
+    G4VPhysicalVolume *beamPV, *expSetupPV;
+    beamPV = expSetupPV = nullptr;
+
+    for (size_t i = 0; i < target->GetNoDaughters(); i++) {
+        G4VPhysicalVolume *nowPV = target->GetDaughter(i);
+        if (nowPV->GetName() == "BeamWindowPV")
+            beamPV = nowPV;
+        else if (nowPV->GetName() == "ExperimentalSetupPV")
+            expSetupPV = nowPV;
+
+        if (expSetupPV != nullptr && beamPV != nullptr) break;
+    }
+    if (expSetupPV == nullptr || beamPV == nullptr) {
+        G4cout << "Failed: expSetupPV or beamPV is null" << G4endl;
+        return;
+    }
+
+    G4ThreeVector beamPVTlate   = beamPV->GetTranslation();
+    G4ThreeVector expSetupTlate = expSetupPV->GetTranslation();
+
+    map<pair<string, int>, G4ThreeVector> fpgaTlate;
+
+    G4LogicalVolume *expSetupLV = expSetupPV->GetLogicalVolume();
+    for (size_t i = 0; i < expSetupLV->GetNoDaughters(); i++) {
+        G4VPhysicalVolume *nowPV = expSetupLV->GetDaughter(i);
+        if (nowPV->GetName().find("Frame_") != nowPV->GetName().npos) {
+            fpgaTlate[{nowPV->GetName(), nowPV->GetCopyNo()}] =
+                expSetupTlate + nowPV->GetTranslation() +
+                GetTlateToFPGADie(nowPV->GetLogicalVolume());
+        }
+    }
+
+    for (auto &i : fpgaTlate) {
+        G4double horiOffset  = beamPVTlate.getX() - i.second.getX();
+        G4double distFromTop = -(beamPVTlate.getY() - i.second.getY());
+        G4cout << i.first.first << " #" << i.first.second
+               << " | Horizontal offset (mm): " << horiOffset / mm << "  |  "
+               << "Distance from top (mm): " << distFromTop / mm << G4endl;
+    }
+}
+
+G4ThreeVector PrintLastFPGATlate(G4LogicalVolume *target, const G4String &lastBoardName,
+                                 const G4int lastBoardCopyNo) {
+    using namespace std;
+    G4ThreeVector lastFPGADieTlate;
+    const G4ThreeVector nanVector = {numeric_limits<double>::quiet_NaN(),
+                                     numeric_limits<double>::quiet_NaN(),
+                                     numeric_limits<double>::quiet_NaN()};
+
+    G4LogicalVolume *lastComplexLV = nullptr;
+    for (size_t i = 0; i < target->GetNoDaughters(); i++) {
+        G4VPhysicalVolume *nowDaug = target->GetDaughter(i);
+        if (nowDaug->GetName().find(lastBoardName) != nowDaug->GetName().npos &&
+            nowDaug->GetCopyNo() == lastBoardCopyNo) {
+            lastComplexLV = nowDaug->GetLogicalVolume();
+            lastFPGADieTlate += nowDaug->GetTranslation();
+            break;
+        }
+    }
+
+    if (lastComplexLV == nullptr) {
+        G4cout << "Finding last complex LV failed" << G4endl;
+        return nanVector;
+    }
+
+    G4LogicalVolume *lastBoardLV = FindDaughterPVWithName(lastComplexLV, "_PV")->GetLogicalVolume();
+
+    if (lastComplexLV == nullptr) {
+        G4cout << "Finding last board envelope LV failed" << G4endl;
+        return nanVector;
+    }
+
+    G4VPhysicalVolume *diePV = nullptr;
+    for (size_t i = 0; i < lastBoardLV->GetNoDaughters(); i++) {
+        G4VPhysicalVolume *nowDaug = lastBoardLV->GetDaughter(i);
+        if (nowDaug->GetName().find("FPGADiePV") != nowDaug->GetName().npos) {
+            lastFPGADieTlate += nowDaug->GetTranslation();
+            diePV = nowDaug;
+            break;
+        }
+    }
+    if (diePV == nullptr) {
+        G4cout << "Finding FPGADie PV failed" << G4endl;
+        return nanVector;
+    }
+
+    G4cout << "lastFPGADieTlate @ taregetLV: " << lastFPGADieTlate << G4endl;
+    return lastFPGADieTlate;
+}
 
 namespace bl10sim {
     BL10DetectorConstruction::BL10DetectorConstruction()
@@ -109,6 +248,8 @@ namespace bl10sim {
         fLabWidthDumpside = 3.1 * m;
         fLabFloorSpace    = 25 * cm;
 
+        fStdSmplZPosFromBeamwall = 1.5 * m;
+
         fExitwallDistance  = 60 * cm;
         fExitwallThickness = 50 * cm;
         fExitwallWidth     = 1 * m;
@@ -168,7 +309,6 @@ namespace bl10sim {
 
         fWindowThickness = 1 * nm;
 
-        // Resolved
         fSlitFrameZLength = 10 * cm;
 
         fESlitFrameWidth  = 52 * cm;
@@ -289,6 +429,8 @@ namespace bl10sim {
         fLShapeBracketHeight = 1.0 * cm;
         fLShapeBracketWidth  = 0.4 * cm;
 
+        fLastFPGAZOffsetFromStdSmplPos = -3 * cm;
+
         fBoardZSpaces[0] = 47.1 * mm;
         fBoardZSpaces[1] = 47.8 * mm;
         fBoardZSpaces[2] = 51.4 * mm;
@@ -328,25 +470,25 @@ namespace bl10sim {
         fJigToBoardZSpaces[7] = jigToBoardZSpace;
         fJigToBoardZSpaces[8] = jigToBoardZSpace;
 
-        fBoardDistFromTop[0] = 0;
-        fBoardDistFromTop[1] = 0;
-        fBoardDistFromTop[2] = 0;
-        fBoardDistFromTop[3] = 0;
-        fBoardDistFromTop[4] = 0;
-        fBoardDistFromTop[5] = 0;
-        fBoardDistFromTop[6] = 0;
-        fBoardDistFromTop[7] = 0;
-        fBoardDistFromTop[8] = 0;
+        fBoardDistFromTop[0] = 98 * mm;
+        fBoardDistFromTop[1] = 56.5 * mm;
+        fBoardDistFromTop[2] = 107.0 * mm;
+        fBoardDistFromTop[3] = 98 * mm;
+        fBoardDistFromTop[4] = 56.5 * mm;
+        fBoardDistFromTop[5] = 107.0 * mm;
+        fBoardDistFromTop[6] = 138 * mm;
+        fBoardDistFromTop[7] = 56.5 * mm;
+        fBoardDistFromTop[8] = 107.0 * mm;
 
-        fBoardHoriOffsets[0] = 0;
-        fBoardHoriOffsets[1] = 0;
-        fBoardHoriOffsets[2] = 0;
-        fBoardHoriOffsets[3] = 0;
-        fBoardHoriOffsets[4] = 0;
-        fBoardHoriOffsets[5] = 0;
-        fBoardHoriOffsets[6] = 0;
-        fBoardHoriOffsets[7] = 0;
-        fBoardHoriOffsets[8] = 0;
+        fBoardHoriOffsets[0] = -2.5 * mm;
+        fBoardHoriOffsets[1] = -3.5 * mm;
+        fBoardHoriOffsets[2] = -5.0 * mm;
+        fBoardHoriOffsets[3] = -2.5 * mm;
+        fBoardHoriOffsets[4] = -3.5 * mm;
+        fBoardHoriOffsets[5] = -5.0 * mm;
+        fBoardHoriOffsets[6] = -2.5 * mm;
+        fBoardHoriOffsets[7] = -3.5 * mm;
+        fBoardHoriOffsets[8] = -5.0 * mm;
 
         fBracketBoardPosXMargins[0] = bracketROESTIPosXMargin;
         fBracketBoardPosXMargins[1] = bracketRECBEPosXMargin;
@@ -1709,7 +1851,6 @@ namespace bl10sim {
         for (size_t i = 0; i < fBoardZSpaces.size() + 1; i++) {
             if (i != 0) zPosSum += fBoardZSpaces[i - 1];
             G4ThreeVector nowDisplace = {0, 0, zPosSum};
-
             FrameBoardComplexInfo nowFBCplx;
             switch (i % 3) {
                 case 0:
@@ -1955,21 +2096,6 @@ namespace bl10sim {
         G4Material *jigMaterial = G4Material::GetMaterial("Stainless_Steel");
         G4Material *labMaterial = labLV->GetMaterial();
 
-        G4Box *jackBox = new G4Box("JackBox", fJackWidth / 2., fJackHeight / 2., fJackZLength / 2.);
-        G4LogicalVolume *jackLV = new G4LogicalVolume(jackBox, matFe, "JackLV");
-
-        G4Box *jackISpaceBox =
-            new G4Box("JackInnerSpaceBox", fJackWidth / 2. - fJackThickness,
-                      fJackHeight / 2. - fJackThickness, fJackZLength / 2. - fJackThickness);
-        G4LogicalVolume *jackISpaceLV =
-            new G4LogicalVolume(jackISpaceBox, labMaterial, "JackInnerSpaceLV");
-        new G4PVPlacement(nullptr, {}, jackISpaceLV, "JackInnerSpacePV", jackLV, false, 0,
-                          fCheckOverlaps);
-
-        G4ThreeVector jackTlate = workbenchCenter;
-        jackTlate += {0, fJackHeight / 2., 0};
-        new G4PVPlacement(nullptr, jackTlate, jackLV, "JackPV", labLV, false, 0, fCheckOverlaps);
-
         G4LogicalVolume *expSetup = BuildFrameAndBoards(labMaterial);
         G4Box *expEnvBox          = dynamic_cast<G4Box *>(expSetup->GetSolid());
         if (expEnvBox == nullptr) {
@@ -1984,9 +2110,23 @@ namespace bl10sim {
         G4double setupEnvHeight  = expEnvBox->GetYHalfLength() * 2.;
         G4double setupEnvZLength = expEnvBox->GetZHalfLength() * 2.;
 
-        G4ThreeVector setupTlate = jackTlate;
-        setupTlate += {0, fJackHeight / 2. + setupEnvHeight / 2.,
-                       fJackZLength / 2. - setupEnvZLength / 2. - fJigVHSize};
+        G4ThreeVector lastFPGADieTlate = PrintLastFPGATlate(expSetup, "MkII", 2);
+
+        G4Box *jackBox = new G4Box("JackBox", fJackWidth / 2., fJackHeight / 2., fJackZLength / 2.);
+        G4LogicalVolume *jackLV = new G4LogicalVolume(jackBox, matFe, "JackLV");
+
+        G4Box *jackISpaceBox =
+            new G4Box("JackInnerSpaceBox", fJackWidth / 2. - fJackThickness,
+                      fJackHeight / 2. - fJackThickness, fJackZLength / 2. - fJackThickness);
+        G4LogicalVolume *jackISpaceLV =
+            new G4LogicalVolume(jackISpaceBox, labMaterial, "JackInnerSpaceLV");
+        new G4PVPlacement(nullptr, {}, jackISpaceLV, "JackInnerSpacePV", jackLV, false, 0,
+                          fCheckOverlaps);
+
+        G4ThreeVector setupTlate = workbenchCenter;
+        setupTlate += {0, fJackHeight + setupEnvHeight / 2.,
+                       -fLabZLength / 2. + setupEnvZLength / 2. + fStdSmplZPosFromBeamwall -
+                           lastFPGADieTlate.getZ() + fLastFPGAZOffsetFromStdSmplPos};
         new G4PVPlacement(nullptr, setupTlate, expSetup, "ExperimentalSetupPV", labLV, false, 0,
                           fCheckOverlaps);
 
@@ -1996,6 +2136,13 @@ namespace bl10sim {
             {0, -setupEnvHeight / 2. + fJigVHSize / 2., setupEnvZLength / 2. + fJigVHSize / 2.};
         new G4PVPlacement(ftSimpleRotMtxY90Deg, baseRareJigTlate, baseRareJigLV, "BaseJigPV", labLV,
                           true, 2, fCheckOverlaps);
+
+        G4ThreeVector jackTlate = setupTlate;
+        jackTlate += {0, -setupEnvHeight / 2. - fJackHeight / 2., 0};
+        jackTlate += {0, 0, setupEnvZLength / 2. + fJigVHSize - fJackZLength / 2.};
+        new G4PVPlacement(nullptr, jackTlate, jackLV, "JackPV", labLV, false, 0, fCheckOverlaps);
+
+        // PrintBoardAlignmentParameters(labLV);
 
         return ironcasePV;
     }
