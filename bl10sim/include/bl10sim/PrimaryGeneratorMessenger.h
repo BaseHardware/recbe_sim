@@ -5,6 +5,7 @@
 
 class G4UIcmdWithADoubleAndUnit;
 class G4UIcmdWithAString;
+class G4UIcmdWithABool;
 class G4UIcommand;
 
 namespace bl10sim {
@@ -25,6 +26,7 @@ namespace bl10sim {
         G4UIcmdWithADoubleAndUnit *fDuctEnterXSizeCmd = nullptr;
         G4UIcmdWithADoubleAndUnit *fDuctEnterYSizeCmd = nullptr;
         G4UIcmdWithAString *fFluxFilenameCmd          = nullptr;
+        G4UIcmdWithABool *fEnableCmd                  = nullptr;
     };
 }; // namespace bl10sim
 #endif

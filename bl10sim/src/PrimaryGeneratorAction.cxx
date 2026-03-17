@@ -14,8 +14,6 @@
 #include "G4VSolid.hh"
 #include "Randomize.hh"
 
-#include "CLHEP/Units/PhysicalConstants.h"
-
 // Copied from G4Box source code. It uses G4QuickRand(), which is not suitable for the MT
 // environment
 G4ThreeVector GetPointOnSurface(const G4Box *solid) {
@@ -36,7 +34,7 @@ G4ThreeVector GetPointOnSurface(const G4Box *solid) {
 }
 
 namespace bl10sim {
-    PrimaryGeneratorAction::PrimaryGeneratorAction() {
+    PrimaryGeneratorAction::PrimaryGeneratorAction() : fEnabled(true) {
         G4int nofParticles = 1;
         fParticleGun       = new G4ParticleGun(nofParticles);
 
@@ -66,6 +64,8 @@ namespace bl10sim {
     }
 
     void PrimaryGeneratorAction::GeneratePrimaries(G4Event *event) {
+        if (!fEnabled) fParticleGun->GeneratePrimaryVertex(event);
+
         G4ThreadLocal static G4VPhysicalVolume *worldPV     = nullptr;
         G4ThreadLocal static G4ThreeVector totalTranslation = {0, 0, 0};
 
@@ -79,10 +79,10 @@ namespace bl10sim {
             G4VPhysicalVolume *targetPV;
             targetPV = store->GetVolume("BeamWindowPV");
             if (targetPV == nullptr) {
-                G4Exception("PrimaryVertexGeneration", "1", G4ExceptionSeverity::FatalException,
-                            "We couldn't find PV named 'BeamWindowPV'. Please use the "
-                            "realistic beampipe geometry if you want to generate primaries in the "
-                            "deuteron mode. Aborting.");
+                G4Exception(
+                    "PrimaryVertexGeneration", "1", G4ExceptionSeverity::FatalException,
+                    "We couldn't find PV named 'BeamWindowPV'. Please use the realistic beampipe "
+                    "geometry if you want to generate primaries in the deuteron mode. Aborting.");
             }
 
             totalTranslation = targetPV->GetTranslation();

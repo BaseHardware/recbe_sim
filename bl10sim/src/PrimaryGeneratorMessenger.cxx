@@ -1,6 +1,7 @@
 #include "bl10sim/PrimaryGeneratorMessenger.h"
 #include "bl10sim/PrimaryGeneratorAction.h"
 
+#include "G4UIcmdWithABool.hh"
 #include "G4UIcmdWithADoubleAndUnit.hh"
 #include "G4UIcmdWithAString.hh"
 #include "G4UIcommand.hh"
@@ -31,6 +32,13 @@ namespace bl10sim {
         fFluxFilenameCmd->SetGuidance("Set the filename for the neutron flux.");
         fFluxFilenameCmd->SetParameterName("filename (path)", false);
         fFluxFilenameCmd->AvailableForStates(G4State_PreInit, G4State_Init, G4State_Idle);
+
+        fEnableCmd = new G4UIcmdWithABool("/prim_gen/enable", this);
+        fEnableCmd->SetGuidance("Set the enable for this primary generator. If disable this, the "
+                                "fixed vertex will be generated.");
+        fEnableCmd->SetParameterName("enable", true, false);
+        fEnableCmd->SetDefaultValue(true);
+        fFluxFilenameCmd->AvailableForStates(G4State_PreInit, G4State_Init, G4State_Idle);
     }
 
     PrimaryGeneratorMessenger::~PrimaryGeneratorMessenger() {
@@ -53,6 +61,9 @@ namespace bl10sim {
             fPrimGenAction->SetDuctEnteranceYSize(length);
         } else if (command == fFluxFilenameCmd) {
             fPrimGenAction->SetFluxFilename(newValue);
+        } else if (command == fEnableCmd) {
+            bool enable = fEnableCmd->GetNewBoolValue(newValue);
+            fPrimGenAction->Enable(enable);
         }
     }
 } // namespace bl10sim

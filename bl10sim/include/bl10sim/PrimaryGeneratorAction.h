@@ -53,6 +53,9 @@ namespace bl10sim {
         void SetFluxFilename(const std::string &a) { fFluxFilename = a; }
         std::string GetFluxFilename() const { return fFluxFilename; }
 
+        bool IsEnabled() const { return fEnabled; }
+        void Enable(bool a = true) { fEnabled = a; }
+
       private:
         G4ParticleGun *fParticleGun           = nullptr; // G4 particle gun
         LethargyEnergyGenerator *fEGenerator  = nullptr;
@@ -63,6 +66,8 @@ namespace bl10sim {
         double fDuctEnterY;
 
         std::string fFluxFilename;
+
+        bool fEnabled;
     };
 } // namespace bl10sim
 #endif
