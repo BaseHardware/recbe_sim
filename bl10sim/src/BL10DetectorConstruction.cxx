@@ -2249,13 +2249,14 @@ namespace bl10sim {
         ttsd->SetRequireNonzeroEdep(true);
 
         G4SDManager::GetSDMpointer()->AddNewDetector(ttsd);
+        FindLVAndAddSD("DetectorLV", ttsd);
         FindLVAndAddSD("MkIIFPGADieLV", ttsd);
         FindLVAndAddSD("RECBEFPGADieLV", ttsd);
         FindLVAndAddSD("ROESTIFPGADieLV", ttsd);
     }
 
     bool BL10DetectorConstruction::FindLVAndAddSD(const G4String &name, G4VSensitiveDetector *sd) {
-        G4LogicalVolume *testres = G4LogicalVolumeStore::GetInstance()->GetVolume(name);
+        G4LogicalVolume *testres = G4LogicalVolumeStore::GetInstance()->GetVolume(name, false);
         if (testres != nullptr) {
             SetSensitiveDetector(testres, sd);
             return true;
