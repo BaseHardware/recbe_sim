@@ -2,6 +2,7 @@
 #define __bl10sim_PrimaryGeneratorAction_h__
 
 #include "LethargyEGenerator.h"
+#include "NeutronTimeGenerator.h"
 
 #include "G4VUserPrimaryGeneratorAction.hh"
 
@@ -37,6 +38,7 @@ namespace bl10sim {
       private:
         G4ParticleGun *fParticleGun           = nullptr; // G4 particle gun
         LethargyEnergyGenerator *fEGenerator  = nullptr;
+        NeutronTimeGenerator *fTGenerator     = nullptr;
         PrimaryGeneratorMessenger *fMessenger = nullptr;
 
         double fDuctLength;

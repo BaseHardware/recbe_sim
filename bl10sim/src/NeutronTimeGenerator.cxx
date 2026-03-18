@@ -4,7 +4,7 @@
 #include "bl10sim/NeutronTimeGenerator.h"
 
 #include "G4Exception.hh"
-#include "G4SystemOfUnits.hh"
+#include "G4ParticleTable.hh"
 #include "G4ios.hh"
 
 #include "Randomize.hh"
@@ -17,22 +17,21 @@ constexpr double cInvSqrt2   = 0.7071067811865475244; // 1/sqrt(2)
 namespace bl10sim {
     NeutronTimeGenerator::NeutronTimeGenerator()
         : fCWSampler({.eMin_eV            = 0.001,
-                      .eMax_eV            = 1.0e4,
+                      .eMax_eV            = 1.0e5,
                       .nE                 = 200,
                       .nU                 = 2048,
                       .allowExtrapolation = true}),
-          fTimeOffset(0), fFirstBunchOffset(0), fBunchSeparation(0.6) {
-        // fBunchFWHM[0] = 0.127; // at an acceleration power of 200 kW
-        // fBunchFWHM[1] = 0.129;
-        fBunchFWHM[0] = 0.130; // at an acceleration power of 300 kW
-        fBunchFWHM[1] = 0.136;
+          fTimeOffset(0.35), fFirstBunchOffset(0), fBunchSeparation(0.6) {
+        // double fwhm_200kW[2] = {0.127, 0.129}; // fwhm at an accelerator power of 200 kW
+        double fwhm_300kW[2] = {0.130, 0.136}; // fwhm at an accelerator power of 300 kW
+        SetFirstBunchFWHM(fwhm_300kW[0]);
+        SetSecondBunchFWHM(fwhm_300kW[1]);
     }
 
     void NeutronTimeGenerator::SetBunchSeparation(double a) {
-        a /= us;
         if (a < 0) {
             G4ExceptionDescription msg;
-            msg << "The separation time for the two bunches must be positive. (request: " << a / us
+            msg << "The separation time for the two bunches must be positive. (request: " << a
                 << " us). This will be ignored." << G4endl;
             G4Exception("NeutronTimeGenerator::SetBunchSeparation()", "NeutronTime0001",
                         JustWarning, msg);
@@ -41,31 +40,36 @@ namespace bl10sim {
         }
     }
 
-    void NeutronTimeGenerator::SetFWHM(double a, int idx) {
-        a /= us;
+    void NeutronTimeGenerator::SetBunchSigma(double a, int idx) {
         if (idx != 0 && idx != 1) {
             G4ExceptionDescription msg;
-            msg << "The index for the SetFWHM() must be 0 or 1. Bug in the code? (request: " << idx
-                << " ). This will be ignored." << G4endl;
-            G4Exception("NeutronTimeGenerator::SetFWHM()", "NeutronTime0002", JustWarning, msg);
+            msg << "The index for the SetBunchFWHM() must be 0 or 1. Bug in the code? (request: "
+                << idx << " ). This will be ignored." << G4endl;
+            G4Exception("NeutronTimeGenerator::SetBunchFWHM()", "NeutronTime0002", JustWarning,
+                        msg);
         } else if (a < 0) {
             G4ExceptionDescription msg;
             msg << "The FWHM value for the two bunches must be positive. (request: " << a
                 << " us). This will be ignored." << G4endl;
-            G4Exception("NeutronTimeGenerator::SetFWHM()", "NeutronTime0001", JustWarning, msg);
+            G4Exception("NeutronTimeGenerator::SetBunchFWHM()", "NeutronTime0001", JustWarning,
+                        msg);
         } else {
-            fBunchFWHM[idx] = a;
+            fBunchSigma[idx] = a;
         }
     }
 
-    // 1eV 이하라면 Bunch 고려 안 하되, 일단 아래 PDF로 생성
-    // 1eV <-> 10 keV라면 Bunch와 아래 PDF를 동시에 고려할 것
-    // 10 keV 이상이라면 Bunch 영향만 고려?
-    double NeutronTimeGenerator::Generate(double en) const {
+    double NeutronTimeGenerator::Generate(double energy_eV, double dist_m) const {
         double retval = fTimeOffset;
-        en /= eV;
 
-        if (en > 1) retval += 0.;
+        if (energy_eV <= 1) {
+            retval += fCWSampler.Sample(energy_eV);
+        } else if (1 < energy_eV && energy_eV <= fCWSampler.GetMaxEnergy()) {
+            retval += fCWSampler.Sample(energy_eV);
+            retval += BunchSeparation();
+        } else {
+            retval += BunchSeparation();
+        }
+        retval += DuctFlight(energy_eV, dist_m);
 
         return retval;
     }
@@ -73,22 +77,29 @@ namespace bl10sim {
     double NeutronTimeGenerator::BunchSeparation() const {
         using namespace std;
 
-        const double firstSigma  = fBunchFWHM[0] * 2 * sqrt(2 * log(2));
-        const double secondSigma = fBunchFWHM[1] * 2 * sqrt(2 * log(2));
-
         double mean  = fFirstBunchOffset;
-        double sigma = firstSigma;
+        double sigma = fBunchSigma[0];
 
         if (fBunchSeparation != 0 && G4UniformRand() > 0.5) {
             mean += fBunchSeparation;
-            sigma = secondSigma;
+            sigma = fBunchSigma[1];
         }
 
         return G4RandGauss::shoot(mean, sigma);
     }
 
-    double NeutronTimeGenerator::ModeratorDelay(double en) const {
-        return fCWSampler.Sample(en / eV) * us;
+    double NeutronTimeGenerator::ModeratorDelay(double energy_eV) const {
+        return fCWSampler.Sample(energy_eV);
+    }
+
+    double NeutronTimeGenerator::DuctFlight(double energy_eV, double dist_m) const {
+        static G4ParticleDefinition *neutronDef = nullptr;
+        if (neutronDef == nullptr) {
+            neutronDef = G4ParticleTable::GetParticleTable()->FindParticle("neutron");
+        }
+
+        double cla_t = dist_m * sqrt(neutronDef->GetPDGMass() / (2 * energy_eV));
+        return cla_t;
     }
 
     double ColeWindsor::PDF(double t) const {
@@ -114,41 +125,41 @@ namespace bl10sim {
         return fNorm * ((1 - fFrac) * f1 + fFrac * f2);
     }
 
-    void ColeWindsor::UpdateParameters(double en, double xmax_multiplier) {
-        if (en == fPrevE) {
+    void ColeWindsor::UpdateParameters(double energy_eV, double xmax_multiplier) {
+        if (energy_eV == fPrevE) {
             return;
         } else {
-            fT0      = Evaluate_t0(en);
-            fSigma1  = Evaluate_s1(en);
-            fSigma2  = Evaluate_s2(en);
-            fGamma1  = Evaluate_g1(en);
-            fGamma2  = Evaluate_g2(en);
+            fT0      = Evaluate_t0(energy_eV);
+            fSigma1  = Evaluate_s1(energy_eV);
+            fSigma2  = Evaluate_s2(energy_eV);
+            fGamma1  = Evaluate_g1(energy_eV);
+            fGamma2  = Evaluate_g2(energy_eV);
             fThres1  = fGamma1 * SQ(fSigma2);
             fThres2  = fGamma2 * SQ(fSigma2);
-            fFrac    = std::clamp(Evaluate_R(en), 0.0, 1.0);
+            fFrac    = std::clamp(Evaluate_R(energy_eV), 0.0, 1.0);
             fIntXMax = fT0 + std::max(fThres1 + xmax_multiplier * fGamma1,
                                       fThres2 + xmax_multiplier * fGamma2);
             fNorm    = Evaluate_C(fIntXMax);
         }
     }
 
-    double ColeWindsor::Evaluate_t0(double en) const {
-        return 2.27e-2 + 2.030 * std::pow(en, -0.460);
+    double ColeWindsor::Evaluate_t0(double energy_eV) const {
+        return 2.27e-2 + 2.030 * std::pow(energy_eV, -0.460);
     }
-    double ColeWindsor::Evaluate_s1(double en) const {
-        return 6.80e-3 + 0.658 * std::pow(en, -0.468);
+    double ColeWindsor::Evaluate_s1(double energy_eV) const {
+        return 6.80e-3 + 0.658 * std::pow(energy_eV, -0.468);
     }
-    double ColeWindsor::Evaluate_s2(double en) const {
-        return 3.15e-2 + 1.710 * std::pow(en, -0.476);
+    double ColeWindsor::Evaluate_s2(double energy_eV) const {
+        return 3.15e-2 + 1.710 * std::pow(energy_eV, -0.476);
     }
-    double ColeWindsor::Evaluate_g1(double en) const {
-        return 2.95e-2 + 0.905 * std::pow(en, 0.343);
+    double ColeWindsor::Evaluate_g1(double energy_eV) const {
+        return 2.95e-2 + 0.905 * std::pow(energy_eV, 0.343);
     }
-    double ColeWindsor::Evaluate_g2(double en) const {
-        return 6.78e-2 + 9.77e-2 * std::pow(en, 0.447);
+    double ColeWindsor::Evaluate_g2(double energy_eV) const {
+        return 6.78e-2 + 9.77e-2 * std::pow(energy_eV, 0.447);
     }
-    double ColeWindsor::Evaluate_R(double en) const {
-        return 0.404 - 0.290 * std::exp(-2.78e-4 * en);
+    double ColeWindsor::Evaluate_R(double energy_eV) const {
+        return 0.404 - 0.290 * std::exp(-2.78e-4 * energy_eV);
     }
 
     double ColeWindsor::IntegralZeroTo(double t) const {
@@ -224,7 +235,9 @@ namespace bl10sim {
             throw std::runtime_error("ColeWindsorSampler: epsU must be in (0, 0.5)");
         }
 
+        G4cout << "Building a table for the neutron emission time..." << G4endl;
         BuildTables();
+        G4cout << "Finished." << G4endl;
     }
 
     double ColeWindsorSampler::Sample(double energy_eV) const {
@@ -262,8 +275,8 @@ namespace bl10sim {
             const double fE = static_cast<double>(iE) / static_cast<double>(fConfig.nE - 1);
             fLogEGrid[iE]   = logEmin + (logEmax - logEmin) * fE;
 
-            const double en = std::exp(fLogEGrid[iE]);
-            fCWFunc.UpdateParameters(en);
+            const double energy_eV = std::exp(fLogEGrid[iE]);
+            fCWFunc.UpdateParameters(energy_eV);
 
             for (std::size_t iU = 0; iU < fConfig.nU; ++iU) {
                 const double fu = static_cast<double>(iU) / static_cast<double>(fConfig.nU - 1);

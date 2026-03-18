@@ -47,6 +47,7 @@ namespace bl10sim {
         fDuctEnterY = 105 * mm;
 
         fEGenerator   = new LethargyEnergyGenerator();
+        fTGenerator   = new NeutronTimeGenerator();
         fFluxFilename = "./data/at_ductexit.txt";
     }
 
@@ -132,11 +133,8 @@ namespace bl10sim {
         pDir *= 1. / flightDistance;
         fParticleGun->SetParticleMomentumDirection(pDir);
 
-        G4double particleMass = fParticleGun->GetParticleDefinition()->GetPDGMass();
-
-        G4double cla_t = flightDistance * sqrt(particleMass / (2 * particleEnergy));
-
-        fParticleGun->SetParticleTime(cla_t);
+        G4double particleTime = fTGenerator->Generate(particleEnergy / eV, flightDistance / m);
+        fParticleGun->SetParticleTime(particleTime * us);
         fParticleGun->GeneratePrimaryVertex(event);
     }
 

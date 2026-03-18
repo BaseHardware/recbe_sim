@@ -1,6 +1,7 @@
 #ifndef __bl10sim_NeutronTimeGenerator_h__
 #define __bl10sim_NeutronTimeGenerator_h__
 
+#include <cmath>
 #include <vector>
 
 namespace bl10sim {
@@ -70,6 +71,9 @@ namespace bl10sim {
         // Same as above, but input/output in eV / microsecond
         double Sample(double energy_eV) const;
 
+        double GetMinEnergy() const { return fConfig.eMin_eV; }
+        double GetMaxEnergy() const { return fConfig.eMax_eV; }
+
       private:
         Config fConfig;
         std::vector<double> fLogEGrid;              // size nE
@@ -88,35 +92,40 @@ namespace bl10sim {
     class NeutronTimeGenerator {
       public:
         NeutronTimeGenerator();
-        virtual ~NeutronTimeGenerator();
+        virtual ~NeutronTimeGenerator() = default;
 
         void SetBunchSeparation(double a);
 
-        double operator()(double en) const { return Generate(en); }
-        double Generate(double en) const;
+        double operator()(double energy_eV, double dist_m) const {
+            return Generate(energy_eV, dist_m);
+        }
+        double Generate(double energy_eV, double dist_m) const;
 
         double GetTimeOffset() const { return fTimeOffset; }
         double GetFirstBunchOffset() const { return fFirstBunchOffset; }
         double GetBunchSeparation() const { return fBunchSeparation; }
-        double GetFirstBunchFWHM() const { return fBunchFWHM[0]; }
-        double GetSecondBunchFWHM() const { return fBunchFWHM[1]; }
+        double GetFirstBunchSigma() const { return fBunchSigma[0]; }
+        double GetSecondBunchSigma() const { return fBunchSigma[1]; }
 
         void SetTimeOffset(double a) { fTimeOffset = a; }
         void SetFirstBunchOffset(double a) { fFirstBunchOffset = a; }
-        void SetFirstBunchFWHM(double a) { SetFWHM(a, 0); }
-        void SetSecondBunchFWHM(double a) { SetFWHM(a, 1); }
+        void SetFirstBunchFWHM(double a) { SetBunchSigma(a / (2 * sqrt(2 * log(2))), 0); }
+        void SetSecondBunchFWHM(double a) { SetBunchSigma(a / (2 * sqrt(2 * log(2))), 1); }
+        void SetFirstBunchSigma(double a) { SetBunchSigma(a, 0); }
+        void SetSecondBunchSigma(double a) { SetBunchSigma(a, 1); }
 
       protected:
         double BunchSeparation() const;
-        double ModeratorDelay(double en) const;
+        double ModeratorDelay(double energy_eV) const;
+        double DuctFlight(double energy_eV, double dist_m) const;
 
       private:
-        void SetFWHM(double a, int idx);
+        void SetBunchSigma(double a, int idx);
 
         double fTimeOffset;
         double fFirstBunchOffset;
         double fBunchSeparation;
-        double fBunchFWHM[2];
+        double fBunchSigma[2];
 
         ColeWindsorSampler fCWSampler;
     };
