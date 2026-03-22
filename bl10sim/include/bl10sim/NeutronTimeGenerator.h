@@ -74,6 +74,8 @@ namespace bl10sim {
         double GetMinEnergy() const { return fConfig.eMin_eV; }
         double GetMaxEnergy() const { return fConfig.eMax_eV; }
 
+        const ColeWindsor &GetColeWindsor() const { return fCWFunc; }
+
       private:
         Config fConfig;
         std::vector<double> fLogEGrid;              // size nE
@@ -117,6 +119,7 @@ namespace bl10sim {
       protected:
         double BunchSeparation() const;
         double ModeratorDelay(double energy_eV) const;
+        double SpallationDelay(double energy_eV) const;
         double DuctFlight(double energy_eV, double dist_m) const;
 
       private:

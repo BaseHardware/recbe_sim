@@ -61,14 +61,14 @@ namespace bl10sim {
     double NeutronTimeGenerator::Generate(double energy_eV, double dist_m) const {
         double retval = fTimeOffset;
 
-        if (energy_eV <= 1) {
-            retval += fCWSampler.Sample(energy_eV);
-        } else if (1 < energy_eV && energy_eV <= fCWSampler.GetMaxEnergy()) {
-            retval += fCWSampler.Sample(energy_eV);
-            retval += BunchSeparation();
+        retval += BunchSeparation();
+
+        if (energy_eV <= fCWSampler.GetMaxEnergy()) {
+            retval += ModeratorDelay(energy_eV);
         } else {
-            retval += BunchSeparation();
+            retval += SpallationDelay(energy_eV);
         }
+
         retval += DuctFlight(energy_eV, dist_m);
 
         return retval;
@@ -86,6 +86,20 @@ namespace bl10sim {
         }
 
         return G4RandGauss::shoot(mean, sigma);
+    }
+
+    double NeutronTimeGenerator::SpallationDelay(double energy_eV) const {
+        double mean   = fCWSampler.GetColeWindsor().Evaluate_t0(energy_eV);
+        double sigma1 = fCWSampler.GetColeWindsor().Evaluate_s1(energy_eV);
+        double sigma2 = fCWSampler.GetColeWindsor().Evaluate_s2(energy_eV);
+
+        double s1_int = 0.5 - sigma1 * cSqrtHalfPi * (1 + std::erf(-mean / sigma1 * cInvSqrt2));
+        double s2_int = 0.5;
+        if (G4UniformRand() < s1_int / (s1_int + s2_int)) {
+            return mean - abs(G4RandGauss::shoot(0, sigma1));
+        } else {
+            return mean + abs(G4RandGauss::shoot(0, sigma2));
+        }
     }
 
     double NeutronTimeGenerator::ModeratorDelay(double energy_eV) const {
