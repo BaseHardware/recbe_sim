@@ -95,11 +95,18 @@ namespace bl10sim {
 
         double s1_int = 0.5 - sigma1 * cSqrtHalfPi * (1 + std::erf(-mean / sigma1 * cInvSqrt2));
         double s2_int = 0.5;
-        if (G4UniformRand() < s1_int / (s1_int + s2_int)) {
-            return mean - abs(G4RandGauss::shoot(0, sigma1));
-        } else {
-            return mean + abs(G4RandGauss::shoot(0, sigma2));
-        }
+
+        double result;
+
+        do {
+            if (G4UniformRand() < s1_int / (s1_int + s2_int)) {
+                result = mean - abs(G4RandGauss::shoot(0, sigma1));
+            } else {
+                result = mean + abs(G4RandGauss::shoot(0, sigma2));
+            }
+        } while (result <= 0);
+
+        return result;
     }
 
     double NeutronTimeGenerator::ModeratorDelay(double energy_eV) const {
