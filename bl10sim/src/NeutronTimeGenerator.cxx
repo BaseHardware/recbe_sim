@@ -43,15 +43,15 @@ namespace bl10sim {
     void NeutronTimeGenerator::SetBunchSigma(double a, int idx) {
         if (idx != 0 && idx != 1) {
             G4ExceptionDescription msg;
-            msg << "The index for the SetBunchFWHM() must be 0 or 1. Bug in the code? (request: "
+            msg << "The index for the SetBunchSigma() must be 0 or 1. Bug in the code? (request: "
                 << idx << " ). This will be ignored." << G4endl;
-            G4Exception("NeutronTimeGenerator::SetBunchFWHM()", "NeutronTime0002", JustWarning,
+            G4Exception("NeutronTimeGenerator::SetBunchSigma()", "NeutronTime0002", JustWarning,
                         msg);
         } else if (a < 0) {
             G4ExceptionDescription msg;
-            msg << "The FWHM value for the two bunches must be positive. (request: " << a
+            msg << "The Sigma value for the two bunches must be positive. (request: " << a
                 << " us). This will be ignored." << G4endl;
-            G4Exception("NeutronTimeGenerator::SetBunchFWHM()", "NeutronTime0001", JustWarning,
+            G4Exception("NeutronTimeGenerator::SetBunchSigma()", "NeutronTime0001", JustWarning,
                         msg);
         } else {
             fBunchSigma[idx] = a;
