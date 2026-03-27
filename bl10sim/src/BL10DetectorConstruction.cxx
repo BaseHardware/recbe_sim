@@ -405,8 +405,8 @@ namespace bl10sim {
         // TODO: Correct these values with the measured ones
         G4double jigToBoardZSpace = 15 * mm;
 
-        G4double bracketROESTIPosXMargin = -0.2 * mm;
-        G4double bracketROESTINegXMargin = 15 * mm;
+        G4double bracketROESTIPosXMargin = 15 * mm;
+        G4double bracketROESTINegXMargin = -0.2 * mm;
         G4double bracketRECBEPosXMargin  = 12 * mm;
         G4double bracketRECBENegXMargin  = 12 * mm;
         G4double bracketMkIIPosXMargin   = 10 * mm;
