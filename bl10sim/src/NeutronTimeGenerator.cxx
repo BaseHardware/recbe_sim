@@ -139,7 +139,8 @@ namespace bl10sim {
             neutronDef = G4ParticleTable::GetParticleTable()->FindParticle("neutron");
         }
 
-        double cla_t = (dist_m * m) * sqrt(neutronDef->GetPDGMass() / (2 * (energy_eV * eV)));
+        double cla_t =
+            (dist_m * m) * sqrt(neutronDef->GetPDGMass() / (2 * (energy_eV * eV))) / CLHEP::c_light;
         return cla_t / us;
     }
 

@@ -57,8 +57,7 @@ struct HitInfo {
         : fEnvCopyNo(-1), fPrimaryKE(-1), fPrimaryTime(-1), fTotalEdep(0), fHitTime(-1),
           fPVName() {};
 
-    HitInfo(const simobj::Track &t, const simobj::Step &s, const simobj::Primary &p,
-            const string &bpvname)
+    HitInfo(const simobj::Track &t, const simobj::Step &s, const simobj::Primary &p)
         : fEnvCopyNo(s.GetEnvelopeCopyNumber()),
           fPrimaryKE(p.GetPrimaryParticleObjPtr(0)->GetKineticEnergy()),
           fPrimaryTime(p.GetVertexObjPtr(0)->GetT()), fTotalEdep(s.GetDepositedEnergy()),
@@ -70,7 +69,7 @@ struct HitInfo {
         fStepY.push_back(s.GetY());
         fStepZ.push_back(s.GetZ());
         fStepT.push_back(s.GetGlobalTime());
-        fStepBPVName.push_back(bpvname);
+        fStepBPVName.push_back(t.GetFirstStep().GetVolumeName().Data());
     };
 
     bool IsAcceptableStep(const simobj::Step &target) const {
@@ -85,18 +84,17 @@ struct HitInfo {
         }
     }
 
-    bool AppendStep(const simobj::Step &target, const int pid, const int pdg,
-                    const string &bpvname) {
-        if (IsAcceptableStep(target)) {
-            fTotalEdep += target.GetDepositedEnergy();
-            fStepPID.push_back(pid);
-            fStepPDG.push_back(pdg);
-            fStepEdep.push_back(target.GetDepositedEnergy());
-            fStepX.push_back(target.GetX());
-            fStepY.push_back(target.GetY());
-            fStepZ.push_back(target.GetZ());
-            fStepT.push_back(target.GetGlobalTime());
-            fStepBPVName.push_back(bpvname);
+    bool AppendStep(const simobj::Track &track, const simobj::Step &step) {
+        if (IsAcceptableStep(step)) {
+            fTotalEdep += step.GetDepositedEnergy();
+            fStepPID.push_back(track.GetTrackID());
+            fStepPDG.push_back(track.GetPDGCode());
+            fStepEdep.push_back(step.GetDepositedEnergy());
+            fStepX.push_back(step.GetX());
+            fStepY.push_back(step.GetY());
+            fStepZ.push_back(step.GetZ());
+            fStepT.push_back(step.GetGlobalTime());
+            fStepBPVName.push_back(track.GetFirstStep().GetVolumeName().Data());
             return true;
         } else {
             return false;
@@ -153,7 +151,7 @@ void make_fpgahits(const char *input_file  = "./simout.root",
 
     size_t stepnum;
     auto AddFPGAStep = [&](const simobj::Step *s, int idx) -> void {
-        if (s->GetVolumeName().Contains("FPGADieLV")) {
+        if (s->GetVolumeName().Contains("FPGADiePV")) {
             step_in_fpga[stepnum].first  = (*s);
             step_in_fpga[stepnum].second = idx;
             ++stepnum;
@@ -221,17 +219,13 @@ void make_fpgahits(const char *input_file  = "./simout.root",
         for (size_t i_step = 0; i_step < stepnum; i_step++) {
             auto &step = step_in_fpga[i_step].first;
             auto track = static_cast<simobj::Track *>(tcaTrack->At(step_in_fpga[i_step].second));
-            string bpvname = static_cast<simobj::Step *>(tcaStep->At(track->GetStepIndex(0)))
-                                 ->GetVolumeName()
-                                 .Data();
 
             if (i_step == 0) {
-                currentHit = HitInfo(*track, step, *primary, bpvname);
+                currentHit = HitInfo(*track, step, *primary);
             } else {
-                if (!currentHit.AppendStep(step, track->GetTrackID(), track->GetPDGCode(),
-                                           bpvname)) {
+                if (!currentHit.AppendStep(*track, step)) {
                     FillTreeWithHit(currentHit, i_evt);
-                    currentHit = HitInfo(*track, step, *primary, bpvname);
+                    currentHit = HitInfo(*track, step, *primary);
                 }
             }
         }
