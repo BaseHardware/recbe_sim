@@ -1154,8 +1154,7 @@ namespace bl10sim {
 
         G4Box *slitUpperStandSpaceBox =
             new G4Box("RoomSlitUpperStandBox", fSlitUStandWidth / 2. - fSlitUStandThickness,
-                      fSlitUStandHeight / 2. - fSlitUStandThickness,
-                      fSlitUStandZLength / 2. - fSlitUStandThickness);
+                      fSlitUStandHeight / 2. - fSlitUStandThickness, fSlitUStandZLength / 2.);
 
         G4LogicalVolume *slitUpperStandSpaceLV = new G4LogicalVolume(
             slitUpperStandSpaceBox, aroundMaterial, "RoomSlitUpperStandSpaceLV");
