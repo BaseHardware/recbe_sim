@@ -3,6 +3,8 @@
 
 #include "TNamed.h"
 
+#include "simobj/Step.h"
+
 namespace simobj {
     class Track : public TNamed {
       public:
@@ -40,6 +42,12 @@ namespace simobj {
         int GetTrackID() const { return fTrackID; }
         int GetParentID() const { return fParentID; }
 
+        Step &FirstStep() { return fFirstStep; };
+        Step &FinalStep() { return fFinalStep; };
+
+        const Step &GetFirstStep() const { return fFirstStep; };
+        const Step &GetFinalStep() const { return fFinalStep; };
+
         void Print(Option_t *option = "") const override;
 
         static const int fgcMaxStepSize = 10000;
@@ -52,7 +60,10 @@ namespace simobj {
         size_t fNStep;
         size_t fStepIdxArray[fgcMaxStepSize];
 
-        ClassDefOverride(simobj::Track, 1)
+        Step fFirstStep;
+        Step fFinalStep;
+
+        ClassDefOverride(simobj::Track, 2)
     };
 } // namespace simobj
 #endif

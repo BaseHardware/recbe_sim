@@ -8,7 +8,8 @@ namespace simobj {
     Track::Track() : fPDGCode(0), fTrackID(-1), fParentID(-1), fNStep(0), fStepIdxArray() {}
 
     Track::Track(int pdgCode, int tID, int pID)
-        : fPDGCode(pdgCode), fTrackID(tID), fParentID(pID), fNStep(0), fStepIdxArray() {
+        : fPDGCode(pdgCode), fTrackID(tID), fParentID(pID), fNStep(0), fStepIdxArray(),
+          fFirstStep(), fFinalStep() {
         using namespace std;
         TDatabasePDG *pdb      = TDatabasePDG::Instance();
         TParticlePDG *particle = pdb->GetParticle(pdgCode);
@@ -24,14 +25,14 @@ namespace simobj {
 
     Track::Track(int pdgCode, const std::string &pdgName, int tID, int pID)
         : TNamed(pdgName.c_str(), ""), fPDGCode(pdgCode), fTrackID(tID), fParentID(pID), fNStep(0),
-          fStepIdxArray() {
+          fStepIdxArray(), fFirstStep(), fFinalStep() {
         using namespace std;
         fName = pdgName;
     }
 
     Track::Track(const Track &orig)
         : TNamed(orig), fPDGCode(orig.fPDGCode), fTrackID(orig.fTrackID), fParentID(orig.fParentID),
-          fNStep(orig.fNStep) {
+          fNStep(orig.fNStep), fFirstStep(orig.fFirstStep), fFinalStep(orig.fFinalStep) {
         for (size_t i = 0; i < fNStep; i++) {
             fStepIdxArray[i] = orig.fStepIdxArray[i];
         }

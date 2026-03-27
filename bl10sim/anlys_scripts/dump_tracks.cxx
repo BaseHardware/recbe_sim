@@ -13,6 +13,14 @@
 
 using namespace std;
 
+void print_onestep(const simobj::Step *s) {
+    cout << setw(9) << s->GetX() << "  " << setw(9) << s->GetY() << "  " << setw(9) << s->GetZ()
+         << "  " << setw(12) << s->GetKineticEnergy() << "  " << setw(13) << s->GetDepositedEnergy()
+         << "  " << setw(20) << s->GetVolumeName() << "  " << setw(9) << s->GetCopyNumber()
+         << setw(9) << s->GetEnvelopeCopyNumber() << " " << setw(13) << " " << s->GetProcessName()
+         << "  " << s->GetNDaughters() << endl;
+}
+
 void dump_tracks() {
     TFile *pInput = new TFile("./simout.root");
 
@@ -41,20 +49,17 @@ void dump_tracks() {
                 "    Volume        CopyNo       EnvCopyNo   Process  #daug"
              << endl;
 
+        cout.precision(4);
+
+        cout << fixed << " " << setw(5) << "START" << "   ";
+        print_onestep(&nowtrk->GetFirstStep());
         for (size_t idx_step = 0; idx_step < nStep; idx_step++) {
             simobj::Step *nowstep =
                 static_cast<simobj::Step *>(tcaStep->At(nowtrk->GetStepIndex(idx_step)));
-
-            cout.precision(4);
-
-            cout << fixed << " " << setw(5) << idx_step << "   " << setw(9) << nowstep->GetX()
-                 << "  " << setw(9) << nowstep->GetY() << "  " << setw(9) << nowstep->GetZ() << "  "
-                 << setw(12) << nowstep->GetKineticEnergy() << "  " << setw(13)
-                 << nowstep->GetDepositedEnergy() << "  " << setw(20) << nowstep->GetVolumeName()
-                 << "  " << setw(9) << nowstep->GetCopyNumber() << setw(9)
-                 << nowstep->GetEnvelopeCopyNumber() << " " << setw(13) << " "
-                 << nowstep->GetProcessName() << "  " << nowstep->GetNDaughters() << endl;
+            cout << fixed << " " << setw(5) << idx_step << "   ";
+            print_onestep(nowstep);
         }
+        cout << fixed << " " << setw(5) << "END" << "   ";
+        print_onestep(&nowtrk->GetFinalStep());
     }
-    // simobj::Step *nowstep = static_cast<simobj::Track *>(tcaTrack->At(0));
 }

@@ -85,7 +85,7 @@ static void G4Step2SimStep(const G4Step *src, simobj::Step *dest) {
     dest->SetEnvelopeCopyNumber(envCopyNo);
 }
 
-static void G4Track2SimStep(const G4Track *src, simobj::Step *dest, G4bool start) {
+static void G4Track2SimTrack(const G4Track *src, simobj::Track *dest, G4bool start) {
     G4ThreeVector pos = src->GetPosition();
     G4double glob_t   = src->GetGlobalTime();
 
@@ -99,6 +99,8 @@ static void G4Track2SimStep(const G4Track *src, simobj::Step *dest, G4bool start
 
     std::string procName, volName;
 
+    simobj::Step *destStep;
+
     if (start) {
         procName = "initStep";
         volName  = src->GetVolume()->GetName();
@@ -107,6 +109,7 @@ static void G4Track2SimStep(const G4Track *src, simobj::Step *dest, G4bool start
         nDaug     = 0;
         copyNo    = src->GetVolume()->GetCopyNo();
         envCopyNo = GetEnvelopeCopyNo(src);
+        destStep  = &dest->FirstStep();
     } else {
         const G4Step *nowStep            = src->GetStep();
         const G4StepPoint *postStepPoint = nowStep->GetPostStepPoint();
@@ -124,19 +127,20 @@ static void G4Track2SimStep(const G4Track *src, simobj::Step *dest, G4bool start
             envCopyNo = -1;
         }
 
-        nDaug = nowStep->GetNumberOfSecondariesInCurrentStep();
-        edep  = nowStep->GetTotalEnergyDeposit();
+        nDaug    = nowStep->GetNumberOfSecondariesInCurrentStep();
+        edep     = nowStep->GetTotalEnergyDeposit();
+        destStep = &dest->FinalStep();
     }
 
-    dest->SetNDaughters(nDaug);
-    dest->SetDepositedEnergy(edep / MeV);
-    dest->SetProperTime(prop_t / ns);
-    dest->SetXYZT(pos.x() / mm, pos.y() / mm, pos.z() / mm, glob_t / ns);
-    dest->SetPxPyPzE(mom.x() / mm, mom.y() / mm, mom.z() / mm, energy / MeV);
-    dest->SetProcessName(procName.c_str());
-    dest->SetVolumeName(volName.c_str());
-    dest->SetCopyNumber(copyNo);
-    dest->SetEnvelopeCopyNumber(envCopyNo);
+    destStep->SetNDaughters(nDaug);
+    destStep->SetDepositedEnergy(edep / MeV);
+    destStep->SetProperTime(prop_t / ns);
+    destStep->SetXYZT(pos.x() / mm, pos.y() / mm, pos.z() / mm, glob_t / ns);
+    destStep->SetPxPyPzE(mom.x() / mm, mom.y() / mm, mom.z() / mm, energy / MeV);
+    destStep->SetProcessName(procName.c_str());
+    destStep->SetVolumeName(volName.c_str());
+    destStep->SetCopyNumber(copyNo);
+    destStep->SetEnvelopeCopyNumber(envCopyNo);
 }
 
 namespace simcore {
@@ -148,7 +152,7 @@ namespace simcore {
     }
 
     void RootManager::Clear() const {
-        fgTLS->fTCAStep->Clear("C");
+        if (fgTLS->fTCAStep != nullptr) fgTLS->fTCAStep->Clear("C");
         fgTLS->fTCATrack->Clear("C");
 
         fgTLS->fNTrack = 0;
@@ -159,8 +163,6 @@ namespace simcore {
 
     bool RootManager::CheckTrack(const G4Track *track, G4bool start) const {
         using namespace simobj;
-
-        if (!start && fRecordStep) return false;
 
         if (fgcMaxTrackNum <= fgTLS->fNTrack) {
             G4cerr << "WARNING: The number of tracks exceeds the maximum number (" << fgcMaxTrackNum
@@ -187,10 +189,7 @@ namespace simcore {
             nowTrack = static_cast<Track *>(
                 fgTLS->fTCATrack->At(fgTLS->fID2IdxTable[track->GetTrackID()]));
         }
-
-        nowTrack->AppendStepIdx(fgTLS->fNStep);
-        Step *newStep = (new ((*fgTLS->fTCAStep)[fgTLS->fNStep++]) Step());
-        G4Track2SimStep(track, newStep, start);
+        G4Track2SimTrack(track, nowTrack, start);
 
         return true;
     }
@@ -312,9 +311,15 @@ namespace simcore {
         fgTLS->fNTrack   = 0;
         fgTLS->fTree->Branch("Tracks", &fgTLS->fTCATrack);
 
-        fgTLS->fNStep   = 0;
-        fgTLS->fTCAStep = new TClonesArray("simobj::Step", fgcMaxStepNum);
-        fgTLS->fTree->Branch("Steps", &fgTLS->fTCAStep);
+        fgTLS->fID2IdxTable.clear();
+
+        fgTLS->fNStep = 0;
+        if (fRecordStep) {
+            fgTLS->fTCAStep = new TClonesArray("simobj::Step", fgcMaxStepNum);
+            fgTLS->fTree->Branch("Steps", &fgTLS->fTCAStep);
+        } else {
+            fgTLS->fTCAStep = nullptr;
+        }
 
         if (fRecordPrimary) {
             fgTLS->fPrimary = new simobj::Primary;
@@ -353,8 +358,8 @@ namespace simcore {
         fgTLS->fFile.reset();
 
         delete fgTLS->fTCATrack;
-        delete fgTLS->fTCAStep;
 
+        if (fRecordStep) delete fgTLS->fTCAStep;
         if (fRecordPrimary) delete fgTLS->fPrimary;
 
         delete fgTLS;

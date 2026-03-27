@@ -7,7 +7,12 @@ namespace simcore {
     SteppingAction::SteppingAction() {}
 
     void SteppingAction::UserSteppingAction(const G4Step *step) {
-        RootManager::GetInstance().AppendStep(step);
+        const G4Track *track = step->GetTrack();
+
+        if (track->GetTrackStatus() != fStopAndKill &&
+            track->GetTrackStatus() != fKillTrackAndSecondaries) {
+            RootManager::GetInstance().AppendStep(step);
+        }
 
         StepAction(step);
     }
