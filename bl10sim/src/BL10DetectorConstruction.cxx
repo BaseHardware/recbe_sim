@@ -371,7 +371,7 @@ namespace bl10sim {
         fRECBEFPGASubstrateVHSize    = 4.3 * cm;
         fRECBEFPGALidThickness       = 0.8 * mm;
         fRECBEFPGASubstrateThickness = 1.0 * mm;
-        fRECBEFPGADieThickness       = 0.8 * mm;
+        fRECBEFPGADieThickness       = 0.7 * mm;
         fRECBEFPGADieVHSize          = 3.5 * cm;
 
         fMkIITopWidth    = 20 * cm;
@@ -385,7 +385,7 @@ namespace bl10sim {
         fMkIIFPGASubstrateVHSize    = 2.6 * cm;
         fMkIIFPGALidThickness       = 0.5 * mm;
         fMkIIFPGASubstrateThickness = 1.0 * mm;
-        fMkIIFPGADieThickness       = 0.2 * mm;
+        fMkIIFPGADieThickness       = 0.7 * mm;
         fMkIIFPGADieVHSize          = 1.0 * cm;
 
         fROESTIWidth      = 18.5 * cm;
@@ -397,7 +397,7 @@ namespace bl10sim {
         fROESTIFPGADieVSize           = 1.2 * cm;
         fROESTIFPGADieHSize           = 1.0 * cm;
         fROESTIFPGASubstrateThickness = 1 * mm;
-        fROESTIFPGADieThickness       = 0.2 * mm;
+        fROESTIFPGADieThickness       = 0.7 * mm;
         fROESTIFPGASubstrateVHSize    = 2.6 * cm;
     }
 
