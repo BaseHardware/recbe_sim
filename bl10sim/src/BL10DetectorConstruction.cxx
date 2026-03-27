@@ -186,6 +186,7 @@ namespace bl10sim {
 
         G4Material *matCu = nist->FindOrBuildMaterial("G4_Cu");
         G4Material *matNi = nist->FindOrBuildMaterial("G4_Ni");
+        G4Material *matPE = nist->FindOrBuildMaterial("G4_POLYETHYLENE");
 
         // Elements
         G4Element *atomH  = nist->FindOrBuildElement("H");
@@ -196,6 +197,7 @@ namespace bl10sim {
         G4Element *atomCa = nist->FindOrBuildElement("Ca");
         G4Element *atomB  = nist->FindOrBuildElement("B");
         G4Element *atomMg = nist->FindOrBuildElement("Mg");
+        G4Element *atomNa = nist->FindOrBuildElement("Na");
 
         G4Material *matDGEBA = new G4Material("DGEBA_Epoxy", 1.16 * g / cm3, 3);
         matDGEBA->AddElement(atomC, 21);
@@ -225,6 +227,16 @@ namespace bl10sim {
         G4Material *matLid = new G4Material("FPGALid", 8.9 * g / cm3, 2);
         matLid->AddMaterial(matCu, 99.15 * perCent);
         matLid->AddMaterial(matNi, 0.85 * perCent);
+
+        G4Material *matBorax = new G4Material("BoraxDecahydrate", 1.73 * g / cm3, 4);
+        matBorax->AddElement(atomNa, 2);
+        matBorax->AddElement(atomB, 4);
+        matBorax->AddElement(atomO, 17);
+        matBorax->AddElement(atomH, 20);
+
+        G4Material *matBResin = new G4Material("BoraxResin", 0.8 * g / cm3, 2);
+        matBResin->AddMaterial(matBorax, 50. * perCent);
+        matBResin->AddMaterial(matPE, 50. * perCent);
     }
 
     void BL10DetectorConstruction::SetGeometryParameters() {
@@ -935,13 +947,13 @@ namespace bl10sim {
         BL10DetectorConstruction::FillExperimentalRoom(G4LogicalVolume *ironcaseLV,
                                                        G4ThreeVector &workbenchCenter,
                                                        G4ThreeVector &wbCenterOnBeamAxis) const {
-        G4Material *matB4C = G4Material::GetMaterial("G4_BORON_CARBIDE");
-        G4Material *matAir = G4Material::GetMaterial("G4_AIR");
-        G4Material *matFe  = G4Material::GetMaterial("G4_Fe");
-        G4Material *matSS  = G4Material::GetMaterial("Stainless_Steel");
+        G4Material *matBResin = G4Material::GetMaterial("BoraxResin");
+        G4Material *matAir    = G4Material::GetMaterial("G4_AIR");
+        G4Material *matFe     = G4Material::GetMaterial("G4_Fe");
+        G4Material *matSS     = G4Material::GetMaterial("Stainless_Steel");
 
         G4LogicalVolume *boronResinLV = new G4LogicalVolume(
-            BuildBoronResincaseSolid(fSimpleGeometry), matB4C, "BoronResinCaseLV");
+            BuildBoronResincaseSolid(fSimpleGeometry), matBResin, "BoronResinCaseLV");
         G4ThreeVector boronResinTlate = {
             0, -(fFloorThickness + fIronThickness) / 2. + fFloorThickness, 0};
         new G4PVPlacement(nullptr, boronResinTlate, boronResinLV, "BoronResinCasePV", ironcaseLV,
