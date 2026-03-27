@@ -1,8 +1,6 @@
 #include "bl10sim/PrimaryGeneratorAction.h"
 #include "bl10sim/PrimaryGeneratorMessenger.h"
 
-#include <cmath>
-
 #include "G4Box.hh"
 #include "G4LogicalVolume.hh"
 #include "G4ParticleGun.hh"
@@ -42,7 +40,7 @@ namespace bl10sim {
 
         fMessenger = new PrimaryGeneratorMessenger(this);
 
-        fDuctLength = 5.5 * m;
+        fDuctLength = 12.7 * m;
         fDuctEnterX = 105 * mm;
         fDuctEnterY = 105 * mm;
 
@@ -57,7 +55,7 @@ namespace bl10sim {
         delete fMessenger;
     }
 
-    void PrimaryGeneratorAction::InitializeEGenerator() {
+    void PrimaryGeneratorAction::InitializeGenerators() {
         fEGenerator->SetInputFilename(fFluxFilename);
         fEGenerator->SetTrimLastones(true);
         fEGenerator->Initialize();

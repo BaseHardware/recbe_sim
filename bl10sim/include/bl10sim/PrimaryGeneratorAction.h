@@ -19,7 +19,7 @@ namespace bl10sim {
         PrimaryGeneratorAction();
         ~PrimaryGeneratorAction() override;
 
-        void InitializeEGenerator();
+        void InitializeGenerators();
         void GeneratePrimaries(G4Event *event) override;
 
         void SetDuctLength(double a) { fDuctLength = a; };
@@ -35,8 +35,15 @@ namespace bl10sim {
         bool IsEnabled() const { return fEnabled; }
         void Enable(bool a = true) { fEnabled = a; }
 
+        void SetTimeOffset(double a) { fTGenerator->SetTimeOffset(a); }
+        void SetBunchSeparation(double a) { fTGenerator->SetBunchSeparation(a); }
+        void SetFirstBunchOffset(double a) { fTGenerator->SetFirstBunchOffset(a); }
+        void SetFirstBunchFraction(double a) { fTGenerator->SetFirstBunchFraction(a); }
+        void SetFirstBunchFWHM(double a) { fTGenerator->SetFirstBunchFWHM(a); }
+        void SetSecondBunchFWHM(double a) { fTGenerator->SetSecondBunchFWHM(a); }
+
       private:
-        G4ParticleGun *fParticleGun           = nullptr; // G4 particle gun
+        G4ParticleGun *fParticleGun           = nullptr;
         LethargyEnergyGenerator *fEGenerator  = nullptr;
         NeutronTimeGenerator *fTGenerator     = nullptr;
         PrimaryGeneratorMessenger *fMessenger = nullptr;
