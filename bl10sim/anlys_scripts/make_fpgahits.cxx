@@ -151,6 +151,15 @@ void make_fpgahits(const char *input_file  = "./simout.root",
         born_pvname.clear();
     };
 
+    size_t stepnum;
+    auto AddFPGAStep = [&](const simobj::Step *s, int idx) -> void {
+        if (s->GetVolumeName().Contains("FPGADieLV")) {
+            step_in_fpga[stepnum].first  = (*s);
+            step_in_fpga[stepnum].second = idx;
+            ++stepnum;
+        }
+    };
+
     pOTree->Branch("evtid", &evtid);
     pOTree->Branch("total_edep", &total_edep);
     pOTree->Branch("time", &time);
@@ -186,22 +195,22 @@ void make_fpgahits(const char *input_file  = "./simout.root",
 
         int n_trk = tcaTrack->GetEntries();
 
-        size_t stepnum = 0;
+        stepnum = 0;
         for (int idx_track = 0; idx_track < n_trk; idx_track++) {
             simobj::Track *now_track = static_cast<simobj::Track *>(tcaTrack->At(idx_track));
+
+            const simobj::Step *f_step = &now_track->GetFirstStep();
+            AddFPGAStep(f_step, idx_track);
 
             for (int idx_step = 0; idx_step < now_track->GetNStep(); idx_step++) {
                 simobj::Step *now_step =
                     static_cast<simobj::Step *>(tcaStep->At(now_track->GetStepIndex(idx_step)));
 
-                const auto &volName = now_step->GetVolumeName();
-
-                if (volName.Contains("FPGADiePV")) {
-                    step_in_fpga[stepnum].first  = *(now_step);
-                    step_in_fpga[stepnum].second = idx_track;
-                    ++stepnum;
-                }
+                AddFPGAStep(now_step, idx_track);
             }
+
+            f_step = &now_track->GetFinalStep();
+            AddFPGAStep(f_step, idx_track);
         }
 
         cout << "EvtID: " << i_evt << " | Stepnum: " << stepnum << endl;
