@@ -1,6 +1,7 @@
 #ifndef __bl10sim_NeutronTimeGenerator_h__
 #define __bl10sim_NeutronTimeGenerator_h__
 
+#include <algorithm>
 #include <cmath>
 #include <vector>
 
@@ -86,7 +87,7 @@ namespace bl10sim {
         double InvertCDF(double u, double start_lo, double start_hi) const;
         void BuildTables();
         size_t FindEnergyBin(double logE) const;
-        double InterpolateQuantileUs(std::size_t iE, double uEff) const;
+        double InterpolateQuantile(std::size_t iE, double uEff) const;
 
         ColeWindsor fCWFunc;
     };
@@ -96,7 +97,6 @@ namespace bl10sim {
         NeutronTimeGenerator();
         virtual ~NeutronTimeGenerator() = default;
 
-        void SetBunchSeparation(double a);
 
         double operator()(double energy_eV, double dist_m) const {
             return Generate(energy_eV, dist_m);
@@ -105,12 +105,15 @@ namespace bl10sim {
 
         double GetTimeOffset() const { return fTimeOffset; }
         double GetFirstBunchOffset() const { return fFirstBunchOffset; }
+        double GetFirstBunchFraction() const { return fFirstBunchFraction; }
         double GetBunchSeparation() const { return fBunchSeparation; }
         double GetFirstBunchSigma() const { return fBunchSigma[0]; }
         double GetSecondBunchSigma() const { return fBunchSigma[1]; }
 
+        void SetBunchSeparation(double a);
         void SetTimeOffset(double a) { fTimeOffset = a; }
         void SetFirstBunchOffset(double a) { fFirstBunchOffset = a; }
+        void SetFirstBunchFraction(double a) { fFirstBunchFraction = std::clamp(a, 0., 1.); }
         void SetFirstBunchFWHM(double a) { SetBunchSigma(a / (2 * sqrt(2 * log(2))), 0); }
         void SetSecondBunchFWHM(double a) { SetBunchSigma(a / (2 * sqrt(2 * log(2))), 1); }
         void SetFirstBunchSigma(double a) { SetBunchSigma(a, 0); }
@@ -119,7 +122,8 @@ namespace bl10sim {
       protected:
         double BunchSeparation() const;
         double ModeratorDelay(double energy_eV) const;
-        double SpallationDelay(double energy_eV) const;
+        double SpallationDelay_Gauss(double energy_eV) const;
+        double SpallationDelay_BifurGauss(double energy_eV) const;
         double DuctFlight(double energy_eV, double dist_m) const;
 
       private:
@@ -127,6 +131,7 @@ namespace bl10sim {
 
         double fTimeOffset;
         double fFirstBunchOffset;
+        double fFirstBunchFraction;
         double fBunchSeparation;
         double fBunchSigma[2];
 

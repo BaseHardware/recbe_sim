@@ -1,4 +1,3 @@
-#include <algorithm>
 #include <stdexcept>
 
 #include "bl10sim/NeutronTimeGenerator.h"
@@ -21,7 +20,7 @@ namespace bl10sim {
                       .nE                 = 200,
                       .nU                 = 2048,
                       .allowExtrapolation = true}),
-          fTimeOffset(0.35), fFirstBunchOffset(0), fBunchSeparation(0.6) {
+          fTimeOffset(2), fFirstBunchOffset(0.35), fFirstBunchFraction(0.5), fBunchSeparation(0.6) {
         // double fwhm_200kW[2] = {0.127, 0.129}; // fwhm at an accelerator power of 200 kW
         double fwhm_300kW[2] = {0.130, 0.136}; // fwhm at an accelerator power of 300 kW
         SetFirstBunchFWHM(fwhm_300kW[0]);
@@ -66,7 +65,8 @@ namespace bl10sim {
         if (energy_eV <= fCWSampler.GetMaxEnergy()) {
             retval += ModeratorDelay(energy_eV);
         } else {
-            retval += SpallationDelay(energy_eV);
+            retval += SpallationDelay_BifurGauss(energy_eV);
+            // retval += SpallationDelay_Gauss(energy_eV);
         }
 
         retval += DuctFlight(energy_eV, dist_m);
@@ -80,15 +80,21 @@ namespace bl10sim {
         double mean  = fFirstBunchOffset;
         double sigma = fBunchSigma[0];
 
-        if (fBunchSeparation != 0 && G4UniformRand() > 0.5) {
+        if (fBunchSeparation != 0 && G4UniformRand() > fFirstBunchFraction) {
             mean += fBunchSeparation;
             sigma = fBunchSigma[1];
         }
 
-        return G4RandGauss::shoot(mean, sigma);
+        double result;
+
+        do {
+            result = G4RandGauss::shoot(mean, sigma);
+        } while (result <= 0);
+
+        return result;
     }
 
-    double NeutronTimeGenerator::SpallationDelay(double energy_eV) const {
+    double NeutronTimeGenerator::SpallationDelay_BifurGauss(double energy_eV) const {
         double mean   = fCWSampler.GetColeWindsor().Evaluate_t0(energy_eV);
         double sigma1 = fCWSampler.GetColeWindsor().Evaluate_s1(energy_eV);
         double sigma2 = fCWSampler.GetColeWindsor().Evaluate_s2(energy_eV);
@@ -104,6 +110,19 @@ namespace bl10sim {
             } else {
                 result = mean + abs(G4RandGauss::shoot(0, sigma2));
             }
+        } while (result <= 0);
+
+        return result;
+    }
+
+    double NeutronTimeGenerator::SpallationDelay_Gauss(double energy_eV) const {
+        double mean   = fCWSampler.GetColeWindsor().Evaluate_t0(energy_eV);
+        double sigma1 = fCWSampler.GetColeWindsor().Evaluate_s1(energy_eV);
+
+        double result;
+
+        do {
+            result = G4RandGauss::shoot(mean, sigma1);
         } while (result <= 0);
 
         return result;
@@ -269,8 +288,8 @@ namespace bl10sim {
         const double uRaw = G4UniformRand();
         const double uEff = fConfig.epsU + (1.0 - 2.0 * fConfig.epsU) * uRaw;
 
-        const double t0 = InterpolateQuantileUs(iE, uEff);
-        const double t1 = InterpolateQuantileUs(iE + 1, uEff);
+        const double t0 = InterpolateQuantile(iE, uEff);
+        const double t1 = InterpolateQuantile(iE + 1, uEff);
 
         return (1.0 - xE) * t0 + xE * t1;
     }
@@ -307,7 +326,7 @@ namespace bl10sim {
         }
     }
 
-    double ColeWindsorSampler::InterpolateQuantileUs(size_t iE, double uEff) const {
+    double ColeWindsorSampler::InterpolateQuantile(size_t iE, double uEff) const {
         const double fu = (uEff - fConfig.epsU) / (1.0 - 2.0 * fConfig.epsU) *
                           static_cast<double>(fConfig.nU - 1);
 
