@@ -4,6 +4,7 @@
 
 #include "G4Exception.hh"
 #include "G4ParticleTable.hh"
+#include "G4SystemOfUnits.hh"
 #include "G4ios.hh"
 
 #include "Randomize.hh"
@@ -138,8 +139,8 @@ namespace bl10sim {
             neutronDef = G4ParticleTable::GetParticleTable()->FindParticle("neutron");
         }
 
-        double cla_t = dist_m * sqrt(neutronDef->GetPDGMass() / (2 * energy_eV));
-        return cla_t;
+        double cla_t = (dist_m * m) * sqrt(neutronDef->GetPDGMass() / (2 * (energy_eV * eV)));
+        return cla_t / us;
     }
 
     double ColeWindsor::PDF(double t) const {
