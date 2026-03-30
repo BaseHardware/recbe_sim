@@ -50,6 +50,7 @@ static void G4Step2SimStep(const G4Step *src, simobj::Step *dest) {
 
     G4double prop_t = src->GetPostStepPoint()->GetProperTime();
     G4double edep   = src->GetTotalEnergyDeposit();
+    G4double niEdep = src->GetNonIonizingEnergyDeposit();
 
     G4int nDaug = src->GetNumberOfSecondariesInCurrentStep();
     G4int copyNo, envCopyNo;
@@ -76,6 +77,7 @@ static void G4Step2SimStep(const G4Step *src, simobj::Step *dest) {
 
     dest->SetNDaughters(nDaug);
     dest->SetDepositedEnergy(edep / MeV);
+    dest->SetNonIonDepositedEnergy(niEdep / MeV);
     dest->SetProperTime(prop_t / ns);
     dest->SetXYZT(pos.x() / mm, pos.y() / mm, pos.z() / mm, glob_t / ns);
     dest->SetPxPyPzE(mom.x() / MeV, mom.y() / MeV, mom.z() / MeV, energy / MeV);
@@ -93,7 +95,7 @@ static void G4Track2SimTrack(const G4Track *src, simobj::Track *dest, G4bool sta
     G4double energy   = src->GetKineticEnergy();
 
     G4double prop_t = src->GetProperTime();
-    G4double edep;
+    G4double edep, niEdep;
 
     G4int nDaug, copyNo, envCopyNo;
 
@@ -105,6 +107,7 @@ static void G4Track2SimTrack(const G4Track *src, simobj::Track *dest, G4bool sta
         procName = "initStep";
         volName  = src->GetVolume()->GetName();
         edep     = 0;
+        niEdep   = 0;
 
         nDaug     = 0;
         copyNo    = src->GetVolume()->GetCopyNo();
@@ -129,11 +132,13 @@ static void G4Track2SimTrack(const G4Track *src, simobj::Track *dest, G4bool sta
 
         nDaug    = nowStep->GetNumberOfSecondariesInCurrentStep();
         edep     = nowStep->GetTotalEnergyDeposit();
+        niEdep   = nowStep->GetNonIonizingEnergyDeposit();
         destStep = &dest->FinalStep();
     }
 
     destStep->SetNDaughters(nDaug);
     destStep->SetDepositedEnergy(edep / MeV);
+    destStep->SetNonIonDepositedEnergy(niEdep / MeV);
     destStep->SetProperTime(prop_t / ns);
     destStep->SetXYZT(pos.x() / mm, pos.y() / mm, pos.z() / mm, glob_t / ns);
     destStep->SetPxPyPzE(mom.x() / mm, mom.y() / mm, mom.z() / mm, energy / MeV);

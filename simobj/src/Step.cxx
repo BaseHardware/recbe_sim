@@ -4,7 +4,7 @@
 
 namespace simobj {
     Step::Step(const Step &orig)
-        : fTrackID(0), fNDaughters(orig.fNDaughters), fEdep(orig.fEdep),
+        : fTrackID(0), fNDaughters(orig.fNDaughters), fEdep(orig.fEdep), fNIEdep(orig.fNIEdep),
           fProperTime(orig.fProperTime), f4Position(orig.f4Position), f4Momentum(orig.f4Momentum),
           fProcessName(orig.fProcessName), fVolumeName(orig.fVolumeName), fCopyNo(orig.fCopyNo),
           fEnvelopeCopyNo(orig.fEnvelopeCopyNo) {};
@@ -20,6 +20,7 @@ namespace simobj {
              << f4Momentum.Pz() << ", " << f4Momentum.E() << ") [unit: MeV]" << endl;
         cout << "Number of daughters: " << fNDaughters << endl;
         cout << "Edep: " << fEdep << endl;
+        cout << "Non-ionizing Edep: " << fNIEdep << endl;
         cout << "Proper time: " << fProperTime << endl;
         cout << "Volume: " << fVolumeName << ", copy number: " << fCopyNo
              << ", copy number of the envelope volume: " << fEnvelopeCopyNo << endl;

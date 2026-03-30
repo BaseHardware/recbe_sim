@@ -11,8 +11,8 @@ namespace simobj {
     class Step : public TObject {
       public:
         Step()
-            : fTrackID(0), fNDaughters(0), fEdep(0), fProperTime(0), f4Position({}), f4Momentum({}),
-              fProcessName(""), fVolumeName(""), fCopyNo(0) {};
+            : fTrackID(0), fNDaughters(0), fEdep(0), fNIEdep(0), fProperTime(0), f4Position({}),
+              f4Momentum({}), fProcessName(""), fVolumeName(""), fCopyNo(0) {};
         Step(const Step &orig);
 
         TObject *Clone(const char *) const override;
@@ -25,6 +25,9 @@ namespace simobj {
 
         void SetDepositedEnergy(double a) { fEdep = a; }
         double GetDepositedEnergy() const { return fEdep; }
+
+        void SetNonIonDepositedEnergy(double a) { fNIEdep = a; }
+        double GetNonIonDepositedEnergy() const { return fNIEdep; }
 
         void SetProperTime(double a) { fProperTime = a; }
         double GetProperTime() const { return fProperTime; }
@@ -68,7 +71,7 @@ namespace simobj {
       private:
         int fTrackID;
         int fNDaughters;
-        double fEdep;
+        double fEdep, fNIEdep;
         double fProperTime;
         ROOT::Math::XYZTVector f4Position;
         ROOT::Math::PxPyPzEVector f4Momentum;
@@ -77,7 +80,7 @@ namespace simobj {
         int fCopyNo;
         int fEnvelopeCopyNo;
 
-        ClassDefOverride(simobj::Step, 1)
+        ClassDefOverride(simobj::Step, 2)
     };
 }; // namespace simobj
 #endif
