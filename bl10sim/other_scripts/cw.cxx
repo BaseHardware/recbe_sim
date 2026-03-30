@@ -1,8 +1,9 @@
+#include <cmath>
 #include <iostream>
+#include <vector>
+#include <algorithm>
+#include <stdexcept>
 
-#include "TF1.h"
-#include "TH1F.h"
-#include "TLine.h"
 #include "TRandom3.h"
 
 using namespace std;
@@ -33,6 +34,7 @@ class ColeWindsor {
     }
 
     double GetCurrentXMax() const { return fIntXMax; }
+    double GetCurrentT0() const { return fT0; }
     double GetCurrentThreshold1() const { return fThres1; }
     double GetCurrentThreshold2() const { return fThres2; }
     double GetCurrentFraction() const { return fFrac; }
@@ -327,50 +329,3 @@ double ColeWindsorSampler::InvertCDF(double u, double start_lo, double start_hi)
     return 0.5 * (lo + hi);
 }
 
-void cw_dist() {
-    ColeWindsor *a = new ColeWindsor;
-
-    auto testPDF  = [a](double *x, double *p) -> double { return (*a)(x[0], p[0]); };
-    auto testFunc = [a](double *x, double *p) -> double { return p[0] * (*a)(x[0], p[1]); };
-    auto testCDF  = [a](double *x, double *p) -> double { return (*a).CDF(x[0], p[0]); };
-
-    double e;
-
-    e = 1;
-    a->UpdateParameters(e);
-    TF1 *f1 = new TF1("testf1", testPDF, 0, a->GetCurrentXMax(), 1);
-    f1->SetParameter(0, e);
-    f1->SetNpx(10000);
-    f1->SetLineColor(kRed);
-    TF1 *f2 = new TF1("testf1", testCDF, 0, a->GetCurrentXMax(), 1);
-    f2->SetParameter(0, e);
-    f2->SetNpx(10000);
-    f2->SetLineColor(kRed);
-
-    ColeWindsorSampler b(
-        {.eMin_eV = 0.001, .eMax_eV = 10e4, .nE = 200, .nU = 4096, .allowExtrapolation = true});
-    TH1F *h1 = new TH1F("h1", "h1", 1000, 0, 10);
-    for (int i = 0; i < 1000000; i++) {
-        double t = b.Sample(e);
-        h1->Fill(t);
-    }
-    h1->Draw("");
-    TF1 *f3 = new TF1("testf2", testFunc, 0, a->GetCurrentXMax(), 2);
-    f3->SetParameter(0, 2.2 * 100000);
-    f3->SetParameter(1, e);
-
-    f3->Draw("same");
-
-    TLine *l1 = new TLine(a->Evaluate_t0(e), 0, a->Evaluate_t0(e), h1->GetMaximum());
-    l1->SetLineColor(kRed);
-    l1->Draw("same");
-    TLine *l2 =
-        new TLine(a->GetCurrentThreshold1(), 0, a->GetCurrentThreshold1(), h1->GetMaximum());
-    l2->SetLineColor(kRed);
-    l2->Draw("same");
-    TLine *l3 =
-        new TLine(a->GetCurrentThreshold2(), 0, a->GetCurrentThreshold2(), h1->GetMaximum());
-    l3->SetLineColor(kRed);
-    l3->Draw("same");
-    cout << a->GetCurrentFraction() << endl;
-}
