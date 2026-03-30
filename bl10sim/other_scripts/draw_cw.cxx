@@ -49,6 +49,7 @@ void draw_cw() {
     fCDF->SetLineColor(kGreen + 1);
 
     fPDF->Draw();
+    fPDF->GetYaxis()->Draw("same");
     gPad->Update();
 
     c1->cd();
@@ -67,20 +68,22 @@ void draw_cw() {
     Double_t ymin = pad2->GetUymin();
     Double_t ymax = pad2->GetUymax();
 
-    TGaxis *axis =
-        new TGaxis(xmax, ymin, xmax, ymax, fCDF->GetMinimum(), fCDF->GetMaximum(), 510, "+L");
+    TGaxis *axis = new TGaxis(xmax, ymin, xmax, ymax, ymin, ymax, 510, "+L");
     axis->SetLineColor(kGreen + 1);
     axis->SetLabelColor(kGreen + 1);
+    axis->SetTitleColor(kGreen + 1);
+    axis->SetLabelSize(fPDF->GetYaxis()->GetLabelSize());
+    axis->SetLabelFont(fPDF->GetYaxis()->GetLabelFont());
     axis->SetTitle("CDF (Green)");
     axis->Draw();
 
     fCDF->Draw("same");
 
-    TLine *l1 = new TLine(a->Evaluate_t0(e), 0, a->Evaluate_t0(e), fCDF->GetMaximum());
+    TLine *l1 = new TLine(a->Evaluate_t0(e), ymin, a->Evaluate_t0(e), ymax);
     l1->SetLineColor(kBlack);
     l1->Draw("same");
     Double_t thres1 = a->GetCurrentT0() + a->GetCurrentThreshold1();
-    TLine *l2       = new TLine(thres1, 0, thres1, fCDF->GetMaximum());
+    TLine *l2       = new TLine(thres1, ymin, thres1, ymax);
     l2->SetLineColor(kBlue);
     l2->Draw("same");
 
