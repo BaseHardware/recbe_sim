@@ -154,6 +154,8 @@ namespace simcore {
     void RootManager::Fill() const {
         size_t &filledBytes = fgTLS->fFilledBytes;
 
+        fgTLS->fBranches.fComplete = (!fgTLS->fTrackDisabled) && (!fgTLS->fStepDisabled);
+
         filledBytes += fgTLS->fTree->Fill();
         if (fTreeBufferLimit != 0 && filledBytes >= fTreeBufferLimit) {
             G4cout << "The size of raw data filled into TTree is " << filledBytes / 1024. / 1024.
@@ -167,8 +169,8 @@ namespace simcore {
     }
 
     void RootManager::Clear() const {
-        if (fgTLS->fTCAStep != nullptr) fgTLS->fTCAStep->Clear("C");
-        fgTLS->fTCATrack->Clear("C");
+        if (fgTLS->fBranches.fTCAStep != nullptr) fgTLS->fBranches.fTCAStep->Clear("C");
+        fgTLS->fBranches.fTCATrack->Clear("C");
 
         fgTLS->fNTrack = 0;
         fgTLS->fNStep  = 0;
@@ -200,14 +202,14 @@ namespace simcore {
         if (start) {
             fgTLS->fID2IdxTable[track->GetTrackID()] = fgTLS->fNTrack;
 
-            nowTrack = new ((*fgTLS->fTCATrack)[fgTLS->fNTrack]) Track(
+            nowTrack = new ((*fgTLS->fBranches.fTCATrack)[fgTLS->fNTrack]) Track(
                 track->GetDefinition()->GetPDGEncoding(), track->GetDefinition()->GetParticleName(),
                 track->GetTrackID(), track->GetParentID());
 
             fgTLS->fNTrack++;
         } else {
             nowTrack = static_cast<Track *>(
-                fgTLS->fTCATrack->At(fgTLS->fID2IdxTable[track->GetTrackID()]));
+                fgTLS->fBranches.fTCATrack->At(fgTLS->fID2IdxTable[track->GetTrackID()]));
         }
         G4Track2SimTrack(track, nowTrack, start);
 
@@ -234,11 +236,11 @@ namespace simcore {
             return false;
         }
 
-        Track *tcaTrack =
-            static_cast<Track *>((*fgTLS->fTCATrack)[fgTLS->fID2IdxTable[track->GetTrackID()]]);
+        Track *tcaTrack = static_cast<Track *>(
+            (*fgTLS->fBranches.fTCATrack)[fgTLS->fID2IdxTable[track->GetTrackID()]]);
         tcaTrack->AppendStepIdx(fgTLS->fNStep);
 
-        Step *newStep = (new ((*fgTLS->fTCAStep)[fgTLS->fNStep++]) Step());
+        Step *newStep = (new ((*fgTLS->fBranches.fTCAStep)[fgTLS->fNStep++]) Step());
 
         G4Step2SimStep(step, newStep);
         return true;
@@ -254,8 +256,8 @@ namespace simcore {
         for (int idxVert = 0; idxVert < nVert; idxVert++) {
             const G4PrimaryVertex *nowVert = event->GetPrimaryVertex(idxVert);
 
-            Vertex *newVertex = new (fgTLS->fPrimary->GetVertexObjPtr(idxVert)) Vertex();
-            if (fgTLS->fPrimary->GetVertexSize() <= idxVert + 1) {
+            Vertex *newVertex = new (fgTLS->fBranches.fPrimary->GetVertexObjPtr(idxVert)) Vertex();
+            if (fgTLS->fBranches.fPrimary->GetVertexSize() <= idxVert + 1) {
                 G4cerr << "WARNING: The number of primary vertices exceeds the maximum number."
                           "This vertex will not be added."
                        << G4endl;
@@ -269,7 +271,7 @@ namespace simcore {
             newVertex->SetNParticle(nPart);
             for (int idxPart = 0; idxPart < nPart; idxPart++) {
                 G4PrimaryParticle *nowPart = nowVert->GetPrimary(idxPart);
-                if (fgTLS->fPrimary->GetPrimaryParticleSize() <= partCnt + 1) {
+                if (fgTLS->fBranches.fPrimary->GetPrimaryParticleSize() <= partCnt + 1) {
                     G4cerr << "WARNING: The number of primary particles exceeds the maximum number."
                               "This particle will not be added."
                            << G4endl;
@@ -277,7 +279,8 @@ namespace simcore {
                 }
 
                 PrimaryParticle *newPP =
-                    new (fgTLS->fPrimary->GetPrimaryParticleObjPtr(partCnt++)) PrimaryParticle();
+                    new (fgTLS->fBranches.fPrimary->GetPrimaryParticleObjPtr(partCnt++))
+                        PrimaryParticle();
                 newPP->SetVertexIdx(idxVert);
                 newPP->SetPxPyPzE(nowPart->GetPx() / MeV, nowPart->GetPy() / MeV,
                                   nowPart->GetPz() / MeV, nowPart->GetKineticEnergy() / MeV);
@@ -335,25 +338,27 @@ namespace simcore {
     }
 
     void RootManager::MakeBranches() const {
-        fgTLS->fTCATrack = new TClonesArray("simobj::Track", fgcMaxTrackNum);
-        fgTLS->fNTrack   = 0;
-        fgTLS->fTree->Branch("Tracks", &fgTLS->fTCATrack);
+        fgTLS->fTree->Branch("complete", &fgTLS->fBranches.fComplete);
+
+        fgTLS->fBranches.fTCATrack = new TClonesArray("simobj::Track", fgcMaxTrackNum);
+        fgTLS->fNTrack             = 0;
+        fgTLS->fTree->Branch("Tracks", &fgTLS->fBranches.fTCATrack);
 
         fgTLS->fID2IdxTable.clear();
 
         fgTLS->fNStep = 0;
         if (fRecordStep) {
-            fgTLS->fTCAStep = new TClonesArray("simobj::Step", fgcMaxStepNum);
-            fgTLS->fTree->Branch("Steps", &fgTLS->fTCAStep);
+            fgTLS->fBranches.fTCAStep = new TClonesArray("simobj::Step", fgcMaxStepNum);
+            fgTLS->fTree->Branch("Steps", &fgTLS->fBranches.fTCAStep);
         } else {
-            fgTLS->fTCAStep = nullptr;
+            fgTLS->fBranches.fTCAStep = nullptr;
         }
 
         if (fRecordPrimary) {
-            fgTLS->fPrimary = new simobj::Primary;
-            fgTLS->fTree->Branch("Primary", &fgTLS->fPrimary);
+            fgTLS->fBranches.fPrimary = new simobj::Primary;
+            fgTLS->fTree->Branch("Primary", &fgTLS->fBranches.fPrimary);
         } else {
-            fgTLS->fPrimary = nullptr;
+            fgTLS->fBranches.fPrimary = nullptr;
         }
     }
 
@@ -387,10 +392,10 @@ namespace simcore {
         delete fgTLS->fTree;
         fgTLS->fFile.reset();
 
-        delete fgTLS->fTCATrack;
+        delete fgTLS->fBranches.fTCATrack;
 
-        if (fRecordStep) delete fgTLS->fTCAStep;
-        if (fRecordPrimary) delete fgTLS->fPrimary;
+        if (fRecordStep) delete fgTLS->fBranches.fTCAStep;
+        if (fRecordPrimary) delete fgTLS->fBranches.fPrimary;
 
         delete fgTLS;
         fgTLS = nullptr;

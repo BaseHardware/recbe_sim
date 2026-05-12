@@ -26,6 +26,14 @@ class G4Track;
 class G4Event;
 
 namespace simcore {
+    struct TreeBranches {
+        bool fComplete;
+
+        TClonesArray *fTCATrack;
+        TClonesArray *fTCAStep;
+        simobj::Primary *fPrimary;
+    };
+
     struct TLSContainer {
         std::shared_ptr<ROOT::TBufferMergerFile> fFile;
 
@@ -34,14 +42,13 @@ namespace simcore {
 
         int fNTrack;
         std::map<int, size_t> fID2IdxTable;
-        TClonesArray *fTCATrack;
 
         int fNStep;
-        TClonesArray *fTCAStep;
 
-        simobj::Primary *fPrimary;
         bool fTrackDisabled;
         bool fStepDisabled;
+
+        TreeBranches fBranches;
     };
 
     class RootManager {
@@ -129,7 +136,7 @@ namespace simcore {
 
         inline static G4Mutex fgcStartMutex = G4MUTEX_INITIALIZER;
 
-        inline static int fgcMaxTrackNum = 20000;
+        inline static int fgcMaxTrackNum = 10000;
         inline static int fgcMaxStepNum  = 10000000;
 
         static G4ThreadLocal TLSContainer *fgTLS;

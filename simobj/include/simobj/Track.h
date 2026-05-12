@@ -50,7 +50,7 @@ namespace simobj {
 
         void Print(Option_t *option = "") const override;
 
-        static const int fgcMaxStepSize = 10000;
+        static const int fgcMaxStepSize = 2000;
 
       private:
         int fPDGCode;
