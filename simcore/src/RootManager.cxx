@@ -57,12 +57,7 @@ static void G4Step2SimStep(const G4Step *src, simobj::Step *dest) {
 
     std::string procName, volName;
 
-    const G4VProcess *nowProcess = src->GetPostStepPoint()->GetProcessDefinedStep();
-    if (nowProcess == nullptr) {
-        procName = "initStep";
-    } else {
-        procName = nowProcess->GetProcessName();
-    }
+    procName = src->GetPostStepPoint()->GetProcessDefinedStep()->GetProcessName();
 
     const G4VPhysicalVolume *nowVolume = src->GetPostStepPoint()->GetPhysicalVolume();
     if (nowVolume == nullptr) {
@@ -104,10 +99,15 @@ static void G4Track2SimTrack(const G4Track *src, simobj::Track *dest, G4bool sta
     simobj::Step *destStep;
 
     if (start) {
-        procName = "initStep";
-        volName  = src->GetVolume()->GetName();
-        edep     = 0;
-        niEdep   = 0;
+        const G4VProcess *cProc = src->GetCreatorProcess();
+        if (cProc == nullptr)
+            procName = "PrimaryGeneratorAction";
+        else
+            procName = cProc->GetProcessName();
+
+        volName = src->GetVolume()->GetName();
+        edep    = 0;
+        niEdep  = 0;
 
         nDaug     = 0;
         copyNo    = src->GetVolume()->GetCopyNo();
