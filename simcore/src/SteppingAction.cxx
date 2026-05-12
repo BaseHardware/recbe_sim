@@ -11,7 +11,13 @@ namespace simcore {
 
         if (track->GetTrackStatus() != fStopAndKill &&
             track->GetTrackStatus() != fKillTrackAndSecondaries) {
-            RootManager::GetInstance().AppendStep(step);
+            auto &rmInstance = RootManager::GetInstance();
+            if (!rmInstance.AppendStep(step)) {
+                G4cerr << "The number of steps exceeds the limit. All the further steps from this "
+                          "event will not be recorded."
+                       << G4endl;
+                rmInstance.DisableStep();
+            }
         }
 
         StepAction(step);

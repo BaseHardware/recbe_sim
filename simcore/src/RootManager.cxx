@@ -173,11 +173,16 @@ namespace simcore {
         fgTLS->fNTrack = 0;
         fgTLS->fNStep  = 0;
 
+        fgTLS->fTrackDisabled = false;
+        fgTLS->fStepDisabled  = false;
+
         fgTLS->fID2IdxTable.clear();
     }
 
     bool RootManager::CheckTrack(const G4Track *track, G4bool start) const {
         using namespace simobj;
+
+        if (fgTLS->fTrackDisabled) return true;
 
         if (fgcMaxTrackNum <= fgTLS->fNTrack) {
             G4cerr << "WARNING: The number of tracks exceeds the maximum number (" << fgcMaxTrackNum
@@ -212,7 +217,16 @@ namespace simcore {
     bool RootManager::AppendStep(const G4Step *step) const {
         using namespace simobj;
 
-        if (!fRecordStep) return false;
+        const G4Track *track = step->GetTrack();
+
+        if (fgTLS->fStepDisabled) {
+            return true;
+        } else if (!fRecordStep) {
+            return false;
+        } else if (fgTLS->fTrackDisabled &
+                   fgTLS->fID2IdxTable.find(track->GetTrackID()) == fgTLS->fID2IdxTable.end()) {
+            return true;
+        }
 
         if (fgcMaxStepNum <= fgTLS->fNStep) {
             G4cerr << "WARNING: The number of steps exceeds the maximum number (" << fgcMaxStepNum
@@ -220,7 +234,6 @@ namespace simcore {
             return false;
         }
 
-        const G4Track *track = step->GetTrack();
         Track *tcaTrack =
             static_cast<Track *>((*fgTLS->fTCATrack)[fgTLS->fID2IdxTable[track->GetTrackID()]]);
         tcaTrack->AppendStepIdx(fgTLS->fNStep);

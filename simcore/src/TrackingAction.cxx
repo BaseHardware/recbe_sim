@@ -3,7 +3,13 @@
 
 namespace simcore {
     void TrackingAction::PreUserTrackingAction(const G4Track *trk) {
-        RootManager::GetInstance().CheckTrack(trk, true);
+        auto &rmInstance = RootManager::GetInstance();
+        if (!rmInstance.CheckTrack(trk, true)) {
+            G4cerr << "The number of tracks exceeds the limit. All the further tracks from this "
+                      "event will not be recorded."
+                   << G4endl;
+            rmInstance.DisableTrack();
+        }
         PreAction(trk);
     }
 

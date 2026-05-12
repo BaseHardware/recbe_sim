@@ -40,6 +40,8 @@ namespace simcore {
         TClonesArray *fTCAStep;
 
         simobj::Primary *fPrimary;
+        bool fTrackDisabled;
+        bool fStepDisabled;
     };
 
     class RootManager {
@@ -86,6 +88,9 @@ namespace simcore {
 
         void SetTreeBufferLimit(size_t a) { fTreeBufferLimit = a; }
         size_t GetTreeBufferLimit() const { return fTreeBufferLimit; }
+
+        void DisableTrack(bool a = true) { fgTLS->fTrackDisabled = a; }
+        void DisableStep(bool a = true) { fgTLS->fStepDisabled = a; }
 
         std::string GetFilename() const { return fFilename; }
         std::string GetTreename() const { return fTreename; }
