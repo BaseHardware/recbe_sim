@@ -28,7 +28,9 @@ class G4Event;
 namespace simcore {
     struct TLSContainer {
         std::shared_ptr<ROOT::TBufferMergerFile> fFile;
+
         TTree *fTree;
+        size_t fFilledBytes;
 
         int fNTrack;
         std::map<int, size_t> fID2IdxTable;
@@ -82,6 +84,9 @@ namespace simcore {
         void SetMaxStepNum(int a) { fgcMaxStepNum = a; }
         int GetMaxStepNum() const { return fgcMaxStepNum; }
 
+        void SetTreeBufferLimit(size_t a) { fTreeBufferLimit = a; }
+        size_t GetTreeBufferLimit() const { return fTreeBufferLimit; }
+
         std::string GetFilename() const { return fFilename; }
         std::string GetTreename() const { return fTreename; }
         std::string GetPersistentTreename() const { return fPTreename; }
@@ -94,7 +99,8 @@ namespace simcore {
                     const char *persistent_treename = "persistent")
             : fMessenger(nullptr), fFilename(filename), fTreename(treename),
               fPTreename(persistent_treename), fStarted(false), fRecordStep(true),
-              fRecordPrimary(true), fMerger(nullptr), fPTree(nullptr), fMetadata(nullptr) {
+              fRecordPrimary(true), fMerger(nullptr), fPTree(nullptr), fMetadata(nullptr),
+              fTreeBufferLimit(10 * 1024 * 1024) {
             fMessenger = new RootManagerMessenger(this);
         };
         virtual ~RootManager() { delete fMessenger; };
@@ -113,6 +119,8 @@ namespace simcore {
         std::shared_ptr<ROOT::TBufferMergerFile> fFileForMaster;
         TTree *fPTree;
         simobj::Metadata *fMetadata;
+
+        size_t fTreeBufferLimit;
 
         inline static G4Mutex fgcStartMutex = G4MUTEX_INITIALIZER;
 

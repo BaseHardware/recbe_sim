@@ -152,7 +152,17 @@ namespace simcore {
     G4ThreadLocal TLSContainer *RootManager::fgTLS = nullptr;
 
     void RootManager::Fill() const {
-        fgTLS->fTree->Fill();
+        size_t &filledBytes = fgTLS->fFilledBytes;
+
+        filledBytes += fgTLS->fTree->Fill();
+        if (fTreeBufferLimit != 0 && filledBytes >= fTreeBufferLimit) {
+            G4cout << "The size of raw data filled into TTree is " << filledBytes / 1024. / 1024.
+                   << " MiB (> " << fTreeBufferLimit / 1024. / 1024.
+                   << " MiB). The I/O buffer will be flushed." << G4endl;
+            fgTLS->fTree->FlushBaskets();
+            fgTLS->fFile->Write();
+            filledBytes = 0;
+        }
         SafeTermination::RestoreSignalHandler();
     }
 
@@ -176,7 +186,7 @@ namespace simcore {
         }
 
         if (fgcMaxStepNum <= fgTLS->fNStep) {
-            G4cerr << "WARNING: The number of steps exceeds the maximum number (" << fgcMaxTrackNum
+            G4cerr << "WARNING: The number of steps exceeds the maximum number (" << fgcMaxStepNum
                    << "). This track will not be added." << G4endl;
             return false;
         }
@@ -205,7 +215,7 @@ namespace simcore {
         if (!fRecordStep) return false;
 
         if (fgcMaxStepNum <= fgTLS->fNStep) {
-            G4cerr << "WARNING: The number of steps exceeds the maximum number (" << fgcMaxTrackNum
+            G4cerr << "WARNING: The number of steps exceeds the maximum number (" << fgcMaxStepNum
                    << "). This step will not be added." << G4endl;
             return false;
         }
@@ -344,6 +354,8 @@ namespace simcore {
 
         fgTLS->fTree =
             new TTree(fTreename.c_str(), "An instance of TTree for the simulation output");
+        fgTLS->fFilledBytes = 0;
+
         if (fgTLS->fTree == nullptr) return false;
         fgTLS->fTree->ResetBit(kMustCleanup);
         fgTLS->fTree->SetDirectory(fgTLS->fFile.get());
