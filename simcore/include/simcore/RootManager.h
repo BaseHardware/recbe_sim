@@ -75,7 +75,7 @@ namespace simcore {
         void SetPersistentTreename(const char *a) { fPTreename = a; }
 
         void Fill() const;
-        void Clear() const;
+        void Reset() const;
 
         bool CheckTrack(const G4Track *track, G4bool start) const;
         bool AppendStep(const G4Step *step) const;
@@ -136,7 +136,7 @@ namespace simcore {
 
         inline static G4Mutex fgcStartMutex = G4MUTEX_INITIALIZER;
 
-        inline static int fgcMaxTrackNum = 10000;
+        inline static int fgcMaxTrackNum = 20000;
         inline static int fgcMaxStepNum  = 10000000;
 
         static G4ThreadLocal TLSContainer *fgTLS;

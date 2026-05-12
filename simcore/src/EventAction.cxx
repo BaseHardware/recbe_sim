@@ -8,7 +8,7 @@
 
 namespace simcore {
     void EventAction::BeginOfEventAction(const G4Event *event) {
-        RootManager::GetInstance().Clear();
+        RootManager::GetInstance().Reset();
         EventTrigger::GetInstance().Reset();
 
         BeginAction(event);

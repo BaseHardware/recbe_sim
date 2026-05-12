@@ -168,7 +168,7 @@ namespace simcore {
         SafeTermination::RestoreSignalHandler();
     }
 
-    void RootManager::Clear() const {
+    void RootManager::Reset() const {
         if (fgTLS->fBranches.fTCAStep != nullptr) fgTLS->fBranches.fTCAStep->Clear("C");
         fgTLS->fBranches.fTCATrack->Clear("C");
 
@@ -186,14 +186,8 @@ namespace simcore {
 
         if (fgTLS->fTrackDisabled) return true;
 
-        if (fgcMaxTrackNum <= fgTLS->fNTrack) {
+        if (start && fgcMaxTrackNum <= fgTLS->fNTrack) {
             G4cerr << "WARNING: The number of tracks exceeds the maximum number (" << fgcMaxTrackNum
-                   << "). This track will not be added." << G4endl;
-            return false;
-        }
-
-        if (fgcMaxStepNum <= fgTLS->fNStep) {
-            G4cerr << "WARNING: The number of steps exceeds the maximum number (" << fgcMaxStepNum
                    << "). This track will not be added." << G4endl;
             return false;
         }
