@@ -11,6 +11,8 @@
 #include "G4Material.hh"
 #include "G4NistManager.hh"
 #include "G4PVPlacement.hh"
+#include "G4ProductionCuts.hh"
+#include "G4Region.hh"
 #include "G4SDManager.hh"
 #include "G4SolidStore.hh"
 #include "G4SubtractionSolid.hh"
@@ -174,6 +176,18 @@ namespace bl10sim {
 
         ftSimpleRotMtxX90Deg->rotateX(90 * deg);
         ftSimpleRotMtxY90Deg->rotateY(90 * deg);
+
+        fFPGADieRegion = new G4Region("FPGADieRegion");
+
+        G4ProductionCuts *cuts = new G4ProductionCuts();
+
+        G4double defCut = 1 * nanometer;
+        cuts->SetProductionCut(defCut, "gamma");
+        cuts->SetProductionCut(defCut, "e-");
+        cuts->SetProductionCut(defCut, "e+");
+        cuts->SetProductionCut(defCut, "proton");
+
+        fFPGADieRegion->SetProductionCuts(cuts);
     }
 
     void BL10DetectorConstruction::DefineMaterials() {
@@ -238,6 +252,12 @@ namespace bl10sim {
         matBResin->AddMaterial(matBorax, 50. * perCent);
         matBResin->AddMaterial(matPE, 50. * perCent);
     }
+    BL10DetectorConstruction::~BL10DetectorConstruction() {
+        delete ftSimpleRotMtxX90Deg;
+        delete ftSimpleRotMtxY90Deg;
+
+        delete fFPGADieRegion;
+    };
 
     void BL10DetectorConstruction::SetGeometryParameters() {
         SetBL10RoomParameters();
@@ -1692,6 +1712,8 @@ namespace bl10sim {
             fpgaSubstrateLV = new G4LogicalVolume(fpgaSubstrateBox, matFR4, "MkIIFPGASubstrateLV");
             fpgaLV          = new G4LogicalVolume(fpgaDieBox, matSi, "MkIIFPGADieLV");
             fpgaLidLV       = new G4LogicalVolume(fpgaLidBox, matLid, "MkIIFPGALidLV");
+
+            fFPGADieRegion->AddRootLogicalVolume(fpgaLV);
         } else {
             pcbLV           = lvsInst->GetVolume("MkIIPCBLV", false);
             fpgaSubstrateLV = lvsInst->GetVolume("MkIIFPGASubstrateLV", false);
@@ -1773,6 +1795,8 @@ namespace bl10sim {
             fpgaSubstrateLV = new G4LogicalVolume(fpgaSubstrateBox, matFR4, "RECBEFPGASubstrateLV");
             fpgaLV          = new G4LogicalVolume(fpgaDieBox, matSi, "RECBEFPGADieLV");
             fpgaLidLV       = new G4LogicalVolume(fpgaLidBox, matLid, "RECBEFPGALidLV");
+
+            fFPGADieRegion->AddRootLogicalVolume(fpgaLV);
         } else {
             pcbLV           = lvsInst->GetVolume("RECBEPCBLV", false);
             fpgaSubstrateLV = lvsInst->GetVolume("RECBEFPGASubstrateLV", false);
@@ -1849,6 +1873,8 @@ namespace bl10sim {
             fpgaSubstrateLV =
                 new G4LogicalVolume(fpgaSubstrateBox, matFR4, "ROESTIFPGASubstrateLV");
             fpgaLV = new G4LogicalVolume(fpgaDieBox, matSi, "ROESTIFPGADieLV");
+
+            fFPGADieRegion->AddRootLogicalVolume(fpgaLV);
         } else {
             pcbLV           = lvsInst->GetVolume("ROESTIPCBLV", false);
             fpgaSubstrateLV = lvsInst->GetVolume("ROESTIFPGASubstrateLV", false);

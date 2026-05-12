@@ -3,16 +3,23 @@
 
 #include "simcore/DetectorConstruction.h"
 
-#include "G4RotationMatrix.hh"
 #include "G4ThreeVector.hh"
 #include "G4TwoVector.hh"
 #include "G4VUserDetectorConstruction.hh"
 
+#include <CLHEP/Vector/ThreeVector.h>
 #include <array>
 #include <vector>
 
+namespace CLHEP {
+    class HepRotation;
+};
+
+using G4RotationMatrix = CLHEP::HepRotation;
+
 class G4VPhysicalVolume;
 class G4GlobalMagFieldMessenger;
+class G4Region;
 class G4VSolid;
 class G4Material;
 
@@ -67,10 +74,7 @@ namespace bl10sim {
 
       public:
         BL10DetectorConstruction();
-        virtual ~BL10DetectorConstruction() override {
-            delete ftSimpleRotMtxX90Deg;
-            delete ftSimpleRotMtxY90Deg;
-        };
+        virtual ~BL10DetectorConstruction() override;
 
       public:
         void ConstructSDandField() override;
@@ -326,6 +330,8 @@ namespace bl10sim {
         std::array<G4double, 9> fBracketBoardNegXMargins;
         std::array<G4double, 9> fPosXBracketYOffset;
         std::array<G4double, 9> fNegXBracketYOffset;
+
+        G4Region *fFPGADieRegion;
     };
 } // namespace bl10sim
 #endif

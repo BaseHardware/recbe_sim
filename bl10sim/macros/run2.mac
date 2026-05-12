@@ -12,6 +12,11 @@
 #/process/em/verbose 0
 #/process/had/verbose 0
 #
+
+/prim_gen/duct_length 12.7 m
+
+/process/em/AddMicroElecRegion FPGADieRegion
+
 /run/initialize
 #
 # Default kinemtics:  
