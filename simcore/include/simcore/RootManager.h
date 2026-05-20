@@ -136,7 +136,7 @@ namespace simcore {
 
         inline static G4Mutex fgcStartMutex = G4MUTEX_INITIALIZER;
 
-        inline static int fgcMaxTrackNum = 20000;
+        inline static int fgcMaxTrackNum = 40000;
         inline static int fgcMaxStepNum  = 10000000;
 
         static G4ThreadLocal TLSContainer *fgTLS;
