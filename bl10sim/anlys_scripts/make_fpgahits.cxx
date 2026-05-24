@@ -1,5 +1,4 @@
 #include <algorithm>
-#include <array>
 #include <vector>
 
 #include "TClonesArray.h"
@@ -82,7 +81,8 @@ struct HitInfo {
 
         double distance = sqrt(x_diff * x_diff + y_diff * y_diff + z_diff * z_diff);
 
-        if (pdb->GetParticle(target.GetPDGCode())->Charge() == 0) {
+        auto *particle = pdb->GetParticle(target.GetPDGCode());
+        if (particle != nullptr && particle->Charge() == 0) {
             return false;
         } else if (fPVName != step.GetVolumeName()) {
             return false;
@@ -100,7 +100,14 @@ struct HitInfo {
     bool AppendTrack(const simobj::Track &track) {
         const simobj::Step &step = track.GetFinalStep();
 
-        int trkCharge = pdb->GetParticle(track.GetPDGCode())->Charge();
+        auto *particle = pdb->GetParticle(track.GetPDGCode());
+
+        int trkCharge;
+        if (particle == nullptr)
+            trkCharge = 1;
+        else
+            trkCharge = abs(particle->Charge());
+
         int newCharge = fChargeNum + trkCharge;
 
         if (IsAcceptableTrack(track)) {
@@ -131,7 +138,7 @@ void make_fpgahits(const char *input_file  = "./simout.root",
     double x, y, z;
     int chargeNum;
 
-    array<simobj::Track, 40000> tracks_in_fpga;
+    simobj::Track *tracks_in_fpga = new simobj::Track[40000];
 
     auto FillTreeWithHit = [&](vector<HitInfo> &buffer, int entry) -> void {
         evtid = entry;
@@ -176,10 +183,12 @@ void make_fpgahits(const char *input_file  = "./simout.root",
     TClonesArray *tcaTrack   = nullptr;
     TClonesArray *tcaStep    = nullptr;
     simobj::Primary *primary = nullptr;
+    bool complete;
 
     pITree->SetBranchAddress("Steps", &tcaStep);
     pITree->SetBranchAddress("Tracks", &tcaTrack);
     pITree->SetBranchAddress("Primary", &primary);
+    pITree->SetBranchAddress("complete", &complete);
 
     int n_evts = pITree->GetEntries();
 
@@ -187,6 +196,7 @@ void make_fpgahits(const char *input_file  = "./simout.root",
 
     for (int i_evt = 0; i_evt < n_evts; i_evt++) {
         pITree->GetEntry(i_evt);
+        if (!complete) continue;
 
         int n_trk = tcaTrack->GetEntries();
 
@@ -198,7 +208,7 @@ void make_fpgahits(const char *input_file  = "./simout.root",
 
         cout << "EvtID: " << i_evt << " | Tracknum: " << tracknum << endl;
 
-        sort(tracks_in_fpga.begin(), tracks_in_fpga.begin() + tracknum);
+        sort(tracks_in_fpga, tracks_in_fpga + tracknum);
 
         HitInfo currentHit;
         for (size_t idx_track = 0; idx_track < tracknum; idx_track++) {
@@ -223,6 +233,8 @@ void make_fpgahits(const char *input_file  = "./simout.root",
 
         hiBuffer.clear();
     }
+
+    delete[] tracks_in_fpga;
 
     pInput->Close();
     pOutput->Write();
