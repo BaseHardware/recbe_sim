@@ -43,7 +43,9 @@ void dump_tracks() {
     for (size_t idx_track = 0; idx_track < nTrack; idx_track++) {
         simobj::Track *nowtrk = static_cast<simobj::Track *>(tcaTrack->At(idx_track));
 
-        cout << "Track #" << idx_track + 1 << ": " << nowtrk->GetName() << endl;
+        cout << "Track #" << idx_track + 1 << ": " << nowtrk->GetName()
+             << " [TID: " << nowtrk->GetTrackID() << " | PID: " << nowtrk->GetParentID() << "]"
+             << endl;
         size_t nStep = nowtrk->GetNStep();
         cout << " Step#         X          Y          Z           KineE         dEStep             "
                 "    Volume        CopyNo       EnvCopyNo   Process  #daug"
