@@ -29,6 +29,8 @@ namespace simobj {
         void SetNonIonDepositedEnergy(double a) { fNIEdep = a; }
         double GetNonIonDepositedEnergy() const { return fNIEdep; }
 
+        double GetIonDepositedEnergy() const { return fEdep - fNIEdep; }
+
         void SetProperTime(double a) { fProperTime = a; }
         double GetProperTime() const { return fProperTime; }
 
