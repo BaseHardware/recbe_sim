@@ -84,6 +84,8 @@ flags = [
 
     '-isystem', '/storage/software/root/6.36.04/x86_64/fc42-gcc15.2.1/include',
     '-isystem', '/storage/software/Geant4/11.3.2/x86_64/fc42-gcc15.1.1/include/Geant4',
+    '-isystem', '/storage/software/root/6.32.12/x86_64/fc42-gcc15.2.1/include',
+    '-isystem', '/storage/software/Geant4/11.3.1/x86_64/fc42-gcc15.2.1/include/Geant4'
 ]
 
 nowdir="@PROJECT_SOURCE_DIR@"
