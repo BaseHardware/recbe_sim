@@ -1,35 +1,14 @@
 #ifndef __eventviewer_EventViewer_h__
 #define __eventviewer_EventViewer_h__
 
+#include "eventviewer/EventData.h"
+#include "eventviewer/EventViewerWidgets.h"
+#include "eventviewer/RenderContext.h"
+#include "eventviewer/ViewSettings.h"
+
 #include "TGFrame.h"
 
-#include <memory>
 #include <string>
-#include <unordered_map>
-#include <vector>
-
-class TCanvas;
-class TClonesArray;
-class TFile;
-class TGCheckButton;
-class TGComboBox;
-class TGLabel;
-class TGNumberEntry;
-class TGTab;
-class TGTextButton;
-class TGTextView;
-class TGColorSelect;
-class TGLEmbeddedViewer;
-class TGLEventHandler;
-class TTree;
-class TObject;
-
-namespace simobj {
-    class Metadata;
-    class Primary;
-    class Step;
-    class Track;
-} // namespace simobj
 
 namespace eventviewer {
     class EventViewer : public TGMainFrame {
@@ -54,66 +33,17 @@ namespace eventviewer {
 
       private:
         bool OpenFile(const std::string &filename);
-        bool LoadMetadata();
-        bool ImportGeometry();
 
         void BuildUi();
         void UpdateEventSummary();
         void UpdateObjectLists();
-        void DrawGeometry();
-        void DrawTrackLines();
-        void DrawStepMarkers();
-        void ClearEventPrimitives();
-        void ApplyDefaultCamera();
         void ApplyInitialWindowSize();
         void FlushInitialDisplay();
 
-        static double DisplayLength(double millimeter) { return 0.1 * millimeter; }
-        static int TrackColor(const simobj::Track &track);
-        static std::string FormatStep(const simobj::Step &step, int idx, int trackId);
-        static std::string FormatTrack(const simobj::Track &track, int idx);
-
-        std::string fFilename;
-        std::string fGeometryPath;
-
-        std::unique_ptr<TFile> fFile;
-        TTree *fTree;
-        TTree *fPersistentTree;
-
-        bool fComplete;
-        TClonesArray *fTracks;
-        TClonesArray *fSteps;
-        simobj::Primary *fPrimary;
-        simobj::Metadata *fMetadata;
-
-        Long64_t fCurrentEvent;
-        Long64_t fEventCount;
-
-        TGNumberEntry *fEventEntry;
-        TGLabel *fFileLabel;
-        TGLabel *fSummaryLabel;
-        TGCheckButton *fShowGeometry;
-        TGCheckButton *fShowTracks;
-        TGCheckButton *fShowSteps;
-        TGTextView *fMetadataText;
-        TGTextView *fTrackText;
-        TGTextView *fStepText;
-        TGComboBox *fGraphicalVerbosityBox;
-        TGNumberEntry *fViewXEntry;
-        TGNumberEntry *fViewYEntry;
-        TGNumberEntry *fViewZEntry;
-        TGNumberEntry *fUpXEntry;
-        TGNumberEntry *fUpYEntry;
-        TGNumberEntry *fUpZEntry;
-        TGColorSelect *fBackgroundColorSelect;
-        TCanvas *fCanvas;
-        TGLEmbeddedViewer *fGLViewer;
-        TGLEventHandler *fGLHandler;
-        int fGraphicalVerbosity;
-        bool fCameraInitialized;
-
-        std::vector<TObject *> fEventPrimitives;
-        std::unordered_map<size_t, int> fStepToTrackId;
+        EventData fEvent;
+        EventViewerWidgets fUi;
+        RenderContext fRender;
+        ViewSettings fView;
 
         ClassDefOverride(EventViewer, 0)
     };
