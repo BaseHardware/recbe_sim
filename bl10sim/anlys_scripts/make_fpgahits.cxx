@@ -22,6 +22,9 @@ const TDatabasePDG *pdb = TDatabasePDG::Instance();
 constexpr Double_t time_window = 12;
 constexpr Double_t hit_size    = 0.1;
 
+constexpr double yield_factor  = 0.1;
+constexpr double charge_per_eV = 1. / 3.6;
+
 void print_onestep(const simobj::Step *s) {
     cout << setw(9) << s->GetX() << "  " << setw(9) << s->GetY() << "  " << setw(9) << s->GetZ()
          << "  " << setw(12) << s->GetKineticEnergy() << "  " << setw(13) << s->GetDepositedEnergy()
@@ -115,9 +118,7 @@ struct HitInfo {
         fZ = s->GetZ();
         fT = s->GetGlobalTime();
 
-        double e = s->GetIonDepositedEnergy();
-        cout << e << " MeV | " << e * 1e6 / 3.6 << " q" << endl;
-        fChargeNum = s->GetIonDepositedEnergy() * 1e6 / 3.6;
+        fChargeNum = s->GetIonDepositedEnergy() * 1e6 * charge_per_eV * yield_factor;
     };
 
     bool IsAcceptable(const simobj::Step *target) const {
@@ -182,7 +183,7 @@ struct HitInfo {
     }
 
     bool AppendStep(const simobj::Step *step) {
-        int trkCharge = (step->GetIonDepositedEnergy() * 1e6) / 3.6;
+        int trkCharge = step->GetIonDepositedEnergy() * 1e6 * charge_per_eV * yield_factor;
 
         int newCharge = fChargeNum + trkCharge;
 
@@ -341,7 +342,9 @@ void make_fpgahits(const char *input_file  = "simout.root",
             }
 
             if (!appended) {
-                hiBuffer.push_back(HitInfo(step.first, primary));
+                HitInfo newHit = HitInfo(step.first, primary);
+
+                if (newHit.fChargeNum != 0) hiBuffer.push_back(std::move(newHit));
             }
         }
         cout << "Hitting end. [N = " << hiBuffer.size() << "] Filling start." << endl;
