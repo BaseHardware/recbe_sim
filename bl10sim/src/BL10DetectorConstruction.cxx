@@ -177,7 +177,8 @@ namespace bl10sim {
         ftSimpleRotMtxX90Deg->rotateX(90 * deg);
         ftSimpleRotMtxY90Deg->rotateY(90 * deg);
 
-        fFPGADieRegion = new G4Region("FPGADieRegion");
+        fFPGADieRegion       = new G4Region("FPGADieRegion");
+        fFrameAndBoardRegion = new G4Region("FrameAndBoardRegion");
 
         G4ProductionCuts *cuts = new G4ProductionCuts();
 
@@ -257,6 +258,7 @@ namespace bl10sim {
         delete ftSimpleRotMtxY90Deg;
 
         delete fFPGADieRegion;
+        delete fFrameAndBoardRegion;
     };
 
     void BL10DetectorConstruction::SetGeometryParameters() {
@@ -2158,6 +2160,7 @@ namespace bl10sim {
                           "TriangleBracketPV", envelopeLV, true, 3, fCheckOverlaps);
 
         sFBCplxLVCache[input] = envelopeLV;
+        fFrameAndBoardRegion->AddRootLogicalVolume(envelopeLV);
         return envelopeLV;
     }
 

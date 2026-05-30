@@ -332,6 +332,7 @@ namespace bl10sim {
         std::array<G4double, 9> fNegXBracketYOffset;
 
         G4Region *fFPGADieRegion;
+        G4Region *fFrameAndBoardRegion;
     };
 } // namespace bl10sim
 #endif
