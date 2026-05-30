@@ -12,6 +12,7 @@ class TCanvas;
 class TClonesArray;
 class TFile;
 class TGCheckButton;
+class TGComboBox;
 class TGLabel;
 class TGNumberEntry;
 class TGTab;
@@ -49,6 +50,7 @@ namespace eventviewer {
         void ApplyCameraFromUi();
         void ResetCameraControls();
         void ApplyBackgroundColor(Pixel_t color);
+        void SetGraphicalVerbosity(Int_t level);
 
       private:
         bool OpenFile(const std::string &filename);
@@ -63,6 +65,8 @@ namespace eventviewer {
         void DrawStepMarkers();
         void ClearEventPrimitives();
         void ApplyDefaultCamera();
+        void ApplyInitialWindowSize();
+        void FlushInitialDisplay();
 
         static double DisplayLength(double millimeter) { return 0.1 * millimeter; }
         static int TrackColor(const simobj::Track &track);
@@ -94,6 +98,7 @@ namespace eventviewer {
         TGTextView *fMetadataText;
         TGTextView *fTrackText;
         TGTextView *fStepText;
+        TGComboBox *fGraphicalVerbosityBox;
         TGNumberEntry *fViewXEntry;
         TGNumberEntry *fViewYEntry;
         TGNumberEntry *fViewZEntry;
@@ -104,6 +109,7 @@ namespace eventviewer {
         TCanvas *fCanvas;
         TGLEmbeddedViewer *fGLViewer;
         TGLEventHandler *fGLHandler;
+        int fGraphicalVerbosity;
         bool fCameraInitialized;
 
         std::vector<TObject *> fEventPrimitives;

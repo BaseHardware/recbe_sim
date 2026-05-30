@@ -14,6 +14,7 @@
 #include "TFile.h"
 #include "TGButton.h"
 #include "TGClient.h"
+#include "TGComboBox.h"
 #include "TGColorSelect.h"
 #include "TGFileDialog.h"
 #include "TGLCamera.h"
@@ -36,15 +37,17 @@
 #include "TTree.h"
 
 #include <algorithm>
+#include <array>
+#include <cmath>
 #include <cstdio>
 #include <fstream>
 #include <iomanip>
-#include <iostream>
+#include <map>
 #include <sstream>
 
 ClassImp(eventviewer::EventViewer)
 
-    namespace {
+namespace {
     constexpr int kUnknownCharge = 99;
 
     int ColorFromChargeSign(int chargeSign) {
@@ -59,7 +62,7 @@ ClassImp(eventviewer::EventViewer)
 
     int IonChargeSignFromEncoding(int pdgCode) {
         const int encoding = pdgCode < 0 ? -pdgCode : pdgCode;
-        if (encoding < 10000000) return kUnknownCharge;
+        if (encoding < 1000000000) return kUnknownCharge;
 
         G4int z             = 0;
         G4int a             = 0;
@@ -73,18 +76,70 @@ ClassImp(eventviewer::EventViewer)
         return pdgCode < 0 ? -1 : 1;
     }
 
+    int GeometryVisLevel(int verbosity) {
+        switch (verbosity) {
+        case 0:
+            return 3;
+        case 1:
+            return 5;
+        case 2:
+            return 8;
+        default:
+            return 99;
+        }
+    }
+
+    int GeometryMaxVisNodes(int verbosity) {
+        switch (verbosity) {
+        case 0:
+            return 10000;
+        case 1:
+            return 50000;
+        case 2:
+            return 200000;
+        default:
+            return 1000000;
+        }
+    }
+
+    int GeometrySegments(int verbosity) {
+        switch (verbosity) {
+        case 0:
+            return 20;
+        case 1:
+            return 40;
+        case 2:
+            return 80;
+        default:
+            return 120;
+        }
+    }
+
+    double StepDistance(const simobj::Step &a, const simobj::Step &b) {
+        const double dx = a.GetX() - b.GetX();
+        const double dy = a.GetY() - b.GetY();
+        const double dz = a.GetZ() - b.GetZ();
+        return std::sqrt(dx * dx + dy * dy + dz * dz);
+    }
+
     class ShiftTruckEventHandler : public TGLEventHandler {
       public:
         ShiftTruckEventHandler(TGWindow *window, TObject *object)
-            : TGLEventHandler(window, object), fShiftTruck(false), fLastX(0), fLastY(0) {}
+            : TGLEventHandler(window, object), fShiftTruck(false), fOwnLeftDrag(false), fLastX(0),
+              fLastY(0) {}
 
         Bool_t HandleButton(Event_t *event) override {
-            if (event->fCode == kButton1 && (event->fState & kKeyShiftMask)) {
-                if (event->fType == kButtonPress) {
+            if (event->fCode == kButton1) {
+                if (event->fType == kButtonRelease && fOwnLeftDrag) {
+                    EndShiftTruck(*event);
+                    fOwnLeftDrag = false;
+                    return kTRUE;
+                }
+                if (event->fType == kButtonPress && (event->fState & kKeyShiftMask)) {
                     BeginShiftTruck(*event);
                     return kTRUE;
                 }
-                if (event->fType == kButtonRelease) {
+                if (event->fType == kButtonRelease && (event->fState & kKeyShiftMask)) {
                     EndShiftTruck(*event);
                     return kTRUE;
                 }
@@ -95,10 +150,6 @@ ClassImp(eventviewer::EventViewer)
 
         Bool_t HandleMotion(Event_t *event) override {
             if ((event->fState & kKeyShiftMask) && (event->fState & kButton1Mask) && !fShiftTruck) {
-                Event_t release = *event;
-                release.fType   = kButtonRelease;
-                release.fCode   = kButton1;
-                TGLEventHandler::HandleButton(&release);
                 BeginShiftTruck(*event);
                 return kTRUE;
             }
@@ -125,6 +176,7 @@ ClassImp(eventviewer::EventViewer)
       private:
         void BeginShiftTruck(const Event_t &event) {
             fShiftTruck = true;
+            fOwnLeftDrag = true;
             StopMouseTimer();
             SyncMouseState(event);
         }
@@ -146,6 +198,7 @@ ClassImp(eventviewer::EventViewer)
         }
 
         bool fShiftTruck;
+        bool fOwnLeftDrag;
         int fLastX;
         int fLastY;
     };
@@ -176,20 +229,23 @@ ClassImp(eventviewer::EventViewer)
 
 namespace eventviewer {
     EventViewer::EventViewer(const TGWindow *parent, const char *filename)
-        : TGMainFrame(parent, 1900, 1080), fTree(nullptr), fPersistentTree(nullptr),
+        : TGMainFrame(parent, 1600, 900), fTree(nullptr), fPersistentTree(nullptr),
           fComplete(false), fTracks(nullptr), fSteps(nullptr), fPrimary(nullptr),
           fMetadata(nullptr), fCurrentEvent(0), fEventCount(0), fEventEntry(nullptr),
           fFileLabel(nullptr), fSummaryLabel(nullptr), fShowGeometry(nullptr), fShowTracks(nullptr),
           fShowSteps(nullptr), fMetadataText(nullptr), fTrackText(nullptr), fStepText(nullptr),
-          fViewXEntry(nullptr), fViewYEntry(nullptr), fViewZEntry(nullptr), fUpXEntry(nullptr),
-          fUpYEntry(nullptr), fUpZEntry(nullptr), fBackgroundColorSelect(nullptr), fCanvas(nullptr),
-          fGLViewer(nullptr), fGLHandler(nullptr), fCameraInitialized(false) {
+          fGraphicalVerbosityBox(nullptr), fViewXEntry(nullptr), fViewYEntry(nullptr),
+          fViewZEntry(nullptr), fUpXEntry(nullptr), fUpYEntry(nullptr), fUpZEntry(nullptr),
+          fBackgroundColorSelect(nullptr), fCanvas(nullptr), fGLViewer(nullptr), fGLHandler(nullptr),
+          fGraphicalVerbosity(1), fCameraInitialized(false) {
         BuildUi();
-        OpenFile(filename);
         MapSubwindows();
-        Resize(1900, 1080);
+        ApplyInitialWindowSize();
         MapWindow();
-        LoadEvent();
+        if (OpenFile(filename)) {
+            LoadEvent();
+            FlushInitialDisplay();
+        }
     }
 
     EventViewer::~EventViewer() {
@@ -274,6 +330,19 @@ namespace eventviewer {
         metaTab->AddFrame(fMetadataText, new TGLayoutHints(kLHintsExpandX | kLHintsExpandY));
 
         auto *viewTab = tabs->AddTab("View");
+        viewTab->AddFrame(new TGLabel(viewTab, "Graphical verbosity"),
+                          new TGLayoutHints(kLHintsLeft, 0, 0, 6, 2));
+        fGraphicalVerbosityBox = new TGComboBox(viewTab);
+        fGraphicalVerbosityBox->AddEntry("Overview", 0);
+        fGraphicalVerbosityBox->AddEntry("Normal", 1);
+        fGraphicalVerbosityBox->AddEntry("Detailed", 2);
+        fGraphicalVerbosityBox->AddEntry("Full detail", 3);
+        fGraphicalVerbosityBox->Select(fGraphicalVerbosity, kFALSE);
+        fGraphicalVerbosityBox->Connect("Selected(Int_t)", "eventviewer::EventViewer", this,
+                                        "SetGraphicalVerbosity(Int_t)");
+        viewTab->AddFrame(fGraphicalVerbosityBox,
+                          new TGLayoutHints(kLHintsExpandX, 0, 0, 0, 10));
+
         viewTab->AddFrame(new TGLabel(viewTab, "View vector"),
                           new TGLayoutHints(kLHintsLeft, 0, 0, 6, 2));
         fViewXEntry = AddVectorEntry(viewTab, "X", -1.0);
@@ -310,16 +379,50 @@ namespace eventviewer {
 
         const bool wasBatch = gROOT->IsBatch();
         gROOT->SetBatch(kTRUE);
-        fCanvas = new TCanvas("event_backing_canvas", "event_backing_canvas", 1550, 920);
+        fCanvas = new TCanvas("event_backing_canvas", "event_backing_canvas", 1200, 760);
         gROOT->SetBatch(wasBatch);
         fGLViewer = new TGLEmbeddedViewer(main, fCanvas);
-        fGLViewer->GetFrame()->Resize(1550, 920);
+        fGLViewer->GetFrame()->Resize(1200, 760);
         main->AddFrame(fGLViewer->GetFrame(), new TGLayoutHints(kLHintsExpandX | kLHintsExpandY));
         fGLViewer->SetCurrentCamera(TGLViewer::kCameraPerspXOZ);
         fGLViewer->SetResetCamerasOnUpdate(false);
         fGLViewer->SetClearColor(kBlack);
         fGLHandler = new ShiftTruckEventHandler(nullptr, fGLViewer);
         fGLViewer->GetGLWidget()->SetEventHandler(fGLHandler);
+    }
+
+    void EventViewer::ApplyInitialWindowSize() {
+        constexpr UInt_t targetWidth = 1600;
+        constexpr UInt_t targetHeight = 900;
+        constexpr UInt_t minWidth = 1100;
+        constexpr UInt_t minHeight = 720;
+
+        const UInt_t displayWidth = gClient ? gClient->GetDisplayWidth() : targetWidth;
+        const UInt_t displayHeight = gClient ? gClient->GetDisplayHeight() : targetHeight;
+        const UInt_t margin = 80;
+
+        const UInt_t maxWidth = displayWidth > margin ? displayWidth - margin : displayWidth;
+        const UInt_t maxHeight = displayHeight > margin ? displayHeight - margin : displayHeight;
+        const UInt_t width = std::max(std::min(targetWidth, maxWidth), std::min(minWidth, maxWidth));
+        const UInt_t height =
+            std::max(std::min(targetHeight, maxHeight), std::min(minHeight, maxHeight));
+
+        Resize(width, height);
+    }
+
+    void EventViewer::FlushInitialDisplay() {
+        Layout();
+        MapSubwindows();
+        if (gClient) {
+            gClient->NeedRedraw(this, kTRUE);
+            if (fGLViewer && fGLViewer->GetFrame()) {
+                gClient->NeedRedraw(fGLViewer->GetFrame(), kTRUE);
+            }
+        }
+        if (fGLViewer) fGLViewer->RequestDraw();
+        if (gSystem) {
+            for (int i = 0; i < 3; ++i) gSystem->ProcessEvents();
+        }
     }
 
     bool EventViewer::OpenFile(const std::string &filename) {
@@ -403,7 +506,9 @@ namespace eventviewer {
 
         TGeoManager::Import(fGeometryPath.c_str());
         if (gGeoManager) {
-            gGeoManager->SetVisLevel(4);
+            gGeoManager->SetVisLevel(GeometryVisLevel(fGraphicalVerbosity));
+            gGeoManager->SetMaxVisNodes(GeometryMaxVisNodes(fGraphicalVerbosity));
+            gGeoManager->SetNsegments(GeometrySegments(fGraphicalVerbosity));
             gGeoManager->SetVisOption(0);
         }
         return gGeoManager != nullptr;
@@ -460,6 +565,11 @@ namespace eventviewer {
     void EventViewer::ToggleGeometry() { RedrawEvent(); }
     void EventViewer::ToggleTracks() { RedrawEvent(); }
     void EventViewer::ToggleSteps() { RedrawEvent(); }
+
+    void EventViewer::SetGraphicalVerbosity(Int_t level) {
+        fGraphicalVerbosity = std::clamp(static_cast<int>(level), 0, 3);
+        RedrawEvent();
+    }
 
     void EventViewer::ApplyCameraFromUi() {
         if (!fGLViewer) return;
@@ -556,43 +666,81 @@ namespace eventviewer {
             fGLViewer->SetResetCamerasOnUpdate(false);
             fGLViewer->PadPaint(fCanvas);
             ApplyDefaultCamera();
+            fGLViewer->RequestDraw();
         }
 
         fCanvas->Modified();
+        fCanvas->Update();
     }
 
     void EventViewer::DrawGeometry() {
         if (!gGeoManager || !gGeoManager->GetTopVolume()) return;
+        gGeoManager->SetVisLevel(GeometryVisLevel(fGraphicalVerbosity));
+        gGeoManager->SetMaxVisNodes(GeometryMaxVisNodes(fGraphicalVerbosity));
+        gGeoManager->SetNsegments(GeometrySegments(fGraphicalVerbosity));
+        gGeoManager->SetVisOption(fGraphicalVerbosity >= 3 ? 1 : 0);
         gGeoManager->GetTopVolume()->Draw();
     }
 
     void EventViewer::DrawTrackLines() {
         if (!fTracks) return;
         const int nTracks = fTracks->GetEntriesFast();
+        bool drawnSomething = fShowGeometry->IsOn();
+        std::map<int, std::vector<std::array<double, 3>>> pointMarkers;
         for (int i = 0; i < nTracks; ++i) {
-            const auto *track = static_cast<simobj::Track *>(fTracks->At(i));
+            auto *track = static_cast<simobj::Track *>(fTracks->At(i));
             if (!track) continue;
 
+            const int color = TrackColor(*track);
             std::vector<const simobj::Step *> points;
             points.push_back(&track->GetFirstStep());
             if (fSteps) {
                 for (size_t j = 0; j < track->GetNStep(); ++j) {
-                    auto *step = static_cast<simobj::Step *>(fSteps->At((*track)[j]));
+                    const size_t stepIndex = track->GetStepIndex(j);
+                    auto *step = static_cast<simobj::Step *>(fSteps->At(stepIndex));
                     if (step) points.push_back(step);
                 }
             }
             points.push_back(&track->GetFinalStep());
             if (points.size() < 2) continue;
 
+            double pathLength = 0.0;
+            for (size_t p = 1; p < points.size(); ++p) {
+                pathLength += StepDistance(*points[p - 1], *points[p]);
+            }
+
             auto *line = new TPolyLine3D(points.size());
             for (int p = 0; p < static_cast<int>(points.size()); ++p) {
                 line->SetPoint(p, DisplayLength(points[p]->GetX()),
                                DisplayLength(points[p]->GetY()), DisplayLength(points[p]->GetZ()));
             }
-            line->SetLineColor(TrackColor(*track));
-            line->SetLineWidth(track->GetParentID() == 0 ? 3 : 1);
-            line->Draw(fShowGeometry->IsOn() ? "same" : "");
+            line->SetLineColor(color);
+            line->SetLineWidth(track->GetParentID() == 0 ? 3 : std::max(1, fGraphicalVerbosity));
+            line->Draw(drawnSomething ? "same" : "");
+            drawnSomething = true;
             fEventPrimitives.push_back(line);
+
+            if (fGraphicalVerbosity >= 2 &&
+                (fGraphicalVerbosity >= 3 || pathLength < 0.001)) {
+                auto &markers = pointMarkers[color];
+                for (const auto *point : points) {
+                    markers.push_back({DisplayLength(point->GetX()), DisplayLength(point->GetY()),
+                                       DisplayLength(point->GetZ())});
+                }
+            }
+        }
+
+        for (const auto &entry : pointMarkers) {
+            auto *markers = new TPolyMarker3D(entry.second.size());
+            for (int i = 0; i < static_cast<int>(entry.second.size()); ++i) {
+                markers->SetPoint(i, entry.second[i][0], entry.second[i][1], entry.second[i][2]);
+            }
+            markers->SetMarkerStyle(20);
+            markers->SetMarkerSize(fGraphicalVerbosity >= 3 ? 0.70 : 0.45);
+            markers->SetMarkerColor(entry.first);
+            markers->Draw(drawnSomething ? "same" : "");
+            drawnSomething = true;
+            fEventPrimitives.push_back(markers);
         }
     }
 
