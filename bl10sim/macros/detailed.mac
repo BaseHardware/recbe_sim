@@ -2,6 +2,9 @@
 
 /process/em/AddMicroElecRegion FPGADieRegion
 
+/process/em/AddEmRegion FPGADieRegion G4EmStandard_opt4
+/process/em/AddEmRegion FrameAndBoardRegion G4EmStandard_opt4
+
 # Disable all EM processes for the atomic de-excitation in global region
 /process/em/fluo false
 /process/em/auger false
