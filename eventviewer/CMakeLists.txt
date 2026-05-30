@@ -27,5 +27,5 @@ ROOT_GENERATE_DICTIONARY(G__eventviewer
     NO_CXXMODULE
 )
 
-add_executable(evt_viewer exe/evt_viewer.cxx)
+add_executable(evt_viewer apps/evt_viewer.cxx)
 target_link_libraries(evt_viewer PRIVATE eventviewer)
