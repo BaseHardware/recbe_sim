@@ -10,6 +10,7 @@ add_sim_subdir(simobj)
 add_sim_subdir(simcore)
 add_sim_subdir(bl10sim)
 add_sim_subdir(kobetdsim)
+add_sim_subdir(eventviewer)
 
 #----------------------------------------------------------------------------
 # Create a bash source script for the MC libraries
