@@ -15,10 +15,14 @@
 #include "TGFileDialog.h"
 #include "TGLabel.h"
 #include "TGLEmbeddedViewer.h"
+#include "TGLEventHandler.h"
 #include "TGNumberEntry.h"
 #include "TGTab.h"
 #include "TGTextView.h"
+#include "TGLCamera.h"
 #include "TGLViewer.h"
+#include "TGLWidget.h"
+#include "TGLUtil.h"
 #include "TPolyLine3D.h"
 #include "TPolyMarker3D.h"
 #include "TROOT.h"
@@ -37,6 +41,83 @@
 ClassImp(eventviewer::EventViewer)
 
 namespace {
+    class ShiftTruckEventHandler : public TGLEventHandler {
+      public:
+        ShiftTruckEventHandler(TGWindow *window, TObject *object)
+            : TGLEventHandler(window, object), fShiftTruck(false), fLastX(0), fLastY(0) {}
+
+        Bool_t HandleButton(Event_t *event) override {
+            if (event->fCode == kButton1 && (event->fState & kKeyShiftMask)) {
+                if (event->fType == kButtonPress) {
+                    BeginShiftTruck(*event);
+                    return kTRUE;
+                }
+                if (event->fType == kButtonRelease) {
+                    EndShiftTruck(*event);
+                    return kTRUE;
+                }
+            }
+            if (event->fType == kButtonRelease) EndShiftTruck(*event);
+            return TGLEventHandler::HandleButton(event);
+        }
+
+        Bool_t HandleMotion(Event_t *event) override {
+            if ((event->fState & kKeyShiftMask) && (event->fState & kButton1Mask) && !fShiftTruck) {
+                Event_t release = *event;
+                release.fType = kButtonRelease;
+                release.fCode = kButton1;
+                TGLEventHandler::HandleButton(&release);
+                BeginShiftTruck(*event);
+                return kTRUE;
+            }
+
+            if (fShiftTruck && fGLViewer) {
+                if (!(event->fState & kKeyShiftMask)) {
+                    EndShiftTruck(*event);
+                    return kTRUE;
+                }
+
+                const int dx = event->fX - fLastX;
+                const int dy = event->fY - fLastY;
+                SyncMouseState(*event);
+                if (dx != 0 || dy != 0) {
+                    fGLViewer->SetResetCamerasOnUpdate(false);
+                    fGLViewer->CurrentCamera().Truck(dx, -dy, kFALSE, kFALSE);
+                    fGLViewer->RequestDraw();
+                }
+                return kTRUE;
+            }
+            return TGLEventHandler::HandleMotion(event);
+        }
+
+      private:
+        void BeginShiftTruck(const Event_t &event) {
+            fShiftTruck = true;
+            StopMouseTimer();
+            SyncMouseState(event);
+        }
+
+        void EndShiftTruck(const Event_t &event) {
+            if (!fShiftTruck) return;
+            fShiftTruck = false;
+            SyncMouseState(event);
+        }
+
+        void SyncMouseState(const Event_t &event) {
+            fLastX = event.fX;
+            fLastY = event.fY;
+            fLastPos.fX = event.fX;
+            fLastPos.fY = event.fY;
+            fLastGlobalPos.fX = event.fXRoot;
+            fLastGlobalPos.fY = event.fYRoot;
+            fLastEventState = event.fState;
+        }
+
+        bool fShiftTruck;
+        int fLastX;
+        int fLastY;
+    };
+
     std::string CompactPath(const std::string &path) {
         constexpr size_t maxLen = 86;
         if (path.size() <= maxLen) return path;
@@ -48,26 +129,39 @@ namespace {
         view->AddLine(text.c_str());
         view->Update();
     }
+
+    TGNumberEntry *AddVectorEntry(TGCompositeFrame *parent, const char *label, double value) {
+        auto *row = new TGHorizontalFrame(parent);
+        parent->AddFrame(row, new TGLayoutHints(kLHintsExpandX, 0, 0, 2, 2));
+        row->AddFrame(new TGLabel(row, label), new TGLayoutHints(kLHintsLeft | kLHintsCenterY, 0, 6, 0, 0));
+        auto *entry = new TGNumberEntry(row, value, 8, -1, TGNumberFormat::kNESRealThree,
+                                        TGNumberFormat::kNEAAnyNumber);
+        row->AddFrame(entry, new TGLayoutHints(kLHintsExpandX | kLHintsCenterY));
+        return entry;
+    }
 } // namespace
 
 namespace eventviewer {
     EventViewer::EventViewer(const TGWindow *parent, const char *filename)
-        : TGMainFrame(parent, 1400, 900), fTree(nullptr), fPersistentTree(nullptr),
+        : TGMainFrame(parent, 1900, 1080), fTree(nullptr), fPersistentTree(nullptr),
           fComplete(false), fTracks(nullptr), fSteps(nullptr), fPrimary(nullptr), fMetadata(nullptr),
           fCurrentEvent(0), fEventCount(0), fEventEntry(nullptr), fFileLabel(nullptr),
           fSummaryLabel(nullptr), fShowGeometry(nullptr), fShowTracks(nullptr), fShowSteps(nullptr),
-          fMetadataText(nullptr), fTrackText(nullptr), fStepText(nullptr), fCanvas(nullptr),
-          fGLViewer(nullptr), fCameraInitialized(false) {
+          fMetadataText(nullptr), fTrackText(nullptr), fStepText(nullptr), fViewXEntry(nullptr),
+          fViewYEntry(nullptr), fViewZEntry(nullptr), fUpXEntry(nullptr), fUpYEntry(nullptr),
+          fUpZEntry(nullptr), fCanvas(nullptr), fGLViewer(nullptr), fGLHandler(nullptr),
+          fCameraInitialized(false) {
         BuildUi();
         OpenFile(filename);
         MapSubwindows();
-        Resize(GetDefaultSize());
+        Resize(1900, 1080);
         MapWindow();
         LoadEvent();
     }
 
     EventViewer::~EventViewer() {
         ClearEventPrimitives();
+        delete fGLHandler;
         delete fCanvas;
         if (!fGeometryPath.empty()) std::remove(fGeometryPath.c_str());
         Cleanup();
@@ -126,36 +220,59 @@ namespace eventviewer {
         auto *main = new TGHorizontalFrame(top);
         top->AddFrame(main, new TGLayoutHints(kLHintsExpandX | kLHintsExpandY, 6, 6, 0, 6));
 
-        const bool wasBatch = gROOT->IsBatch();
-        gROOT->SetBatch(kTRUE);
-        fCanvas = new TCanvas("event_backing_canvas", "event_backing_canvas", 900, 760);
-        gROOT->SetBatch(wasBatch);
-        fGLViewer = new TGLEmbeddedViewer(main, fCanvas);
-        main->AddFrame(fGLViewer->GetFrame(),
-                       new TGLayoutHints(kLHintsExpandX | kLHintsExpandY, 0, 6, 0, 0));
-        fGLViewer->SetCurrentCamera(TGLViewer::kCameraPerspXOZ);
-        fGLViewer->SetResetCamerasOnUpdate(false);
+        auto *left = new TGVerticalFrame(main, 280, 920);
+        main->AddFrame(left, new TGLayoutHints(kLHintsLeft | kLHintsExpandY, 0, 8, 0, 0));
 
-        auto *right = new TGVerticalFrame(main, 420, 760);
-        main->AddFrame(right, new TGLayoutHints(kLHintsRight | kLHintsExpandY));
+        fSummaryLabel = new TGLabel(left, "No file loaded");
+        left->AddFrame(fSummaryLabel, new TGLayoutHints(kLHintsExpandX, 0, 0, 0, 6));
 
-        fSummaryLabel = new TGLabel(right, "No file loaded");
-        right->AddFrame(fSummaryLabel, new TGLayoutHints(kLHintsExpandX, 0, 0, 0, 6));
-
-        auto *tabs = new TGTab(right, 420, 720);
-        right->AddFrame(tabs, new TGLayoutHints(kLHintsExpandX | kLHintsExpandY));
+        auto *tabs = new TGTab(left, 280, 880);
+        left->AddFrame(tabs, new TGLayoutHints(kLHintsExpandX | kLHintsExpandY));
 
         auto *trackTab = tabs->AddTab("Tracks");
-        fTrackText = new TGTextView(trackTab, 400, 660);
+        fTrackText = new TGTextView(trackTab, 260, 820);
         trackTab->AddFrame(fTrackText, new TGLayoutHints(kLHintsExpandX | kLHintsExpandY));
 
         auto *stepTab = tabs->AddTab("Steps");
-        fStepText = new TGTextView(stepTab, 400, 660);
+        fStepText = new TGTextView(stepTab, 260, 820);
         stepTab->AddFrame(fStepText, new TGLayoutHints(kLHintsExpandX | kLHintsExpandY));
 
         auto *metaTab = tabs->AddTab("Metadata");
-        fMetadataText = new TGTextView(metaTab, 400, 660);
+        fMetadataText = new TGTextView(metaTab, 260, 820);
         metaTab->AddFrame(fMetadataText, new TGLayoutHints(kLHintsExpandX | kLHintsExpandY));
+
+        auto *viewTab = tabs->AddTab("View");
+        viewTab->AddFrame(new TGLabel(viewTab, "View vector"),
+                          new TGLayoutHints(kLHintsLeft, 0, 0, 6, 2));
+        fViewXEntry = AddVectorEntry(viewTab, "X", -1.0);
+        fViewYEntry = AddVectorEntry(viewTab, "Y", 0.0);
+        fViewZEntry = AddVectorEntry(viewTab, "Z", 0.0);
+        viewTab->AddFrame(new TGLabel(viewTab, "Up vector"),
+                          new TGLayoutHints(kLHintsLeft, 0, 0, 10, 2));
+        fUpXEntry = AddVectorEntry(viewTab, "X", 0.0);
+        fUpYEntry = AddVectorEntry(viewTab, "Y", 1.0);
+        fUpZEntry = AddVectorEntry(viewTab, "Z", 0.0);
+        auto *viewButtons = new TGHorizontalFrame(viewTab);
+        viewTab->AddFrame(viewButtons, new TGLayoutHints(kLHintsExpandX, 0, 0, 10, 0));
+        auto *applyViewButton = new TGTextButton(viewButtons, "Apply");
+        applyViewButton->Connect("Clicked()", "eventviewer::EventViewer", this, "ApplyCameraFromUi()");
+        viewButtons->AddFrame(applyViewButton, new TGLayoutHints(kLHintsExpandX, 0, 4, 0, 0));
+        auto *resetViewButton = new TGTextButton(viewButtons, "Reset");
+        resetViewButton->Connect("Clicked()", "eventviewer::EventViewer", this, "ResetCameraControls()");
+        viewButtons->AddFrame(resetViewButton, new TGLayoutHints(kLHintsExpandX, 4, 0, 0, 0));
+
+        const bool wasBatch = gROOT->IsBatch();
+        gROOT->SetBatch(kTRUE);
+        fCanvas = new TCanvas("event_backing_canvas", "event_backing_canvas", 1550, 920);
+        gROOT->SetBatch(wasBatch);
+        fGLViewer = new TGLEmbeddedViewer(main, fCanvas);
+        fGLViewer->GetFrame()->Resize(1550, 920);
+        main->AddFrame(fGLViewer->GetFrame(),
+                       new TGLayoutHints(kLHintsExpandX | kLHintsExpandY));
+        fGLViewer->SetCurrentCamera(TGLViewer::kCameraPerspXOZ);
+        fGLViewer->SetResetCamerasOnUpdate(false);
+        fGLHandler = new ShiftTruckEventHandler(nullptr, fGLViewer);
+        fGLViewer->GetGLWidget()->SetEventHandler(fGLHandler);
     }
 
     bool EventViewer::OpenFile(const std::string &filename) {
@@ -297,6 +414,45 @@ namespace eventviewer {
     void EventViewer::ToggleTracks() { RedrawEvent(); }
     void EventViewer::ToggleSteps() { RedrawEvent(); }
 
+    void EventViewer::ApplyCameraFromUi() {
+        if (!fGLViewer) return;
+
+        const double vx = fViewXEntry->GetNumber();
+        const double vy = fViewYEntry->GetNumber();
+        const double vz = fViewZEntry->GetNumber();
+        const double ux = fUpXEntry->GetNumber();
+        const double uy = fUpYEntry->GetNumber();
+        const double uz = fUpZEntry->GetNumber();
+
+        const double viewNorm2 = vx * vx + vy * vy + vz * vz;
+        const double upNorm2 = ux * ux + uy * uy + uz * uz;
+        const double cx = vy * uz - vz * uy;
+        const double cy = vz * ux - vx * uz;
+        const double cz = vx * uy - vy * ux;
+        const double crossNorm2 = cx * cx + cy * cy + cz * cz;
+
+        if (viewNorm2 < 1e-12 || upNorm2 < 1e-12 ||
+            crossNorm2 / (viewNorm2 * upNorm2) < 1e-8) {
+            fSummaryLabel->SetText("Camera vectors are invalid or nearly parallel.");
+            return;
+        }
+
+        fGLViewer->ReinitializeCurrentCamera(TGLVector3(vx, vy, vz), TGLVector3(ux, uy, uz));
+        fCameraInitialized = true;
+        UpdateEventSummary();
+    }
+
+    void EventViewer::ResetCameraControls() {
+        fViewXEntry->SetNumber(-1.0);
+        fViewYEntry->SetNumber(0.0);
+        fViewZEntry->SetNumber(0.0);
+        fUpXEntry->SetNumber(0.0);
+        fUpYEntry->SetNumber(1.0);
+        fUpZEntry->SetNumber(0.0);
+        fCameraInitialized = false;
+        ApplyCameraFromUi();
+    }
+
     void EventViewer::UpdateEventSummary() {
         std::ostringstream os;
         os << "Event " << fCurrentEvent << " / " << std::max<Long64_t>(0, fEventCount - 1)
@@ -344,6 +500,7 @@ namespace eventviewer {
         if (fShowSteps->IsOn()) DrawStepMarkers();
 
         if (fGLViewer) {
+            fGLViewer->SetResetCamerasOnUpdate(false);
             fGLViewer->PadPaint(fCanvas);
             ApplyDefaultCamera();
         }

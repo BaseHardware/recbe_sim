@@ -18,6 +18,7 @@ class TGTab;
 class TGTextButton;
 class TGTextView;
 class TGLEmbeddedViewer;
+class TGLEventHandler;
 class TTree;
 class TObject;
 
@@ -44,6 +45,8 @@ namespace eventviewer {
         void ToggleGeometry();
         void ToggleTracks();
         void ToggleSteps();
+        void ApplyCameraFromUi();
+        void ResetCameraControls();
 
       private:
         bool OpenFile(const std::string &filename);
@@ -89,8 +92,15 @@ namespace eventviewer {
         TGTextView *fMetadataText;
         TGTextView *fTrackText;
         TGTextView *fStepText;
+        TGNumberEntry *fViewXEntry;
+        TGNumberEntry *fViewYEntry;
+        TGNumberEntry *fViewZEntry;
+        TGNumberEntry *fUpXEntry;
+        TGNumberEntry *fUpYEntry;
+        TGNumberEntry *fUpZEntry;
         TCanvas *fCanvas;
         TGLEmbeddedViewer *fGLViewer;
+        TGLEventHandler *fGLHandler;
         bool fCameraInitialized;
 
         std::vector<TObject *> fEventPrimitives;
