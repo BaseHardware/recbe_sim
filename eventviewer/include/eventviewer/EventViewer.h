@@ -17,6 +17,7 @@ class TGNumberEntry;
 class TGTab;
 class TGTextButton;
 class TGTextView;
+class TGColorSelect;
 class TGLEmbeddedViewer;
 class TGLEventHandler;
 class TTree;
@@ -47,6 +48,7 @@ namespace eventviewer {
         void ToggleSteps();
         void ApplyCameraFromUi();
         void ResetCameraControls();
+        void ApplyBackgroundColor(Pixel_t color);
 
       private:
         bool OpenFile(const std::string &filename);
@@ -98,6 +100,7 @@ namespace eventviewer {
         TGNumberEntry *fUpXEntry;
         TGNumberEntry *fUpYEntry;
         TGNumberEntry *fUpZEntry;
+        TGColorSelect *fBackgroundColorSelect;
         TCanvas *fCanvas;
         TGLEmbeddedViewer *fGLViewer;
         TGLEventHandler *fGLHandler;

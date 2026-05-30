@@ -5,42 +5,74 @@
 #include "simobj/Step.h"
 #include "simobj/Track.h"
 
+#include "G4IonTable.hh"
+
 #include "TCanvas.h"
 #include "TClonesArray.h"
+#include "TColor.h"
+#include "TDatabasePDG.h"
 #include "TFile.h"
-#include "TGeoManager.h"
-#include "TGeoVolume.h"
 #include "TGButton.h"
 #include "TGClient.h"
+#include "TGColorSelect.h"
 #include "TGFileDialog.h"
-#include "TGLabel.h"
+#include "TGLCamera.h"
 #include "TGLEmbeddedViewer.h"
 #include "TGLEventHandler.h"
+#include "TGLUtil.h"
+#include "TGLViewer.h"
+#include "TGLWidget.h"
+#include "TGLabel.h"
 #include "TGNumberEntry.h"
 #include "TGTab.h"
 #include "TGTextView.h"
-#include "TGLCamera.h"
-#include "TGLViewer.h"
-#include "TGLWidget.h"
-#include "TGLUtil.h"
+#include "TGeoManager.h"
+#include "TGeoVolume.h"
+#include "TParticlePDG.h"
 #include "TPolyLine3D.h"
 #include "TPolyMarker3D.h"
 #include "TROOT.h"
-#include "TStyle.h"
 #include "TSystem.h"
 #include "TTree.h"
-#include "TView.h"
 
 #include <algorithm>
 #include <cstdio>
 #include <fstream>
 #include <iomanip>
+#include <iostream>
 #include <sstream>
-#include <stdexcept>
 
 ClassImp(eventviewer::EventViewer)
 
-namespace {
+    namespace {
+    constexpr int kUnknownCharge = 99;
+
+    int ColorFromChargeSign(int chargeSign) {
+        if (chargeSign == 0) {
+            return kGreen;
+        } else if (chargeSign > 0) {
+            return kRed;
+        } else {
+            return kBlue;
+        }
+    }
+
+    int IonChargeSignFromEncoding(int pdgCode) {
+        const int encoding = pdgCode < 0 ? -pdgCode : pdgCode;
+        if (encoding < 10000000) return kUnknownCharge;
+
+        G4int z             = 0;
+        G4int a             = 0;
+        G4int level         = 0;
+        G4double excitation = 0.0;
+        G4IonTable::GetNucleusByEncoding(encoding, z, a, excitation, level);
+
+        // Geant4 nuclear codes are +-10LZZZAAAI; ZZZ is the ion charge number.
+        if (z <= 0) z = (encoding / 10000) % 1000;
+        if (z <= 0) return 0;
+        return pdgCode < 0 ? -1 : 1;
+    }
+
     class ShiftTruckEventHandler : public TGLEventHandler {
       public:
         ShiftTruckEventHandler(TGWindow *window, TObject *object)
@@ -64,8 +96,8 @@ namespace {
         Bool_t HandleMotion(Event_t *event) override {
             if ((event->fState & kKeyShiftMask) && (event->fState & kButton1Mask) && !fShiftTruck) {
                 Event_t release = *event;
-                release.fType = kButtonRelease;
-                release.fCode = kButton1;
+                release.fType   = kButtonRelease;
+                release.fCode   = kButton1;
                 TGLEventHandler::HandleButton(&release);
                 BeginShiftTruck(*event);
                 return kTRUE;
@@ -104,13 +136,13 @@ namespace {
         }
 
         void SyncMouseState(const Event_t &event) {
-            fLastX = event.fX;
-            fLastY = event.fY;
-            fLastPos.fX = event.fX;
-            fLastPos.fY = event.fY;
+            fLastX            = event.fX;
+            fLastY            = event.fY;
+            fLastPos.fX       = event.fX;
+            fLastPos.fY       = event.fY;
             fLastGlobalPos.fX = event.fXRoot;
             fLastGlobalPos.fY = event.fYRoot;
-            fLastEventState = event.fState;
+            fLastEventState   = event.fState;
         }
 
         bool fShiftTruck;
@@ -124,16 +156,17 @@ namespace {
         return path.substr(0, 34) + "..." + path.substr(path.size() - 49);
     }
 
-    void LoadText(TGTextView *view, const std::string &text) {
+    void LoadText(TGTextView * view, const std::string &text) {
         view->Clear();
         view->AddLine(text.c_str());
         view->Update();
     }
 
-    TGNumberEntry *AddVectorEntry(TGCompositeFrame *parent, const char *label, double value) {
+    TGNumberEntry *AddVectorEntry(TGCompositeFrame * parent, const char *label, double value) {
         auto *row = new TGHorizontalFrame(parent);
         parent->AddFrame(row, new TGLayoutHints(kLHintsExpandX, 0, 0, 2, 2));
-        row->AddFrame(new TGLabel(row, label), new TGLayoutHints(kLHintsLeft | kLHintsCenterY, 0, 6, 0, 0));
+        row->AddFrame(new TGLabel(row, label),
+                      new TGLayoutHints(kLHintsLeft | kLHintsCenterY, 0, 6, 0, 0));
         auto *entry = new TGNumberEntry(row, value, 8, -1, TGNumberFormat::kNESRealThree,
                                         TGNumberFormat::kNEAAnyNumber);
         row->AddFrame(entry, new TGLayoutHints(kLHintsExpandX | kLHintsCenterY));
@@ -144,13 +177,13 @@ namespace {
 namespace eventviewer {
     EventViewer::EventViewer(const TGWindow *parent, const char *filename)
         : TGMainFrame(parent, 1900, 1080), fTree(nullptr), fPersistentTree(nullptr),
-          fComplete(false), fTracks(nullptr), fSteps(nullptr), fPrimary(nullptr), fMetadata(nullptr),
-          fCurrentEvent(0), fEventCount(0), fEventEntry(nullptr), fFileLabel(nullptr),
-          fSummaryLabel(nullptr), fShowGeometry(nullptr), fShowTracks(nullptr), fShowSteps(nullptr),
-          fMetadataText(nullptr), fTrackText(nullptr), fStepText(nullptr), fViewXEntry(nullptr),
-          fViewYEntry(nullptr), fViewZEntry(nullptr), fUpXEntry(nullptr), fUpYEntry(nullptr),
-          fUpZEntry(nullptr), fCanvas(nullptr), fGLViewer(nullptr), fGLHandler(nullptr),
-          fCameraInitialized(false) {
+          fComplete(false), fTracks(nullptr), fSteps(nullptr), fPrimary(nullptr),
+          fMetadata(nullptr), fCurrentEvent(0), fEventCount(0), fEventEntry(nullptr),
+          fFileLabel(nullptr), fSummaryLabel(nullptr), fShowGeometry(nullptr), fShowTracks(nullptr),
+          fShowSteps(nullptr), fMetadataText(nullptr), fTrackText(nullptr), fStepText(nullptr),
+          fViewXEntry(nullptr), fViewYEntry(nullptr), fViewZEntry(nullptr), fUpXEntry(nullptr),
+          fUpYEntry(nullptr), fUpZEntry(nullptr), fBackgroundColorSelect(nullptr), fCanvas(nullptr),
+          fGLViewer(nullptr), fGLHandler(nullptr), fCameraInitialized(false) {
         BuildUi();
         OpenFile(filename);
         MapSubwindows();
@@ -167,9 +200,7 @@ namespace eventviewer {
         Cleanup();
     }
 
-    void EventViewer::CloseWindow() {
-        DeleteWindow();
-    }
+    void EventViewer::CloseWindow() { DeleteWindow(); }
 
     void EventViewer::BuildUi() {
         SetWindowName("Geant4 Event Viewer");
@@ -192,10 +223,11 @@ namespace eventviewer {
         nextButton->Connect("Clicked()", "eventviewer::EventViewer", this, "NextEvent()");
         toolbar->AddFrame(nextButton, new TGLayoutHints(kLHintsLeft | kLHintsCenterY, 0, 8, 0, 0));
 
-        toolbar->AddFrame(new TGLabel(toolbar, "Event"), new TGLayoutHints(kLHintsCenterY, 0, 4, 0, 0));
-        fEventEntry =
-            new TGNumberEntry(toolbar, 0, 7, -1, TGNumberFormat::kNESInteger,
-                              TGNumberFormat::kNEANonNegative, TGNumberFormat::kNELLimitMinMax, 0, 0);
+        toolbar->AddFrame(new TGLabel(toolbar, "Event"),
+                          new TGLayoutHints(kLHintsCenterY, 0, 4, 0, 0));
+        fEventEntry = new TGNumberEntry(toolbar, 0, 7, -1, TGNumberFormat::kNESInteger,
+                                        TGNumberFormat::kNEANonNegative,
+                                        TGNumberFormat::kNELLimitMinMax, 0, 0);
         fEventEntry->Connect("ValueSet(Long_t)", "eventviewer::EventViewer", this, "LoadEvent()");
         toolbar->AddFrame(fEventEntry, new TGLayoutHints(kLHintsCenterY, 0, 10, 0, 0));
 
@@ -230,11 +262,11 @@ namespace eventviewer {
         left->AddFrame(tabs, new TGLayoutHints(kLHintsExpandX | kLHintsExpandY));
 
         auto *trackTab = tabs->AddTab("Tracks");
-        fTrackText = new TGTextView(trackTab, 260, 820);
+        fTrackText     = new TGTextView(trackTab, 260, 820);
         trackTab->AddFrame(fTrackText, new TGLayoutHints(kLHintsExpandX | kLHintsExpandY));
 
         auto *stepTab = tabs->AddTab("Steps");
-        fStepText = new TGTextView(stepTab, 260, 820);
+        fStepText     = new TGTextView(stepTab, 260, 820);
         stepTab->AddFrame(fStepText, new TGLayoutHints(kLHintsExpandX | kLHintsExpandY));
 
         auto *metaTab = tabs->AddTab("Metadata");
@@ -252,13 +284,28 @@ namespace eventviewer {
         fUpXEntry = AddVectorEntry(viewTab, "X", 0.0);
         fUpYEntry = AddVectorEntry(viewTab, "Y", 1.0);
         fUpZEntry = AddVectorEntry(viewTab, "Z", 0.0);
+
+        auto *backgroundRow = new TGHorizontalFrame(viewTab);
+        viewTab->AddFrame(backgroundRow, new TGLayoutHints(kLHintsExpandX, 0, 0, 10, 0));
+        backgroundRow->AddFrame(new TGLabel(backgroundRow, "Background"),
+                                new TGLayoutHints(kLHintsLeft | kLHintsCenterY, 0, 8, 0, 0));
+        Pixel_t blackPixel = 0;
+        gClient->GetColorByName("black", blackPixel);
+        fBackgroundColorSelect = new TGColorSelect(backgroundRow, blackPixel, -1);
+        fBackgroundColorSelect->Connect("ColorSelected(Pixel_t)", "eventviewer::EventViewer", this,
+                                        "ApplyBackgroundColor(Pixel_t)");
+        backgroundRow->AddFrame(fBackgroundColorSelect,
+                                new TGLayoutHints(kLHintsLeft | kLHintsCenterY));
+
         auto *viewButtons = new TGHorizontalFrame(viewTab);
         viewTab->AddFrame(viewButtons, new TGLayoutHints(kLHintsExpandX, 0, 0, 10, 0));
         auto *applyViewButton = new TGTextButton(viewButtons, "Apply");
-        applyViewButton->Connect("Clicked()", "eventviewer::EventViewer", this, "ApplyCameraFromUi()");
+        applyViewButton->Connect("Clicked()", "eventviewer::EventViewer", this,
+                                 "ApplyCameraFromUi()");
         viewButtons->AddFrame(applyViewButton, new TGLayoutHints(kLHintsExpandX, 0, 4, 0, 0));
         auto *resetViewButton = new TGTextButton(viewButtons, "Reset");
-        resetViewButton->Connect("Clicked()", "eventviewer::EventViewer", this, "ResetCameraControls()");
+        resetViewButton->Connect("Clicked()", "eventviewer::EventViewer", this,
+                                 "ResetCameraControls()");
         viewButtons->AddFrame(resetViewButton, new TGLayoutHints(kLHintsExpandX, 4, 0, 0, 0));
 
         const bool wasBatch = gROOT->IsBatch();
@@ -267,10 +314,10 @@ namespace eventviewer {
         gROOT->SetBatch(wasBatch);
         fGLViewer = new TGLEmbeddedViewer(main, fCanvas);
         fGLViewer->GetFrame()->Resize(1550, 920);
-        main->AddFrame(fGLViewer->GetFrame(),
-                       new TGLayoutHints(kLHintsExpandX | kLHintsExpandY));
+        main->AddFrame(fGLViewer->GetFrame(), new TGLayoutHints(kLHintsExpandX | kLHintsExpandY));
         fGLViewer->SetCurrentCamera(TGLViewer::kCameraPerspXOZ);
         fGLViewer->SetResetCamerasOnUpdate(false);
+        fGLViewer->SetClearColor(kBlack);
         fGLHandler = new ShiftTruckEventHandler(nullptr, fGLViewer);
         fGLViewer->GetGLWidget()->SetEventHandler(fGLHandler);
     }
@@ -284,23 +331,23 @@ namespace eventviewer {
             return false;
         }
 
-        fFilename = filename;
-        fTree = dynamic_cast<TTree *>(fFile->Get("tree"));
+        fFilename       = filename;
+        fTree           = dynamic_cast<TTree *>(fFile->Get("tree"));
         fPersistentTree = dynamic_cast<TTree *>(fFile->Get("persistent"));
         if (!fTree) {
             LoadText(fMetadataText, "Missing TTree named 'tree'");
             return false;
         }
 
-        fTracks = nullptr;
-        fSteps = nullptr;
+        fTracks  = nullptr;
+        fSteps   = nullptr;
         fPrimary = nullptr;
         fTree->SetBranchAddress("complete", &fComplete);
         fTree->SetBranchAddress("Tracks", &fTracks);
         if (fTree->GetBranch("Steps")) fTree->SetBranchAddress("Steps", &fSteps);
         if (fTree->GetBranch("Primary")) fTree->SetBranchAddress("Primary", &fPrimary);
 
-        fEventCount = fTree->GetEntries();
+        fEventCount   = fTree->GetEntries();
         fCurrentEvent = 0;
         fEventEntry->SetLimitValues(0, std::max<Long64_t>(0, fEventCount - 1));
         fEventEntry->SetIntNumber(0);
@@ -365,7 +412,7 @@ namespace eventviewer {
     void EventViewer::OpenFileDialog() {
         static TString dir(".");
         TGFileInfo fileInfo;
-        fileInfo.fIniDir = StrDup(dir.Data());
+        fileInfo.fIniDir    = StrDup(dir.Data());
         const char *types[] = {"ROOT files", "*.root", "All files", "*", nullptr, nullptr};
         fileInfo.fFileTypes = types;
         new TGFileDialog(gClient->GetRoot(), this, kFDOpen, &fileInfo);
@@ -424,15 +471,14 @@ namespace eventviewer {
         const double uy = fUpYEntry->GetNumber();
         const double uz = fUpZEntry->GetNumber();
 
-        const double viewNorm2 = vx * vx + vy * vy + vz * vz;
-        const double upNorm2 = ux * ux + uy * uy + uz * uz;
-        const double cx = vy * uz - vz * uy;
-        const double cy = vz * ux - vx * uz;
-        const double cz = vx * uy - vy * ux;
+        const double viewNorm2  = vx * vx + vy * vy + vz * vz;
+        const double upNorm2    = ux * ux + uy * uy + uz * uz;
+        const double cx         = vy * uz - vz * uy;
+        const double cy         = vz * ux - vx * uz;
+        const double cz         = vx * uy - vy * ux;
         const double crossNorm2 = cx * cx + cy * cy + cz * cz;
 
-        if (viewNorm2 < 1e-12 || upNorm2 < 1e-12 ||
-            crossNorm2 / (viewNorm2 * upNorm2) < 1e-8) {
+        if (viewNorm2 < 1e-12 || upNorm2 < 1e-12 || crossNorm2 / (viewNorm2 * upNorm2) < 1e-8) {
             fSummaryLabel->SetText("Camera vectors are invalid or nearly parallel.");
             return;
         }
@@ -453,6 +499,12 @@ namespace eventviewer {
         ApplyCameraFromUi();
     }
 
+    void EventViewer::ApplyBackgroundColor(Pixel_t color) {
+        if (!fGLViewer) return;
+        fGLViewer->SetClearColor(TColor::GetColor(color));
+        fGLViewer->RequestDraw();
+    }
+
     void EventViewer::UpdateEventSummary() {
         std::ostringstream os;
         os << "Event " << fCurrentEvent << " / " << std::max<Long64_t>(0, fEventCount - 1)
@@ -464,7 +516,8 @@ namespace eventviewer {
 
     void EventViewer::UpdateObjectLists() {
         std::ostringstream tracks;
-        tracks << "#  TrackID Parent PDG Particle Steps  Start(x,y,z,t)  Final(x,y,z,t)  FinalProc\n";
+        tracks
+            << "#  TrackID Parent PDG Particle Steps  Start(x,y,z,t)  Final(x,y,z,t)  FinalProc\n";
         if (fTracks) {
             const int nTracks = fTracks->GetEntriesFast();
             for (int i = 0; i < nTracks; ++i) {
@@ -559,7 +612,8 @@ namespace eventviewer {
     }
 
     void EventViewer::ClearEventPrimitives() {
-        for (auto *object : fEventPrimitives) delete object;
+        for (auto *object : fEventPrimitives)
+            delete object;
         fEventPrimitives.clear();
     }
 
@@ -571,19 +625,18 @@ namespace eventviewer {
     }
 
     int EventViewer::TrackColor(const simobj::Track &track) {
-        switch (track.GetPDGCode()) {
-        case 2112:
-            return kGreen + 2;
-        case 22:
-            return kOrange + 7;
-        case 11:
-        case -11:
-            return kAzure + 1;
-        case 2212:
-            return kRed + 1;
-        default:
-            return track.GetParentID() == 0 ? kMagenta + 2 : kGray + 2;
+        const int pdgCode = track.GetPDGCode();
+
+        const auto *particle = TDatabasePDG::Instance()->GetParticle(pdgCode);
+        if (particle) {
+            const double charge = particle->Charge();
+            return ColorFromChargeSign(charge);
         }
+
+        const int ionChargeSign = IonChargeSignFromEncoding(pdgCode);
+        if (ionChargeSign != kUnknownCharge) return ColorFromChargeSign(ionChargeSign);
+
+        return track.GetParentID() == 0 ? kMagenta + 2 : kGray + 2;
     }
 
     std::string EventViewer::FormatTrack(const simobj::Track &track, int idx) {
