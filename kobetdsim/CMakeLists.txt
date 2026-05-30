@@ -16,7 +16,7 @@ find_package(Geant4 REQUIRED ui_all vis_all)
 #
 file(GLOB kobetdsim_lib_sources ${PROJECT_SOURCE_DIR}/src/*.cxx)
 
-file(GLOB kobetdsim_exec ${PROJECT_SOURCE_DIR}/exe/kobetd_mainsim.cxx)
+file(GLOB kobetdsim_exec ${PROJECT_SOURCE_DIR}/apps/kobetd_mainsim.cxx)
 
 #----------------------------------------------------------------------------
 # Add a library with sources and the local headers and the Geant4 libraries
