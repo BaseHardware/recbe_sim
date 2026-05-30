@@ -49,7 +49,7 @@ int main(int argc, char **argv) {
     G4String macro;
     G4String session;
     G4bool verboseBestUnits = true;
-    G4bool useEMZ           = false;
+    G4bool notuseEMZ        = true;
 #ifdef G4MULTITHREADED
     G4int nThreads = 0;
 #endif
@@ -67,7 +67,7 @@ int main(int argc, char **argv) {
             verboseBestUnits = false;
             --i; // this option is not followed with a parameter
         } else if (G4String(argv[i]) == "-pEMZ") {
-            useEMZ = false;
+            notuseEMZ = false;
             --i; // this option is not followed with a parameter
         } else {
             PrintUsage();
@@ -107,12 +107,12 @@ int main(int argc, char **argv) {
 
     G4VModularPhysicsList *physicsList;
 
-    if (useEMZ) {
-        G4PhysListFactory factory;
-        physicsList = factory.GetReferencePhysList("FTFP_BERT_HPT_EMZ");
-    } else {
+    if (notuseEMZ) {
         physicsList = new FTFP_BERT_HP;
         physicsList->RegisterPhysics(new G4ThermalNeutrons());
+    } else {
+        G4PhysListFactory factory;
+        physicsList = factory.GetReferencePhysList("FTFP_BERT_HPT_EMZ");
     }
     runManager->SetUserInitialization(physicsList);
 
