@@ -1,6 +1,8 @@
 #include <random>
 
-#include "FTFP_BERT_HP.hh"
+#include "G4PhysListFactory.hh"
+#include "G4VModularPhysicsList.hh"
+
 #include "bl10sim/ActionInitialization.h"
 #include "bl10sim/BL10DetectorConstruction.h"
 
@@ -98,8 +100,8 @@ int main(int argc, char **argv) {
     auto detConstruction = new bl10sim::BL10DetectorConstruction();
     runManager->SetUserInitialization(detConstruction);
 
-    auto physicsList = new FTFP_BERT_HP;
-    physicsList->RegisterPhysics(new G4ThermalNeutrons());
+    G4PhysListFactory factory;
+    G4VModularPhysicsList *physicsList = factory.GetReferencePhysList("FTFP_BERT_HPT_EMZ");
     runManager->SetUserInitialization(physicsList);
 
     auto actionInitialization = new bl10sim::ActionInitialization();
