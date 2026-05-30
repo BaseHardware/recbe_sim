@@ -5,6 +5,7 @@ class TGCheckButton;
 class TGColorSelect;
 class TGComboBox;
 class TGLabel;
+class TGListTree;
 class TGNumberEntry;
 class TGTextView;
 
@@ -18,6 +19,7 @@ namespace eventviewer {
         TGCheckButton *showTracks            = nullptr;
         TGCheckButton *showSteps             = nullptr;
         TGTextView *metadataText             = nullptr;
+        TGListTree *geometryTree             = nullptr;
         TGTextView *trackText                = nullptr;
         TGTextView *stepText                 = nullptr;
         TGComboBox *graphicalVerbosityBox    = nullptr;

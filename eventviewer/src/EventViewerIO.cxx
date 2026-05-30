@@ -178,6 +178,7 @@ namespace eventviewer {
         fUi.fileLabel->SetText(CompactPath(filename).c_str());
         LoadText(fUi.metadataText, fEvent.MetadataText());
         fEvent.ImportGeometry(fView.graphicalVerbosity);
+        UpdateGeometryTree();
         return true;
     }
 

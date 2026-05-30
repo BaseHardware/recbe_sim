@@ -10,13 +10,14 @@ class TObject;
 
 namespace eventviewer {
     class EventData;
+    class ViewSettings;
 
     class RenderContext {
       public:
         void Destroy();
         void ClearEventPrimitives();
-        void Redraw(const EventData &event, bool showGeometry, bool showTracks, bool showSteps,
-                    int graphicalVerbosity);
+        void Redraw(const EventData &event, const ViewSettings &view, bool showGeometry,
+                    bool showTracks, bool showSteps);
         void ApplyDefaultCamera();
 
         TCanvas *canvas             = nullptr;
@@ -26,7 +27,7 @@ namespace eventviewer {
         std::vector<TObject *> eventPrimitives;
 
       private:
-        void DrawGeometry(int graphicalVerbosity);
+        void DrawGeometry(const ViewSettings &view);
         void DrawTrackLines(const EventData &event, bool geometryVisible, int graphicalVerbosity);
         void DrawStepMarkers(const EventData &event, bool geometryVisible, bool tracksVisible);
     };

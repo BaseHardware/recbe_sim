@@ -8,9 +8,12 @@
 #include "TCanvas.h"
 #include "TClonesArray.h"
 #include "TDatabasePDG.h"
+#include "TGeoAtt.h"
 #include "TGLEmbeddedViewer.h"
 #include "TGLViewer.h"
 #include "TGeoManager.h"
+#include "TGeoMaterial.h"
+#include "TGeoNode.h"
 #include "TGeoVolume.h"
 #include "TParticlePDG.h"
 #include "TPolyLine3D.h"
@@ -25,22 +28,25 @@ namespace eventviewer {
     using namespace detail;
     namespace {
         int TrackColor(const simobj::Track &track);
+        void RestoreGeometryAttributes(TGeoNode &node, const ViewSettings &view);
+        void ApplyHiddenGeometryNodes(const ViewSettings &view);
+        void HideGeometryNode(TGeoNode &node);
     } // namespace
 
     void EventViewer::RedrawEvent() {
-        fRender.Redraw(fEvent, fUi.showGeometry->IsOn(), fUi.showTracks->IsOn(),
-                       fUi.showSteps->IsOn(), fView.graphicalVerbosity);
+        fRender.Redraw(fEvent, fView, fUi.showGeometry->IsOn(), fUi.showTracks->IsOn(),
+                       fUi.showSteps->IsOn());
     }
 
-    void RenderContext::Redraw(const EventData &event, bool showGeometry, bool showTracks,
-                               bool showSteps, int graphicalVerbosity) {
+    void RenderContext::Redraw(const EventData &event, const ViewSettings &view, bool showGeometry,
+                               bool showTracks, bool showSteps) {
         if (!canvas) return;
         ClearEventPrimitives();
         canvas->cd();
         canvas->Clear();
 
-        if (showGeometry) DrawGeometry(graphicalVerbosity);
-        if (showTracks) DrawTrackLines(event, showGeometry, graphicalVerbosity);
+        if (showGeometry) DrawGeometry(view);
+        if (showTracks) DrawTrackLines(event, showGeometry, view.graphicalVerbosity);
         if (showSteps) DrawStepMarkers(event, showGeometry, showTracks);
 
         if (glViewer) {
@@ -54,12 +60,16 @@ namespace eventviewer {
         canvas->Update();
     }
 
-    void RenderContext::DrawGeometry(int graphicalVerbosity) {
+    void RenderContext::DrawGeometry(const ViewSettings &view) {
         if (!gGeoManager || !gGeoManager->GetTopVolume()) return;
-        gGeoManager->SetVisLevel(GeometryVisLevel(graphicalVerbosity));
-        gGeoManager->SetMaxVisNodes(GeometryMaxVisNodes(graphicalVerbosity));
-        gGeoManager->SetNsegments(GeometrySegments(graphicalVerbosity));
-        gGeoManager->SetVisOption(graphicalVerbosity >= 3 ? 1 : 0);
+        if (auto *top = gGeoManager->GetTopNode()) {
+            RestoreGeometryAttributes(*top, view);
+            ApplyHiddenGeometryNodes(view);
+        }
+        gGeoManager->SetVisLevel(GeometryVisLevel(view.graphicalVerbosity));
+        gGeoManager->SetMaxVisNodes(GeometryMaxVisNodes(view.graphicalVerbosity));
+        gGeoManager->SetNsegments(GeometrySegments(view.graphicalVerbosity));
+        gGeoManager->SetVisOption(view.graphicalVerbosity >= 3 ? 1 : 0);
         gGeoManager->GetTopVolume()->Draw();
     }
 
@@ -156,6 +166,75 @@ namespace eventviewer {
     }
 
     namespace {
+        void ApplyGeometryAttributes(TGeoAtt &attributes, const GeometryAttributeState &state) {
+            attributes.SetAttBit(TGeoAtt::kVisOverride, state.visOverride);
+            attributes.SetAttBit(TGeoAtt::kVisNone, state.visNone);
+            attributes.SetAttBit(TGeoAtt::kVisThis, state.visThis);
+            attributes.SetAttBit(TGeoAtt::kVisDaughters, state.visDaughters);
+            attributes.SetAttBit(TGeoAtt::kVisOneLevel, state.visOneLevel);
+            attributes.SetAttBit(TGeoAtt::kVisStreamed, state.visStreamed);
+            attributes.SetAttBit(TGeoAtt::kVisTouched, state.visTouched);
+            attributes.SetAttBit(TGeoAtt::kVisContainers, state.visContainers);
+            attributes.SetAttBit(TGeoAtt::kVisOnly, state.visOnly);
+            attributes.SetAttBit(TGeoAtt::kVisBranch, state.visBranch);
+            attributes.SetAttBit(TGeoAtt::kVisRaytrace, state.visRaytrace);
+        }
+
+        void ApplyVolumeDrawState(TGeoVolume &volume, const GeometryVolumeDrawState &state) {
+            volume.SetTransparency(state.transparency);
+            volume.SetLineColor(state.lineColor);
+            volume.SetLineStyle(state.lineStyle);
+            volume.SetLineWidth(state.lineWidth);
+            volume.SetFillColor(state.fillColor);
+            volume.SetFillStyle(state.fillStyle);
+        }
+
+        void RestoreGeometryAttributes(TGeoNode &node, const ViewSettings &view) {
+            const auto nodeAttributes = view.geometryNodeAttributeDefaults.find(&node);
+            if (nodeAttributes != view.geometryNodeAttributeDefaults.end()) {
+                ApplyGeometryAttributes(node, nodeAttributes->second);
+            }
+
+            if (auto *volume = node.GetVolume()) {
+                const auto volumeAttributes = view.geometryVolumeAttributeDefaults.find(volume);
+                if (volumeAttributes != view.geometryVolumeAttributeDefaults.end()) {
+                    ApplyGeometryAttributes(*volume, volumeAttributes->second);
+                }
+                const auto volumeDrawState = view.geometryVolumeDrawDefaults.find(volume);
+                if (volumeDrawState != view.geometryVolumeDrawDefaults.end()) {
+                    ApplyVolumeDrawState(*volume, volumeDrawState->second);
+                }
+                if (auto *material = volume->GetMaterial()) {
+                    const auto materialTransparency =
+                        view.geometryMaterialTransparencyDefaults.find(material);
+                    if (materialTransparency != view.geometryMaterialTransparencyDefaults.end()) {
+                        material->SetTransparency(materialTransparency->second);
+                    }
+                }
+            }
+
+            const int nDaughters = node.GetNdaughters();
+            for (int i = 0; i < nDaughters; ++i) {
+                auto *daughter = node.GetDaughter(i);
+                if (daughter) RestoreGeometryAttributes(*daughter, view);
+            }
+        }
+
+        void ApplyHiddenGeometryNodes(const ViewSettings &view) {
+            for (const auto *node : view.hiddenGeometryNodes) {
+                if (node) HideGeometryNode(*const_cast<TGeoNode *>(node));
+            }
+        }
+
+        void HideGeometryNode(TGeoNode &node) {
+            node.SetAttBit(TGeoAtt::kVisNone, kFALSE);
+            node.SetAttBit(TGeoAtt::kVisThis, kFALSE);
+            node.SetAttBit(TGeoAtt::kVisDaughters, kTRUE);
+            node.SetAttBit(TGeoAtt::kVisOneLevel, kFALSE);
+            node.SetAttBit(TGeoAtt::kVisOnly, kFALSE);
+            node.SetAttBit(TGeoAtt::kVisBranch, kFALSE);
+        }
+
         int TrackColor(const simobj::Track &track) {
             const int pdgCode = track.GetPDGCode();
 

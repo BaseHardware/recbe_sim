@@ -6,6 +6,7 @@
 #include "G4IonTable.hh"
 
 #include "TGLEventHandler.h"
+#include "TGListTree.h"
 #include "TGLViewer.h"
 #include "TGLabel.h"
 #include "TGNumberEntry.h"
@@ -110,6 +111,23 @@ namespace eventviewer::detail {
         row->AddFrame(entry, new TGLayoutHints(kLHintsExpandX | kLHintsCenterY));
         return entry;
     }
+
+    class GeometryListTree : public TGListTree {
+      public:
+        GeometryListTree(TGCanvas *parent, UInt_t options) : TGListTree(parent, options) {}
+
+        Bool_t HandleButton(Event_t *event) override {
+            if (event->fType == kButtonPress) {
+                fLastButtonPressWasShift = (event->fState & kKeyShiftMask) != 0;
+            }
+            return TGListTree::HandleButton(event);
+        }
+
+        bool LastButtonPressWasShift() const { return fLastButtonPressWasShift; }
+
+      private:
+        bool fLastButtonPressWasShift = false;
+    };
 
     class ShiftTruckEventHandler : public TGLEventHandler {
       public:

@@ -5,6 +5,7 @@
 #include "TCanvas.h"
 #include "TColor.h"
 #include "TGButton.h"
+#include "TGCanvas.h"
 #include "TGClient.h"
 #include "TGColorSelect.h"
 #include "TGComboBox.h"
@@ -14,6 +15,7 @@
 #include "TGLViewer.h"
 #include "TGLWidget.h"
 #include "TGLabel.h"
+#include "TGListTree.h"
 #include "TGNumberEntry.h"
 #include "TGTab.h"
 #include "TGTextView.h"
@@ -96,6 +98,16 @@ namespace eventviewer {
         auto *metaTab    = tabs->AddTab("Metadata");
         fUi.metadataText = new TGTextView(metaTab, 260, 820);
         metaTab->AddFrame(fUi.metadataText, new TGLayoutHints(kLHintsExpandX | kLHintsExpandY));
+
+        auto *geometryTab    = tabs->AddTab("Geometry");
+        auto *geometryCanvas = new TGCanvas(geometryTab, 260, 820);
+        fUi.geometryTree     = new GeometryListTree(geometryCanvas, kHorizontalFrame);
+        fUi.geometryTree->SetCheckMode(TGListTree::kSimple);
+        fUi.geometryTree->Connect("Checked(TObject*,Bool_t)", "eventviewer::EventViewer", this,
+                                  "SetGeometryNodeVisibility(TObject*,Bool_t)");
+        geometryTab->AddFrame(geometryCanvas,
+                              new TGLayoutHints(kLHintsExpandX | kLHintsExpandY));
+        fUi.geometryTree->AddItem(nullptr, "No geometry loaded");
 
         auto *viewTab = tabs->AddTab("View");
         viewTab->AddFrame(new TGLabel(viewTab, "Graphical verbosity"),

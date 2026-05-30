@@ -10,6 +10,8 @@
 
 #include <string>
 
+class TObject;
+
 namespace eventviewer {
     class EventViewer : public TGMainFrame {
       public:
@@ -29,6 +31,7 @@ namespace eventviewer {
         void ApplyCameraFromUi();
         void ResetCameraControls();
         void ApplyBackgroundColor(Pixel_t color);
+        void SetGeometryNodeVisibility(TObject *object, Bool_t visible);
         void SetGraphicalVerbosity(Int_t level);
 
       private:
@@ -36,6 +39,7 @@ namespace eventviewer {
 
         void BuildUi();
         void UpdateEventSummary();
+        void UpdateGeometryTree();
         void UpdateObjectLists();
         void ApplyInitialWindowSize();
         void FlushInitialDisplay();
