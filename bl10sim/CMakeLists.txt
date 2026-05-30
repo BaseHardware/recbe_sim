@@ -52,6 +52,7 @@ set(BL10SIM_USERDATA
     macros/run1.mac
     macros/run2.mac
     macros/vis.mac
+    macros/detailed.mac
     data/at_ductexit.txt
     data/at_moderator.txt
 )
