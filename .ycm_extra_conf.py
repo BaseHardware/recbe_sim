@@ -97,6 +97,7 @@ flags.append(f'-I{nowdir}/simobj/include')
 flags.append(f'-I{nowdir}/simcore/include')
 flags.append(f'-I{nowdir}/bl10sim/include')
 flags.append(f'-I{nowdir}/kobetdsim/include')
+flags.append(f'-I{nowdir}/eventviewer/include')
 flags.append(f'-I{nowdir}/include')
 
 
