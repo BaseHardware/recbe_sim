@@ -201,8 +201,8 @@ struct HitInfo {
     }
 };
 
-void make_fpgahits(const char *input_file  = "simout.root",
-                   const char *output_file = "output.root") {
+void make_fpgahits_cnum(const char *input_file  = "simout.root",
+                        const char *output_file = "output.root") {
 
     TFile *pOutput = new TFile(output_file, "RECREATE");
     TTree *pOTree  = new TTree("hits", "tree for the FPGA hits");
