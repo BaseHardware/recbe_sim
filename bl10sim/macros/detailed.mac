@@ -1,0 +1,28 @@
+/run/numberOfThreads 25
+
+/process/em/AddMicroElecRegion FPGADieRegion
+
+/process/em/AddEmRegion FPGADieRegion G4EmStandard_opt4
+/process/em/AddEmRegion FrameAndBoardRegion G4EmStandard_opt4
+
+# Disable all EM processes for the atomic de-excitation in global region
+/process/em/fluo false
+/process/em/auger false
+/process/em/pixe false
+
+# Enable the EM processes only in the FPGADieRegion
+/process/em/deexcitationIgnoreCut true
+/process/em/deexcitation FPGADieRegion true true true
+
+/process/em/MaxEnergyNIEL 10 MeV
+
+/run/initialize
+
+/prim_gen/t_offset 2 us
+/prim_gen/duct_length 12.7 m
+
+
+/root/step true
+/root/primary true
+
+/run/beamOn 10000

@@ -16,8 +16,8 @@ find_package(Geant4 REQUIRED ui_all vis_all)
 #
 file(GLOB bl10sim_lib_sources ${PROJECT_SOURCE_DIR}/src/*.cxx)
 
-file(GLOB bl10sim_exec ${PROJECT_SOURCE_DIR}/exe/bl10_mainsim.cxx)
-file(GLOB bl10ductsim_exec ${PROJECT_SOURCE_DIR}/exe/bl10_ductsim.cxx)
+file(GLOB bl10sim_exec ${PROJECT_SOURCE_DIR}/apps/bl10_mainsim.cxx)
+file(GLOB bl10ductsim_exec ${PROJECT_SOURCE_DIR}/apps/bl10_ductsim.cxx)
 
 #----------------------------------------------------------------------------
 # Add a library with sources and the local headers and the Geant4 libraries
@@ -52,6 +52,7 @@ set(BL10SIM_USERDATA
     macros/run1.mac
     macros/run2.mac
     macros/vis.mac
+    macros/detailed.mac
     data/at_ductexit.txt
     data/at_moderator.txt
 )

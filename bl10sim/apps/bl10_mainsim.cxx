@@ -1,5 +1,8 @@
 #include <random>
 
+#include "G4PhysListFactory.hh"
+#include "G4VModularPhysicsList.hh"
+
 #include "FTFP_BERT_HP.hh"
 #include "bl10sim/ActionInitialization.h"
 #include "bl10sim/BL10DetectorConstruction.h"
@@ -46,6 +49,7 @@ int main(int argc, char **argv) {
     G4String macro;
     G4String session;
     G4bool verboseBestUnits = true;
+    G4bool notuseEMZ        = true;
 #ifdef G4MULTITHREADED
     G4int nThreads = 0;
 #endif
@@ -61,6 +65,9 @@ int main(int argc, char **argv) {
 #endif
         else if (G4String(argv[i]) == "-vDefault") {
             verboseBestUnits = false;
+            --i; // this option is not followed with a parameter
+        } else if (G4String(argv[i]) == "-pEMZ") {
+            notuseEMZ = false;
             --i; // this option is not followed with a parameter
         } else {
             PrintUsage();
@@ -98,8 +105,15 @@ int main(int argc, char **argv) {
     auto detConstruction = new bl10sim::BL10DetectorConstruction();
     runManager->SetUserInitialization(detConstruction);
 
-    auto physicsList = new FTFP_BERT_HP;
-    physicsList->RegisterPhysics(new G4ThermalNeutrons());
+    G4VModularPhysicsList *physicsList;
+
+    if (notuseEMZ) {
+        physicsList = new FTFP_BERT_HP;
+        physicsList->RegisterPhysics(new G4ThermalNeutrons());
+    } else {
+        G4PhysListFactory factory;
+        physicsList = factory.GetReferencePhysList("FTFP_BERT_HPT_EMZ");
+    }
     runManager->SetUserInitialization(physicsList);
 
     auto actionInitialization = new bl10sim::ActionInitialization();
