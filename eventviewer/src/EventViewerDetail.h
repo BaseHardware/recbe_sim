@@ -119,14 +119,20 @@ namespace eventviewer::detail {
         Bool_t HandleButton(Event_t *event) override {
             if (event->fType == kButtonPress) {
                 fLastButtonPressWasShift = (event->fState & kKeyShiftMask) != 0;
+                fLastRootX               = event->fXRoot;
+                fLastRootY               = event->fYRoot;
             }
             return TGListTree::HandleButton(event);
         }
 
         bool LastButtonPressWasShift() const { return fLastButtonPressWasShift; }
+        int LastRootX() const { return fLastRootX; }
+        int LastRootY() const { return fLastRootY; }
 
       private:
         bool fLastButtonPressWasShift = false;
+        int fLastRootX                 = 0;
+        int fLastRootY                 = 0;
     };
 
     class ShiftTruckEventHandler : public TGLEventHandler {

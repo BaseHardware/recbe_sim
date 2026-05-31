@@ -16,6 +16,7 @@
 #include "TGLWidget.h"
 #include "TGLabel.h"
 #include "TGListTree.h"
+#include "TGMenu.h"
 #include "TGNumberEntry.h"
 #include "TGTab.h"
 #include "TGTextView.h"
@@ -105,6 +106,17 @@ namespace eventviewer {
         fUi.geometryTree->SetCheckMode(TGListTree::kSimple);
         fUi.geometryTree->Connect("Checked(TObject*,Bool_t)", "eventviewer::EventViewer", this,
                                   "SetGeometryNodeVisibility(TObject*,Bool_t)");
+        fUi.geometryTree->Connect("Clicked(TGListTreeItem*,Int_t,Int_t,Int_t)",
+                                  "eventviewer::EventViewer", this,
+                                  "ShowGeometryContextMenu(TGListTreeItem*,Int_t,Int_t,Int_t)");
+        fUi.geometryContextMenu = new TGPopupMenu(gClient->GetRoot());
+        fUi.geometryContextMenu->AddEntry("Hide this node", 1);
+        fUi.geometryContextMenu->AddEntry("Hide node and children", 2);
+        fUi.geometryContextMenu->AddSeparator();
+        fUi.geometryContextMenu->AddEntry("Show this node", 3);
+        fUi.geometryContextMenu->AddEntry("Show node and children", 4);
+        fUi.geometryContextMenu->Connect("Activated(Int_t)", "eventviewer::EventViewer", this,
+                                         "HandleGeometryContextMenu(Int_t)");
         geometryTab->AddFrame(geometryCanvas,
                               new TGLayoutHints(kLHintsExpandX | kLHintsExpandY));
         fUi.geometryTree->AddItem(nullptr, "No geometry loaded");

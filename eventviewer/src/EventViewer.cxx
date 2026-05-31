@@ -3,6 +3,7 @@
 #include "TCanvas.h"
 #include "TFile.h"
 #include "TGLEventHandler.h"
+#include "TGMenu.h"
 
 #include <cstdio>
 
@@ -22,6 +23,7 @@ ClassImp(eventviewer::EventViewer)
     }
 
     EventViewer::~EventViewer() {
+        delete fUi.geometryContextMenu;
         fRender.Destroy();
         fEvent.CleanupGeometryFile();
         Cleanup();

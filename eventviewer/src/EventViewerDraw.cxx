@@ -14,6 +14,7 @@
 #include "TGeoManager.h"
 #include "TGeoMaterial.h"
 #include "TGeoNode.h"
+#include "TGeoPhysicalNode.h"
 #include "TGeoVolume.h"
 #include "TParticlePDG.h"
 #include "TPolyLine3D.h"
@@ -29,7 +30,7 @@ namespace eventviewer {
     namespace {
         int TrackColor(const simobj::Track &track);
         void RestoreGeometryAttributes(TGeoNode &node, const ViewSettings &view);
-        void ApplyHiddenGeometryNodes(const ViewSettings &view);
+        void ApplyHiddenGeometryPaths(const ViewSettings &view);
         void HideGeometryNode(TGeoNode &node);
     } // namespace
 
@@ -64,7 +65,7 @@ namespace eventviewer {
         if (!gGeoManager || !gGeoManager->GetTopVolume()) return;
         if (auto *top = gGeoManager->GetTopNode()) {
             RestoreGeometryAttributes(*top, view);
-            ApplyHiddenGeometryNodes(view);
+            ApplyHiddenGeometryPaths(view);
         }
         gGeoManager->SetVisLevel(GeometryVisLevel(view.graphicalVerbosity));
         gGeoManager->SetMaxVisNodes(GeometryMaxVisNodes(view.graphicalVerbosity));
@@ -220,10 +221,23 @@ namespace eventviewer {
             }
         }
 
-        void ApplyHiddenGeometryNodes(const ViewSettings &view) {
-            for (const auto *node : view.hiddenGeometryNodes) {
-                if (node) HideGeometryNode(*const_cast<TGeoNode *>(node));
+        void ApplyHiddenGeometryPaths(const ViewSettings &view) {
+            if (gGeoManager) gGeoManager->ClearPhysicalNodes(kTRUE);
+            for (const auto &path : view.hiddenGeometryPaths) {
+                if (path.empty()) continue;
+                auto *physicalNode = gGeoManager ? gGeoManager->MakePhysicalNode(path.c_str()) : nullptr;
+                if (physicalNode) {
+                    physicalNode->SetVisibleFull(kTRUE);
+                    physicalNode->SetVisibility(kFALSE);
+                    gGeoManager->SetVisibility(physicalNode, kFALSE);
+                    continue;
+                }
+
+                if (gGeoManager && gGeoManager->cd(path.c_str())) {
+                    if (auto *node = gGeoManager->GetCurrentNode()) HideGeometryNode(*node);
+                }
             }
+            if (gGeoManager) gGeoManager->RefreshPhysicalNodes(kFALSE);
         }
 
         void HideGeometryNode(TGeoNode &node) {

@@ -1,8 +1,13 @@
 #ifndef __eventviewer_ViewSettings_h__
 #define __eventviewer_ViewSettings_h__
 
+#include "TObject.h"
+
+#include <memory>
+#include <string>
 #include <unordered_map>
 #include <unordered_set>
+#include <vector>
 
 class TGeoMaterial;
 class TGeoNode;
@@ -32,6 +37,11 @@ namespace eventviewer {
         int fillStyle    = 0;
     };
 
+    struct GeometryTreeEntry : public TObject {
+        TGeoNode *node = nullptr;
+        std::string path;
+    };
+
     class ViewSettings {
       public:
         int graphicalVerbosity = 1;
@@ -40,7 +50,9 @@ namespace eventviewer {
         std::unordered_map<const TGeoVolume *, GeometryAttributeState> geometryVolumeAttributeDefaults;
         std::unordered_map<const TGeoVolume *, GeometryVolumeDrawState> geometryVolumeDrawDefaults;
         std::unordered_map<const TGeoMaterial *, int> geometryMaterialTransparencyDefaults;
-        std::unordered_set<const TGeoNode *> hiddenGeometryNodes;
+        std::unordered_set<std::string> hiddenGeometryPaths;
+        std::vector<std::unique_ptr<GeometryTreeEntry>> geometryTreeEntries;
+        GeometryTreeEntry *geometryContextEntry = nullptr;
     };
 } // namespace eventviewer
 

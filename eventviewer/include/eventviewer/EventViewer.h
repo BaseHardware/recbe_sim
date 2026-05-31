@@ -11,6 +11,7 @@
 #include <string>
 
 class TObject;
+class TGListTreeItem;
 
 namespace eventviewer {
     class EventViewer : public TGMainFrame {
@@ -31,6 +32,8 @@ namespace eventviewer {
         void ApplyCameraFromUi();
         void ResetCameraControls();
         void ApplyBackgroundColor(Pixel_t color);
+        void ShowGeometryContextMenu(TGListTreeItem *item, Int_t button, Int_t x, Int_t y);
+        void HandleGeometryContextMenu(Int_t command);
         void SetGeometryNodeVisibility(TObject *object, Bool_t visible);
         void SetGraphicalVerbosity(Int_t level);
 
