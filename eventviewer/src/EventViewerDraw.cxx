@@ -9,12 +9,13 @@
 #include "TClonesArray.h"
 #include "TDatabasePDG.h"
 #include "TGeoAtt.h"
+#include "TGLCamera.h"
 #include "TGLEmbeddedViewer.h"
 #include "TGLViewer.h"
 #include "TGeoManager.h"
 #include "TGeoMaterial.h"
+#include "TGeoMatrix.h"
 #include "TGeoNode.h"
-#include "TGeoPhysicalNode.h"
 #include "TGeoVolume.h"
 #include "TParticlePDG.h"
 #include "TPolyLine3D.h"
@@ -23,6 +24,8 @@
 #include <algorithm>
 #include <array>
 #include <map>
+#include <sstream>
+#include <string>
 #include <vector>
 
 namespace eventviewer {
@@ -30,8 +33,7 @@ namespace eventviewer {
     namespace {
         int TrackColor(const simobj::Track &track);
         void RestoreGeometryAttributes(TGeoNode &node, const ViewSettings &view);
-        void ApplyHiddenGeometryPaths(const ViewSettings &view);
-        void HideGeometryNode(TGeoNode &node);
+        void ApplyHiddenGeometryClones(const ViewSettings &view);
     } // namespace
 
     void EventViewer::RedrawEvent() {
@@ -52,8 +54,22 @@ namespace eventviewer {
 
         if (glViewer) {
             glViewer->SetResetCamerasOnUpdate(false);
+            auto &camera = glViewer->CurrentCamera();
+            const bool preserveCamera = cameraInitialized;
+            const auto cameraBase = camera.GetCamBase();
+            const auto cameraTrans = camera.GetCamTrans();
+            const double *center = camera.GetCenterVec();
+            const std::array<double, 3> cameraCenter = {center[0], center[1], center[2]};
+
             glViewer->PadPaint(canvas);
-            ApplyDefaultCamera();
+            if (preserveCamera) {
+                camera.RefCamBase() = cameraBase;
+                camera.RefCamTrans() = cameraTrans;
+                camera.SetCenterVec(cameraCenter[0], cameraCenter[1], cameraCenter[2]);
+                camera.IncTimeStamp();
+            } else {
+                ApplyDefaultCamera();
+            }
             glViewer->RequestDraw();
         }
 
@@ -63,13 +79,13 @@ namespace eventviewer {
 
     void RenderContext::DrawGeometry(const ViewSettings &view) {
         if (!gGeoManager || !gGeoManager->GetTopVolume()) return;
-        if (auto *top = gGeoManager->GetTopNode()) {
-            RestoreGeometryAttributes(*top, view);
-            ApplyHiddenGeometryPaths(view);
-        }
         gGeoManager->SetVisLevel(GeometryVisLevel(view.graphicalVerbosity));
         gGeoManager->SetMaxVisNodes(GeometryMaxVisNodes(view.graphicalVerbosity));
         gGeoManager->SetNsegments(GeometrySegments(view.graphicalVerbosity));
+        if (auto *top = gGeoManager->GetTopNode()) {
+            RestoreGeometryAttributes(*top, view);
+            ApplyHiddenGeometryClones(view);
+        }
         gGeoManager->SetVisOption(view.graphicalVerbosity >= 3 ? 1 : 0);
         gGeoManager->GetTopVolume()->Draw();
     }
@@ -191,6 +207,11 @@ namespace eventviewer {
         }
 
         void RestoreGeometryAttributes(TGeoNode &node, const ViewSettings &view) {
+            const auto nodeVolume = view.geometryNodeVolumeDefaults.find(&node);
+            if (nodeVolume != view.geometryNodeVolumeDefaults.end()) {
+                node.SetVolume(nodeVolume->second);
+            }
+
             const auto nodeAttributes = view.geometryNodeAttributeDefaults.find(&node);
             if (nodeAttributes != view.geometryNodeAttributeDefaults.end()) {
                 ApplyGeometryAttributes(node, nodeAttributes->second);
@@ -221,32 +242,45 @@ namespace eventviewer {
             }
         }
 
-        void ApplyHiddenGeometryPaths(const ViewSettings &view) {
-            if (gGeoManager) gGeoManager->ClearPhysicalNodes(kTRUE);
-            for (const auto &path : view.hiddenGeometryPaths) {
-                if (path.empty()) continue;
-                auto *physicalNode = gGeoManager ? gGeoManager->MakePhysicalNode(path.c_str()) : nullptr;
-                if (physicalNode) {
-                    physicalNode->SetVisibleFull(kTRUE);
-                    physicalNode->SetVisibility(kFALSE);
-                    gGeoManager->SetVisibility(physicalNode, kFALSE);
-                    continue;
-                }
+        void ApplyHiddenGeometryClones(const ViewSettings &view) {
+            view.hiddenGeometryVolumeClones.clear();
 
-                if (gGeoManager && gGeoManager->cd(path.c_str())) {
-                    if (auto *node = gGeoManager->GetCurrentNode()) HideGeometryNode(*node);
+            std::vector<GeometryTreeEntry *> hiddenEntries;
+            for (const auto &entry : view.geometryTreeEntries) {
+                if (!entry || !entry->node) continue;
+                if (view.hiddenGeometryPaths.find(entry->path) != view.hiddenGeometryPaths.end()) {
+                    hiddenEntries.push_back(entry.get());
                 }
             }
-            if (gGeoManager) gGeoManager->RefreshPhysicalNodes(kFALSE);
-        }
+            std::sort(hiddenEntries.begin(), hiddenEntries.end(),
+                      [](const GeometryTreeEntry *a, const GeometryTreeEntry *b) {
+                          return a->path.size() > b->path.size();
+                      });
 
-        void HideGeometryNode(TGeoNode &node) {
-            node.SetAttBit(TGeoAtt::kVisNone, kFALSE);
-            node.SetAttBit(TGeoAtt::kVisThis, kFALSE);
-            node.SetAttBit(TGeoAtt::kVisDaughters, kTRUE);
-            node.SetAttBit(TGeoAtt::kVisOneLevel, kFALSE);
-            node.SetAttBit(TGeoAtt::kVisOnly, kFALSE);
-            node.SetAttBit(TGeoAtt::kVisBranch, kFALSE);
+            for (auto *entry : hiddenEntries) {
+                auto *volume = entry->node->GetVolume();
+                if (!volume) continue;
+
+                std::ostringstream proxyName;
+                proxyName << volume->GetName() << "_evtviewer_hidden_"
+                          << view.hiddenGeometryProxySerial++;
+                auto *proxy = new TGeoVolumeAssembly(proxyName.str().c_str());
+                proxy->SetVisibility(kFALSE);
+                proxy->SetVisDaughters(kTRUE);
+
+                const int nDaughters = volume->GetNdaughters();
+                for (int i = 0; i < nDaughters; ++i) {
+                    auto *daughter = volume->GetNode(i);
+                    if (!daughter || !daughter->GetVolume()) continue;
+                    auto *matrix = daughter->GetMatrix()
+                                       ? static_cast<TGeoMatrix *>(daughter->GetMatrix()->Clone())
+                                       : nullptr;
+                    proxy->AddNode(daughter->GetVolume(), daughter->GetNumber(), matrix);
+                }
+
+                entry->node->SetVolume(proxy);
+                view.hiddenGeometryVolumeClones.push_back(proxy);
+            }
         }
 
         int TrackColor(const simobj::Track &track) {

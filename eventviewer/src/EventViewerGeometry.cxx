@@ -72,6 +72,7 @@ namespace eventviewer {
 
         void SnapshotGeometryAttributes(TGeoNode &node, ViewSettings &view) {
             view.geometryNodeAttributeDefaults[&node] = CaptureGeometryAttributes(node);
+            view.geometryNodeVolumeDefaults[&node]    = node.GetVolume();
             if (auto *volume = node.GetVolume()) {
                 view.geometryVolumeAttributeDefaults.try_emplace(
                     volume, CaptureGeometryAttributes(*volume));
@@ -146,10 +147,13 @@ namespace eventviewer {
 
         fView.updatingGeometryTree = true;
         fView.geometryNodeAttributeDefaults.clear();
+        fView.geometryNodeVolumeDefaults.clear();
         fView.geometryVolumeAttributeDefaults.clear();
         fView.geometryVolumeDrawDefaults.clear();
         fView.geometryMaterialTransparencyDefaults.clear();
         fView.hiddenGeometryPaths.clear();
+        fView.hiddenGeometryProxySerial = 0;
+        fView.hiddenGeometryVolumeClones.clear();
         fView.geometryTreeEntries.clear();
         fView.geometryContextEntry = nullptr;
         ClearGeometryTree(*fUi.geometryTree);
@@ -189,7 +193,9 @@ namespace eventviewer {
     }
 
     void EventViewer::ShowGeometryContextMenu(TGListTreeItem *item, Int_t button, Int_t, Int_t) {
-        if (button != kButton3 || !item || !fUi.geometryContextMenu) return;
+        if (!item) return;
+
+        if (button != kButton3 || !fUi.geometryContextMenu) return;
 
         fView.geometryContextEntry = static_cast<GeometryTreeEntry *>(item->GetUserData());
         if (!fView.geometryContextEntry) return;

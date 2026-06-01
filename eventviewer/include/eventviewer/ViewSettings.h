@@ -2,7 +2,9 @@
 #define __eventviewer_ViewSettings_h__
 
 #include "TObject.h"
+#include "TGeoVolume.h"
 
+#include <cstddef>
 #include <memory>
 #include <string>
 #include <unordered_map>
@@ -47,10 +49,13 @@ namespace eventviewer {
         int graphicalVerbosity = 1;
         bool updatingGeometryTree = false;
         std::unordered_map<const TGeoNode *, GeometryAttributeState> geometryNodeAttributeDefaults;
+        std::unordered_map<const TGeoNode *, TGeoVolume *> geometryNodeVolumeDefaults;
         std::unordered_map<const TGeoVolume *, GeometryAttributeState> geometryVolumeAttributeDefaults;
         std::unordered_map<const TGeoVolume *, GeometryVolumeDrawState> geometryVolumeDrawDefaults;
         std::unordered_map<const TGeoMaterial *, int> geometryMaterialTransparencyDefaults;
         std::unordered_set<std::string> hiddenGeometryPaths;
+        mutable std::size_t hiddenGeometryProxySerial = 0;
+        mutable std::vector<TGeoVolume *> hiddenGeometryVolumeClones;
         std::vector<std::unique_ptr<GeometryTreeEntry>> geometryTreeEntries;
         GeometryTreeEntry *geometryContextEntry = nullptr;
     };
