@@ -20,9 +20,9 @@ const TDatabasePDG *pdb = TDatabasePDG::Instance();
 // length unit: mm
 
 constexpr Double_t time_window = 12;
-constexpr Double_t hit_size    = 0.1;
+constexpr Double_t hit_size = 0.1;
 
-constexpr double yield_factor  = 0.1;
+constexpr double yield_factor = 1;
 constexpr double charge_per_eV = 1. / 3.6;
 
 void print_onestep(const simobj::Step *s) {
@@ -92,17 +92,17 @@ struct HitInfo {
     string fPVName;
     double fPrimaryKE, fPrimaryTime;
     double fX, fY, fZ, fT;
-    int fChargeNum;
+    int fTrkCharge, fStepCharge;
 
     HitInfo()
         : fEnvCopyNo(-1), fPVName(), fPrimaryKE(-1), fPrimaryTime(-1), fX(0), fY(0), fZ(0), fT(-1),
-          fChargeNum(0) {};
+          fTrkCharge(0), fStepCharge(0) {};
 
     HitInfo(const simobj::Track *t, const simobj::Primary *p)
         : fEnvCopyNo(t->GetFinalStep().GetEnvelopeCopyNumber()),
           fPVName(t->GetFinalStep().GetVolumeName()),
           fPrimaryKE(p->GetPrimaryParticleObjPtr(0)->GetKineticEnergy()),
-          fPrimaryTime(p->GetVertexObjPtr(0)->GetT()), fChargeNum(1) {
+          fPrimaryTime(p->GetVertexObjPtr(0)->GetT()), fTrkCharge(1), fStepCharge(0) {
         fX = t->GetFinalStep().GetX();
         fY = t->GetFinalStep().GetY();
         fZ = t->GetFinalStep().GetZ();
@@ -112,19 +112,29 @@ struct HitInfo {
     HitInfo(const simobj::Step *s, const simobj::Primary *p)
         : fEnvCopyNo(s->GetEnvelopeCopyNumber()), fPVName(s->GetVolumeName()),
           fPrimaryKE(p->GetPrimaryParticleObjPtr(0)->GetKineticEnergy()),
-          fPrimaryTime(p->GetVertexObjPtr(0)->GetT()) {
+          fPrimaryTime(p->GetVertexObjPtr(0)->GetT()), fTrkCharge(0) {
         fX = s->GetX();
         fY = s->GetY();
         fZ = s->GetZ();
         fT = s->GetGlobalTime();
 
-        fChargeNum = s->GetIonDepositedEnergy() * 1e6 * charge_per_eV * yield_factor;
+        fStepCharge = s->GetIonDepositedEnergy() * 1e6 * charge_per_eV * yield_factor;
     };
+
+    void UpdateHitPosition(int addedCharge, double x, double y, double z, double t) {
+        double totalCharge = fTrkCharge + fStepCharge;
+        double newCharge = totalCharge + addedCharge;
+
+        fX = (fX * totalCharge + addedCharge * x) / newCharge;
+        fY = (fY * totalCharge + addedCharge * y) / newCharge;
+        fZ = (fZ * totalCharge + addedCharge * z) / newCharge;
+        fT = (fT * totalCharge + addedCharge * t) / newCharge;
+    }
 
     bool IsAcceptable(const simobj::Step *target) const {
         double time_lower_bound = fT - time_window / 2.;
         double time_upper_bound = fT + time_window / 2.;
-        double target_time      = target->GetGlobalTime();
+        double target_time = target->GetGlobalTime();
 
         double x_diff = fX - target->GetX();
         double y_diff = fY - target->GetY();
@@ -167,15 +177,11 @@ struct HitInfo {
         else
             trkCharge = abs(particle->Charge());
 
-        int newCharge = fChargeNum + trkCharge;
-
         if (IsAcceptable(track)) {
-            fX = (fX * fChargeNum + trkCharge * step.GetX()) / newCharge;
-            fY = (fY * fChargeNum + trkCharge * step.GetY()) / newCharge;
-            fZ = (fZ * fChargeNum + trkCharge * step.GetZ()) / newCharge;
-            fT = (fT * fChargeNum + trkCharge * step.GetGlobalTime()) / newCharge;
+            UpdateHitPosition(trkCharge, step.GetX(), step.GetY(), step.GetZ(),
+                              step.GetGlobalTime());
 
-            fChargeNum = newCharge;
+            fTrkCharge += trkCharge;
             return true;
         } else {
             return false;
@@ -183,29 +189,27 @@ struct HitInfo {
     }
 
     bool AppendStep(const simobj::Step *step) {
-        int trkCharge = step->GetIonDepositedEnergy() * 1e6 * charge_per_eV * yield_factor;
-
-        int newCharge = fChargeNum + trkCharge;
+        int stepCharge = step->GetIonDepositedEnergy() * 1e6 * charge_per_eV * yield_factor;
 
         if (IsAcceptable(step)) {
-            fX = (fX * fChargeNum + trkCharge * step->GetX()) / newCharge;
-            fY = (fY * fChargeNum + trkCharge * step->GetY()) / newCharge;
-            fZ = (fZ * fChargeNum + trkCharge * step->GetZ()) / newCharge;
-            fT = (fT * fChargeNum + trkCharge * step->GetGlobalTime()) / newCharge;
+            UpdateHitPosition(stepCharge, step->GetX(), step->GetY(), step->GetZ(),
+                              step->GetGlobalTime());
 
-            fChargeNum = newCharge;
+            fStepCharge += stepCharge;
             return true;
         } else {
             return false;
         }
     }
+
+    int GetTotalCharge() const { return fTrkCharge + fStepCharge; }
 };
 
-void make_fpgahits_cnum(const char *input_file  = "simout.root",
+void make_fpgahits_cnum(const char *input_file = "simout.root",
                         const char *output_file = "output.root") {
 
     TFile *pOutput = new TFile(output_file, "RECREATE");
-    TTree *pOTree  = new TTree("hits", "tree for the FPGA hits");
+    TTree *pOTree = new TTree("hits", "tree for the FPGA hits");
     pOTree->SetDirectory(pOutput);
 
     Int_t evtid, env_copyno;
@@ -213,23 +217,24 @@ void make_fpgahits_cnum(const char *input_file  = "simout.root",
     Double_t prim_e, prim_t;
     string *pvname = nullptr;
     double x, y, z;
-    int chargeNum;
+    int trkCharge, stepCharge;
 
-    const simobj::Track **tracks_in_fpga           = new const simobj::Track *[40000];
+    const simobj::Track **tracks_in_fpga = new const simobj::Track *[40000];
     pair<const simobj::Step *, int> *steps_in_fpga = new pair<const simobj::Step *, int>[20000];
 
     auto FillTreeWithHit = [&](vector<HitInfo> &buffer, int entry) -> void {
         evtid = entry;
         for (auto &nowhit : buffer) {
             env_copyno = nowhit.fEnvCopyNo;
-            *pvname    = nowhit.fPVName;
-            prim_e     = nowhit.fPrimaryKE;
-            prim_t     = nowhit.fPrimaryTime;
-            time       = nowhit.fT;
-            x          = nowhit.fX;
-            y          = nowhit.fY;
-            z          = nowhit.fZ;
-            chargeNum  = nowhit.fChargeNum;
+            *pvname = nowhit.fPVName;
+            prim_e = nowhit.fPrimaryKE;
+            prim_t = nowhit.fPrimaryTime;
+            time = nowhit.fT;
+            x = nowhit.fX;
+            y = nowhit.fY;
+            z = nowhit.fZ;
+            trkCharge = nowhit.fTrkCharge;
+            stepCharge = nowhit.fStepCharge;
 
             pOTree->Fill();
         }
@@ -246,7 +251,7 @@ void make_fpgahits_cnum(const char *input_file  = "simout.root",
     auto AddFPGAStep = [&](const simobj::Step *s, int trk_idx) -> void {
         if (s->GetVolumeName().Contains("FPGADiePV") &&
             (s->GetProcessName() == "ionIoni" || s->GetProcessName() == "hIoni")) {
-            steps_in_fpga[stepnum].first  = s;
+            steps_in_fpga[stepnum].first = s;
             steps_in_fpga[stepnum].second = trk_idx;
             // print_onestep(s);
             ++stepnum;
@@ -262,14 +267,15 @@ void make_fpgahits_cnum(const char *input_file  = "simout.root",
     pOTree->Branch("y", &y);
     pOTree->Branch("z", &z);
     pOTree->Branch("time", &time);
-    pOTree->Branch("chargeNum", &chargeNum);
+    pOTree->Branch("trkCharge", &trkCharge);
+    pOTree->Branch("stepCharge", &stepCharge);
 
     TFile *pInput = new TFile(input_file);
 
     TTree *pITree = static_cast<TTree *>(pInput->Get("tree"));
 
-    TClonesArray *tcaTrack   = nullptr;
-    TClonesArray *tcaStep    = nullptr;
+    TClonesArray *tcaTrack = nullptr;
+    TClonesArray *tcaStep = nullptr;
     simobj::Primary *primary = nullptr;
     bool complete;
 
@@ -344,7 +350,7 @@ void make_fpgahits_cnum(const char *input_file  = "simout.root",
             if (!appended) {
                 HitInfo newHit = HitInfo(step.first, primary);
 
-                if (newHit.fChargeNum != 0) hiBuffer.push_back(std::move(newHit));
+                if (newHit.GetTotalCharge() != 0) hiBuffer.push_back(std::move(newHit));
             }
         }
         cout << "Hitting end. [N = " << hiBuffer.size() << "] Filling start." << endl;
@@ -360,7 +366,7 @@ void make_fpgahits_cnum(const char *input_file  = "simout.root",
     delete[] tracks_in_fpga;
     delete[] steps_in_fpga;
     tracks_in_fpga = nullptr;
-    steps_in_fpga  = nullptr;
+    steps_in_fpga = nullptr;
 
     pInput->Close();
     pOutput->Write();
