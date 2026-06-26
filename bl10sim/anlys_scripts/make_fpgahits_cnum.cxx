@@ -7,6 +7,7 @@
 #include "TTree.h"
 
 #ifndef __CLING__
+#include "simobj/Metadata.h"
 #include "simobj/Primary.h"
 #include "simobj/Step.h"
 #include "simobj/Track.h"
@@ -20,9 +21,9 @@ const TDatabasePDG *pdb = TDatabasePDG::Instance();
 // length unit: mm
 
 constexpr Double_t time_window = 12;
-constexpr Double_t hit_size = 0.1;
+constexpr Double_t hit_size    = 0.1;
 
-constexpr double yield_factor = 1;
+constexpr double yield_factor  = 1;
 constexpr double charge_per_eV = 1. / 3.6;
 
 void print_onestep(const simobj::Step *s) {
@@ -123,7 +124,7 @@ struct HitInfo {
 
     void UpdateHitPosition(int addedCharge, double x, double y, double z, double t) {
         double totalCharge = fTrkCharge + fStepCharge;
-        double newCharge = totalCharge + addedCharge;
+        double newCharge   = totalCharge + addedCharge;
 
         fX = (fX * totalCharge + addedCharge * x) / newCharge;
         fY = (fY * totalCharge + addedCharge * y) / newCharge;
@@ -134,7 +135,7 @@ struct HitInfo {
     bool IsAcceptable(const simobj::Step *target) const {
         double time_lower_bound = fT - time_window / 2.;
         double time_upper_bound = fT + time_window / 2.;
-        double target_time = target->GetGlobalTime();
+        double target_time      = target->GetGlobalTime();
 
         double x_diff = fX - target->GetX();
         double y_diff = fY - target->GetY();
@@ -205,11 +206,11 @@ struct HitInfo {
     int GetTotalCharge() const { return fTrkCharge + fStepCharge; }
 };
 
-void make_fpgahits_cnum(const char *input_file = "simout.root",
+void make_fpgahits_cnum(const char *input_file  = "simout.root",
                         const char *output_file = "output.root") {
 
     TFile *pOutput = new TFile(output_file, "RECREATE");
-    TTree *pOTree = new TTree("hits", "tree for the FPGA hits");
+    TTree *pOTree  = new TTree("hits", "tree for the FPGA hits");
     pOTree->SetDirectory(pOutput);
 
     Int_t evtid, env_copyno;
@@ -218,22 +219,33 @@ void make_fpgahits_cnum(const char *input_file = "simout.root",
     string *pvname = nullptr;
     double x, y, z;
     int trkCharge, stepCharge;
+    bool complete;
 
-    const simobj::Track **tracks_in_fpga = new const simobj::Track *[40000];
+    int maxNTrack;
+
+    const simobj::Track **tracks_in_fpga           = new const simobj::Track *[40000];
     pair<const simobj::Step *, int> *steps_in_fpga = new pair<const simobj::Step *, int>[20000];
 
     auto FillTreeWithHit = [&](vector<HitInfo> &buffer, int entry) -> void {
-        evtid = entry;
+        bool max_track = false;
+        evtid          = entry;
+        if (buffer.size() == 1 && !complete) {
+            max_track = true;
+        }
         for (auto &nowhit : buffer) {
             env_copyno = nowhit.fEnvCopyNo;
-            *pvname = nowhit.fPVName;
-            prim_e = nowhit.fPrimaryKE;
-            prim_t = nowhit.fPrimaryTime;
-            time = nowhit.fT;
-            x = nowhit.fX;
-            y = nowhit.fY;
-            z = nowhit.fZ;
-            trkCharge = nowhit.fTrkCharge;
+            *pvname    = nowhit.fPVName;
+            prim_e     = nowhit.fPrimaryKE;
+            prim_t     = nowhit.fPrimaryTime;
+            time       = nowhit.fT;
+            x          = nowhit.fX;
+            y          = nowhit.fY;
+            z          = nowhit.fZ;
+            if (trkCharge != 0 && max_track) {
+                trkCharge = maxNTrack;
+            } else {
+                trkCharge = nowhit.fTrkCharge;
+            }
             stepCharge = nowhit.fStepCharge;
 
             pOTree->Fill();
@@ -251,7 +263,7 @@ void make_fpgahits_cnum(const char *input_file = "simout.root",
     auto AddFPGAStep = [&](const simobj::Step *s, int trk_idx) -> void {
         if (s->GetVolumeName().Contains("FPGADiePV") &&
             (s->GetProcessName() == "ionIoni" || s->GetProcessName() == "hIoni")) {
-            steps_in_fpga[stepnum].first = s;
+            steps_in_fpga[stepnum].first  = s;
             steps_in_fpga[stepnum].second = trk_idx;
             // print_onestep(s);
             ++stepnum;
@@ -269,15 +281,23 @@ void make_fpgahits_cnum(const char *input_file = "simout.root",
     pOTree->Branch("time", &time);
     pOTree->Branch("trkCharge", &trkCharge);
     pOTree->Branch("stepCharge", &stepCharge);
+    pOTree->Branch("complete", &complete);
 
     TFile *pInput = new TFile(input_file);
 
-    TTree *pITree = static_cast<TTree *>(pInput->Get("tree"));
+    TTree *pIP = static_cast<TTree *>(pInput->Get("persistent"));
 
-    TClonesArray *tcaTrack = nullptr;
-    TClonesArray *tcaStep = nullptr;
+    simobj::Metadata *metadata = nullptr;
+    pIP->SetBranchAddress("Metadata", &metadata);
+    pIP->GetEntry(0);
+
+    TTree *pITree = static_cast<TTree *>(pInput->Get(metadata->GetOutputTreename().c_str()));
+
+    maxNTrack = metadata->GetMaxTrackNum();
+
+    TClonesArray *tcaTrack   = nullptr;
+    TClonesArray *tcaStep    = nullptr;
     simobj::Primary *primary = nullptr;
-    bool complete;
 
     pITree->SetBranchAddress("Steps", &tcaStep);
     pITree->SetBranchAddress("Tracks", &tcaTrack);
@@ -290,7 +310,6 @@ void make_fpgahits_cnum(const char *input_file = "simout.root",
 
     for (int i_evt = 0; i_evt < n_evts; i_evt++) {
         pITree->GetEntry(i_evt);
-        if (!complete) continue;
 
         int n_trk = tcaTrack->GetEntries();
 
@@ -366,7 +385,7 @@ void make_fpgahits_cnum(const char *input_file = "simout.root",
     delete[] tracks_in_fpga;
     delete[] steps_in_fpga;
     tracks_in_fpga = nullptr;
-    steps_in_fpga = nullptr;
+    steps_in_fpga  = nullptr;
 
     pInput->Close();
     pOutput->Write();

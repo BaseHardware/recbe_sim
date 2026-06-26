@@ -27,6 +27,8 @@ flags = [
     '-Wuninitialized',
     '-Wno-long-long',
     '-Wno-variadic-macros',
+    '-Wno-unused-includes',
+    '-Wno-unused-macros',
     '-fexceptions',
     '-fno-builtin',
     '-DG4LIB_BUILD_DLL',
@@ -99,6 +101,7 @@ flags.append(f'-I{nowdir}/bl10sim/include')
 flags.append(f'-I{nowdir}/kobetdsim/include')
 flags.append(f'-I{nowdir}/include')
 
+clangd_args = ['--header-insertion=never']
 
 # Set this to the absolute path to the folder (NOT the file!) containing the
 # compile_commands.json file to use that instead of 'flags'. See here for
@@ -160,7 +163,8 @@ def Settings(**kwargs):
     # python list, but a "list-like" StringVec object.
     return {
         'flags': list(compilation_info.compiler_flags_),
-        'include_paths_relative_to_dir': compilation_info.compiler_working_dir_
+        'include_paths_relative_to_dir': compilation_info.compiler_working_dir_,
+        'clangd_args': clangd_args
     }
 
 def PythonSysPath( **kwargs ):
