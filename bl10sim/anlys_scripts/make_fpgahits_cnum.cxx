@@ -216,7 +216,7 @@ void make_fpgahits_cnum(const char *input_file  = "simout.root",
     Int_t evtid, env_copyno;
     Double_t time;
     Double_t prim_e, prim_t;
-    string *pvname = nullptr;
+    string *pvname = nullptr, *filename = nullptr;
     double x, y, z;
     int trkCharge, stepCharge;
     bool complete;
@@ -271,6 +271,7 @@ void make_fpgahits_cnum(const char *input_file  = "simout.root",
     };
 
     pOTree->Branch("evtid", &evtid);
+    pOTree->Branch("filename", &filename);
     pOTree->Branch("envelope_copyno", &env_copyno);
     pOTree->Branch("pvname", &pvname);
     pOTree->Branch("prim_e", &prim_e);
@@ -284,6 +285,8 @@ void make_fpgahits_cnum(const char *input_file  = "simout.root",
     pOTree->Branch("complete", &complete);
 
     TFile *pInput = new TFile(input_file);
+
+    *filename = input_file;
 
     TTree *pIP = static_cast<TTree *>(pInput->Get("persistent"));
 
