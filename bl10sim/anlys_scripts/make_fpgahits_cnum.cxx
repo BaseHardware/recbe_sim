@@ -176,7 +176,7 @@ struct HitInfo {
         if (particle == nullptr)
             trkCharge = 1;
         else
-            trkCharge = abs(particle->Charge());
+            trkCharge = abs(particle->Charge()) / 3;
 
         if (IsAcceptable(track)) {
             UpdateHitPosition(trkCharge, step.GetX(), step.GetY(), step.GetZ(),
