@@ -18,6 +18,7 @@ file(GLOB bl10sim_lib_sources ${PROJECT_SOURCE_DIR}/src/*.cxx)
 
 file(GLOB bl10sim_exec ${PROJECT_SOURCE_DIR}/apps/bl10_mainsim.cxx)
 file(GLOB bl10ductsim_exec ${PROJECT_SOURCE_DIR}/apps/bl10_ductsim.cxx)
+file(GLOB bl10muelsim_exec ${PROJECT_SOURCE_DIR}/apps/bl10_muelsim.cxx)
 
 #----------------------------------------------------------------------------
 # Add a library with sources and the local headers and the Geant4 libraries
@@ -40,6 +41,11 @@ add_executable(bl10_ductsim ${bl10ductsim_exec})
 
 target_link_libraries(bl10_ductsim PRIVATE ${Geant4_LIBRARIES})
 target_link_libraries(bl10_ductsim PRIVATE bl10sim)
+
+add_executable(bl10_muelsim ${bl10muelsim_exec})
+
+target_link_libraries(bl10_muelsim PRIVATE ${Geant4_LIBRARIES})
+target_link_libraries(bl10_muelsim PRIVATE bl10sim)
 
 #----------------------------------------------------------------------------
 # Copy all scripts to the build directory, i.e. the directory in which we
