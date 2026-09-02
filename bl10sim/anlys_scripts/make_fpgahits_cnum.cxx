@@ -93,31 +93,43 @@ struct HitInfo {
     string fPVName;
     double fPrimaryKE, fPrimaryTime;
     double fX, fY, fZ, fT;
+    double fM2;
     int fTrkCharge, fStepCharge;
+    vector<int> fMakerID, fMakerPDG;
+    vector<string> fMakerProc;
 
     HitInfo()
         : fEnvCopyNo(-1), fPVName(), fPrimaryKE(-1), fPrimaryTime(-1), fX(0), fY(0), fZ(0), fT(-1),
-          fTrkCharge(0), fStepCharge(0) {};
+          fM2(0), fTrkCharge(0), fStepCharge(0) {};
 
-    HitInfo(const simobj::Track *t, const simobj::Primary *p)
+    HitInfo(const simobj::Track *t, const simobj::Track *par, const simobj::Primary *prim)
         : fEnvCopyNo(t->GetFinalStep().GetEnvelopeCopyNumber()),
           fPVName(t->GetFinalStep().GetVolumeName()),
-          fPrimaryKE(p->GetPrimaryParticleObjPtr(0)->GetKineticEnergy()),
-          fPrimaryTime(p->GetVertexObjPtr(0)->GetT()), fTrkCharge(1), fStepCharge(0) {
+          fPrimaryKE(prim->GetPrimaryParticleObjPtr(0)->GetKineticEnergy()),
+          fPrimaryTime(prim->GetVertexObjPtr(0)->GetT()), fM2(0), fTrkCharge(1), fStepCharge(0) {
         fX = t->GetFinalStep().GetX();
         fY = t->GetFinalStep().GetY();
         fZ = t->GetFinalStep().GetZ();
         fT = t->GetFinalStep().GetGlobalTime();
+
+        fMakerID.push_back(par->GetTrackID());
+        fMakerPDG.push_back(par->GetPDGCode());
+        fMakerProc.push_back(par->GetFirstStep().GetProcessName().Data());
     };
 
-    HitInfo(const simobj::Step *s, const simobj::Primary *p)
+    HitInfo(const simobj::Step *s, const simobj::Track *par, const simobj::Primary *prim)
         : fEnvCopyNo(s->GetEnvelopeCopyNumber()), fPVName(s->GetVolumeName()),
-          fPrimaryKE(p->GetPrimaryParticleObjPtr(0)->GetKineticEnergy()),
-          fPrimaryTime(p->GetVertexObjPtr(0)->GetT()), fTrkCharge(0) {
-        fX = s->GetX();
-        fY = s->GetY();
-        fZ = s->GetZ();
-        fT = s->GetGlobalTime();
+          fPrimaryKE(prim->GetPrimaryParticleObjPtr(0)->GetKineticEnergy()),
+          fPrimaryTime(prim->GetVertexObjPtr(0)->GetT()), fTrkCharge(0) {
+        fX  = s->GetX();
+        fY  = s->GetY();
+        fZ  = s->GetZ();
+        fT  = s->GetGlobalTime();
+        fM2 = 0;
+
+        fMakerID.push_back(par->GetTrackID());
+        fMakerPDG.push_back(par->GetPDGCode());
+        fMakerProc.push_back(par->GetFirstStep().GetProcessName().Data());
 
         fStepCharge = s->GetIonDepositedEnergy() * 1e6 * charge_per_eV * yield_factor;
     };
@@ -126,10 +138,21 @@ struct HitInfo {
         double totalCharge = fTrkCharge + fStepCharge;
         double newCharge   = totalCharge + addedCharge;
 
+        double oldX = fX, oldY = fY, oldZ = fZ;
+
         fX = (fX * totalCharge + addedCharge * x) / newCharge;
         fY = (fY * totalCharge + addedCharge * y) / newCharge;
         fZ = (fZ * totalCharge + addedCharge * z) / newCharge;
         fT = (fT * totalCharge + addedCharge * t) / newCharge;
+
+        double odx = x - oldX;
+        double ody = y - oldY;
+        double odz = z - oldZ;
+        double dx  = x - fX;
+        double dy  = y - fY;
+        double dz  = z - fZ;
+
+        fM2 += addedCharge * (odx * dx + ody * dy + odz * dz);
     }
 
     bool IsAcceptable(const simobj::Step *target) const {
@@ -167,7 +190,7 @@ struct HitInfo {
         }
     }
 
-    bool AppendTrack(const simobj::Track *track) {
+    bool AppendTrack(const simobj::Track *track, const simobj::Track *parent) {
         const simobj::Step &step = track->GetFinalStep();
 
         auto *particle = pdb->GetParticle(track->GetPDGCode());
@@ -183,13 +206,20 @@ struct HitInfo {
                               step.GetGlobalTime());
 
             fTrkCharge += trkCharge;
+
+            auto findres = find(fMakerID.begin(), fMakerID.end(), parent->GetTrackID());
+            if (fMakerID.size() == 0 || fMakerID.end() == findres) {
+                fMakerID.push_back(parent->GetTrackID());
+                fMakerPDG.push_back(parent->GetPDGCode());
+                fMakerProc.push_back(parent->GetFirstStep().GetProcessName().Data());
+            }
             return true;
         } else {
             return false;
         }
     }
 
-    bool AppendStep(const simobj::Step *step) {
+    bool AppendStep(const simobj::Step *step, const simobj::Track *parent) {
         int stepCharge = step->GetIonDepositedEnergy() * 1e6 * charge_per_eV * yield_factor;
 
         if (IsAcceptable(step)) {
@@ -197,6 +227,13 @@ struct HitInfo {
                               step->GetGlobalTime());
 
             fStepCharge += stepCharge;
+
+            auto findres = find(fMakerID.begin(), fMakerID.end(), parent->GetTrackID());
+            if (fMakerID.size() == 0 || fMakerID.end() == findres) {
+                fMakerID.push_back(parent->GetTrackID());
+                fMakerPDG.push_back(parent->GetPDGCode());
+                fMakerProc.push_back(parent->GetFirstStep().GetProcessName().Data());
+            }
             return true;
         } else {
             return false;
@@ -217,11 +254,16 @@ void make_fpgahits_cnum(const char *input_file  = "simout.root",
     Double_t time;
     Double_t prim_e, prim_t;
     string *pvname = nullptr, *filename = nullptr;
-    double x, y, z;
+    double x, y, z, r_rms;
     int trkCharge, stepCharge;
     bool complete;
 
+    vector<int> makerPDG;
+    vector<string> makerProc;
+
     int maxNTrack;
+
+    vector<int> id2idxTbl;
 
     const simobj::Track **tracks_in_fpga           = new const simobj::Track *[40000];
     pair<const simobj::Step *, int> *steps_in_fpga = new pair<const simobj::Step *, int>[20000];
@@ -241,6 +283,7 @@ void make_fpgahits_cnum(const char *input_file  = "simout.root",
             x          = nowhit.fX;
             y          = nowhit.fY;
             z          = nowhit.fZ;
+            r_rms      = sqrt(nowhit.fM2 / (nowhit.fTrkCharge + nowhit.fStepCharge));
             if (trkCharge != 0 && max_track) {
                 trkCharge = maxNTrack;
             } else {
@@ -248,25 +291,15 @@ void make_fpgahits_cnum(const char *input_file  = "simout.root",
             }
             stepCharge = nowhit.fStepCharge;
 
-            pOTree->Fill();
-        }
-    };
+            makerPDG.clear();
+            makerProc.clear();
 
-    size_t tracknum, stepnum;
-    auto AddFPGATrack = [&](const simobj::Track *s) -> void {
-        if (s->GetFinalStep().GetVolumeName().Contains("FPGADiePV") &&
-            pdb->GetParticle(s->GetPDGCode()) != nullptr) {
-            tracks_in_fpga[tracknum] = s;
-            ++tracknum;
-        }
-    };
-    auto AddFPGAStep = [&](const simobj::Step *s, int trk_idx) -> void {
-        if (s->GetVolumeName().Contains("FPGADiePV") &&
-            (s->GetProcessName() == "ionIoni" || s->GetProcessName() == "hIoni")) {
-            steps_in_fpga[stepnum].first  = s;
-            steps_in_fpga[stepnum].second = trk_idx;
-            // print_onestep(s);
-            ++stepnum;
+            for (int i = 0; i < nowhit.fMakerID.size(); i++) {
+                makerPDG.push_back(nowhit.fMakerPDG[i]);
+                makerProc.push_back(nowhit.fMakerProc[i]);
+            }
+
+            pOTree->Fill();
         }
     };
 
@@ -280,8 +313,11 @@ void make_fpgahits_cnum(const char *input_file  = "simout.root",
     pOTree->Branch("y", &y);
     pOTree->Branch("z", &z);
     pOTree->Branch("time", &time);
+    pOTree->Branch("r_rms", &r_rms);
     pOTree->Branch("trkCharge", &trkCharge);
     pOTree->Branch("stepCharge", &stepCharge);
+    pOTree->Branch("makerPDGs", &makerPDG);
+    pOTree->Branch("makerProcs", &makerProc);
     pOTree->Branch("complete", &complete);
 
     TFile *pInput = new TFile(input_file);
@@ -310,15 +346,47 @@ void make_fpgahits_cnum(const char *input_file  = "simout.root",
     int n_evts = pITree->GetEntries();
 
     vector<HitInfo> hiBuffer;
+    id2idxTbl.resize(metadata->GetMaxTrackNum() * 10, 0);
+
+    size_t tracknum, stepnum;
+
+    auto GetParentOutsideFPGA = [&](const simobj::Track *s) -> simobj::Track * {
+        int parent_tid        = s->GetTrackID();
+        simobj::Track *parent = nullptr;
+        while (parent_tid != 0) {
+            parent = static_cast<simobj::Track *>(tcaTrack->At(id2idxTbl[parent_tid]));
+            if (!parent->FirstStep().GetVolumeName().Contains("FPGADiePV")) break;
+            parent_tid = parent->GetParentID();
+        }
+        return parent;
+    };
+
+    auto AddFPGATrack = [&](const simobj::Track *s) -> void {
+        if (s->GetFinalStep().GetVolumeName().Contains("FPGADiePV") &&
+            pdb->GetParticle(s->GetPDGCode()) != nullptr) {
+            tracks_in_fpga[tracknum] = s;
+            ++tracknum;
+        }
+    };
+    auto AddFPGAStep = [&](const simobj::Step *s, int trk_idx) -> void {
+        if (s->GetVolumeName().Contains("FPGADiePV") &&
+            (s->GetProcessName() == "ionIoni" || s->GetProcessName() == "hIoni")) {
+            steps_in_fpga[stepnum].first  = s;
+            steps_in_fpga[stepnum].second = trk_idx;
+            // print_onestep(s);
+            ++stepnum;
+        }
+    };
 
     for (int i_evt = 0; i_evt < n_evts; i_evt++) {
         pITree->GetEntry(i_evt);
 
         int n_trk = tcaTrack->GetEntries();
-
         stepnum = tracknum = 0;
         for (int idx_track = 0; idx_track < n_trk; idx_track++) {
             simobj::Track *now_track = static_cast<simobj::Track *>(tcaTrack->At(idx_track));
+            id2idxTbl[now_track->GetTrackID()] = idx_track;
+
             AddFPGATrack(now_track);
 
             const simobj::Step *f_step = &now_track->GetFirstStep();
@@ -342,35 +410,44 @@ void make_fpgahits_cnum(const char *input_file  = "simout.root",
         sort(tracks_in_fpga, tracks_in_fpga + tracknum, comp_t);
         cout << "Sorting end. Hitting start." << endl;
 
+        simobj::Track *parent;
+
         for (size_t idx_track = 0; idx_track < tracknum; idx_track++) {
             auto trk = tracks_in_fpga[idx_track];
 
+            parent = GetParentOutsideFPGA(trk);
+
             bool appended = false;
             for (auto &i : hiBuffer) {
-                if (i.AppendTrack(trk)) {
+                if (i.AppendTrack(trk, parent)) {
                     appended = true;
                     break;
                 }
             }
 
             if (!appended) {
-                hiBuffer.push_back(HitInfo(trk, primary));
+                hiBuffer.push_back(HitInfo(trk, parent, primary));
             }
         }
 
         for (size_t idx_step = 0; idx_step < stepnum; idx_step++) {
             auto &step = steps_in_fpga[idx_step];
 
+            simobj::Track *trk =
+                static_cast<simobj::Track *>(tcaTrack->At(id2idxTbl[step.first->SetTrackID()]));
+
+            parent = GetParentOutsideFPGA(trk);
+
             bool appended = false;
             for (auto &i : hiBuffer) {
-                if (i.AppendStep(step.first)) {
+                if (i.AppendStep(step.first, parent)) {
                     appended = true;
                     break;
                 }
             }
 
             if (!appended) {
-                HitInfo newHit = HitInfo(step.first, primary);
+                HitInfo newHit = HitInfo(step.first, parent, primary);
 
                 if (newHit.GetTotalCharge() != 0) hiBuffer.push_back(std::move(newHit));
             }
@@ -394,3 +471,5 @@ void make_fpgahits_cnum(const char *input_file  = "simout.root",
     pOutput->Write();
     pOutput->Close();
 }
+
+int main(int argv, char **argc) { make_fpgahits_cnum(argc[1], argc[2]); }
