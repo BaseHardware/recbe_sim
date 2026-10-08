@@ -34,7 +34,7 @@ void print_onestep(const simobj::Step *s) {
          << "  " << s->GetNDaughters() << endl;
 }
 
-bool comp(const simobj::Step *lhs, const simobj::Step *rhs) {
+bool comp_s(const simobj::Step *lhs, const simobj::Step *rhs) {
     if (lhs->GetVolumeName() != rhs->GetVolumeName()) {
         return lhs->GetVolumeName() < rhs->GetVolumeName();
     } else if (lhs->GetEnvelopeCopyNumber() != rhs->GetEnvelopeCopyNumber()) {
