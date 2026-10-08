@@ -3,6 +3,7 @@
 #include "FTFP_BERT_HP.hh"
 #include "G4PhysListFactory.hh"
 #include "bl10sim/ActionInitialization.h"
+#include "bl10sim/MicroElecRegionPhysics.h"
 #include "bl10sim/MuelecDetectorConstruction.h"
 
 #include "simcore/MetadataManager.h"
@@ -99,11 +100,9 @@ int main(int argc, char **argv) {
     auto detConstruction = new bl10sim::MuelecDetectorConstruction();
     runManager->SetUserInitialization(detConstruction);
 
-    // auto physicsList = new FTFP_BERT_HP;
-    // physicsList->RegisterPhysics(new G4ThermalNeutrons());
-
-    G4PhysListFactory factory;
-    auto physicsList = factory.GetReferencePhysList("FTFP_BERT_HPT_EMZ");
+    auto physicsList = new FTFP_BERT_HP;
+    physicsList->RegisterPhysics(new G4ThermalNeutrons());
+    physicsList->RegisterPhysics(new bl10sim::MicroElecRegionPhysics({"TargetRegion"}));
 
     runManager->SetUserInitialization(physicsList);
 

@@ -11,6 +11,7 @@
 #include "G4Material.hh"
 #include "G4NistManager.hh"
 #include "G4PVPlacement.hh"
+#include "G4PhysicalVolumeStore.hh"
 #include "G4ProductionCuts.hh"
 #include "G4Region.hh"
 #include "G4SDManager.hh"
@@ -27,6 +28,54 @@
 #include <vector>
 
 static const G4double booleanSolidTolerance = 5 * cm;
+
+bool FindWorldTransform(G4VPhysicalVolume *currentPV, G4VPhysicalVolume *targetPV,
+                        const G4Transform3D &currentTransform, G4Transform3D &resultTransform) {
+    // Found the target PV
+    if (currentPV == targetPV) {
+        resultTransform = currentTransform;
+        return true;
+    }
+
+    auto *currentLV = currentPV->GetLogicalVolume();
+
+    for (G4int i = 0; i < currentLV->GetNoDaughters(); ++i) {
+
+        auto *daughterPV = currentLV->GetDaughter(i);
+
+        // daughter local -> current local
+        G4Transform3D daughterTransform(daughterPV->GetObjectRotationValue(),
+                                        daughterPV->GetObjectTranslation());
+
+        // daughter local -> world
+        G4Transform3D worldTransform = currentTransform * daughterTransform;
+
+        if (FindWorldTransform(daughterPV, targetPV, worldTransform, resultTransform)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+G4Transform3D GetWorldTransform(G4VPhysicalVolume *worldPV, G4VPhysicalVolume *targetPV) {
+    G4Transform3D result;
+
+    // World coordinate system itself is the reference frame,
+    // so start from identity.
+    G4Transform3D identity;
+
+    if (!FindWorldTransform(worldPV, targetPV, identity, result)) {
+        throw std::runtime_error(
+            "Target physical volume was not found under the given world volume.");
+    }
+
+    return result;
+}
+
+G4ThreeVector GetWorldTranslation(G4VPhysicalVolume *worldPV, G4VPhysicalVolume *targetPV) {
+    return GetWorldTransform(worldPV, targetPV).getTranslation();
+}
 
 G4VPhysicalVolume *FindDaughterPVWithName(G4LogicalVolume *lv, const G4String &name,
                                           G4bool perfect = false) {
@@ -2233,6 +2282,23 @@ namespace bl10sim {
         new G4PVPlacement(nullptr, jackTlate, jackLV, "JackPV", labLV, false, 0, fCheckOverlaps);
 
         // PrintBoardAlignmentParameters(labLV);
+        G4VPhysicalVolume *beamWinPV =
+            G4PhysicalVolumeStore::GetInstance()->GetVolume("BeamWindowPV");
+        G4VPhysicalVolume *recbeDiePV =
+            G4PhysicalVolumeStore::GetInstance()->GetVolume("RECBEFPGADiePV");
+        G4VPhysicalVolume *roestiDiePV =
+            G4PhysicalVolumeStore::GetInstance()->GetVolume("ROESTIFPGADiePV");
+        G4VPhysicalVolume *mkiiDiePV =
+            G4PhysicalVolumeStore::GetInstance()->GetVolume("MkIIFPGADiePV");
+
+        auto beamWinTlate   = GetWorldTranslation(ironcasePV, beamWinPV);
+        auto recbeDieTlate  = GetWorldTranslation(ironcasePV, recbeDiePV);
+        auto roestiDieTlate = GetWorldTranslation(ironcasePV, roestiDiePV);
+        auto mkiiDieTlate   = GetWorldTranslation(ironcasePV, mkiiDiePV);
+
+        G4cout << "RECBE  : " << (recbeDieTlate - beamWinTlate) / mm << G4endl;
+        G4cout << "ROESTI : " << (roestiDieTlate - beamWinTlate) / mm << G4endl;
+        G4cout << "MkII   : " << (mkiiDieTlate - beamWinTlate) / mm << G4endl;
 
         return ironcasePV;
     }

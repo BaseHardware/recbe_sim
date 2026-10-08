@@ -47,6 +47,8 @@ namespace bl10sim {
         G4Material *vacMaterial = G4Material::GetMaterial("G4_Galactic");
         G4Material *boxMaterial = G4Material::GetMaterial("G4_Si");
 
+        vacMaterial->SetName("Vacuum");
+
         G4Box *worldS = new G4Box("World", worldSizeXY / 2., worldSizeXY / 2., worldSizeZ / 2);
 
         G4LogicalVolume *worldLV = new G4LogicalVolume(worldS,      // its solid
