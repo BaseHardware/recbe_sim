@@ -34,6 +34,7 @@ namespace bl10sim {
 
         bool IsEnabled() const { return fEnabled; }
         void Enable(bool a = true) { fEnabled = a; }
+        void EnableNeutronTime(bool a = true) { fNeutronTimeEnabled = a; }
 
         void SetTimeOffset(double a) { fTGenerator->SetTimeOffset(a); }
         void SetBunchSeparation(double a) { fTGenerator->SetBunchSeparation(a); }
@@ -55,6 +56,7 @@ namespace bl10sim {
         std::string fFluxFilename;
 
         bool fEnabled;
+        bool fNeutronTimeEnabled;
     };
 } // namespace bl10sim
 #endif

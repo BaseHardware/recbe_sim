@@ -40,7 +40,13 @@ namespace bl10sim {
                                 "fixed vertex will be generated.");
         fEnableCmd->SetParameterName("enable", true, false);
         fEnableCmd->SetDefaultValue(true);
-        fFluxFilenameCmd->AvailableForStates(G4State_PreInit, G4State_Init, G4State_Idle);
+        fEnableCmd->AvailableForStates(G4State_PreInit, G4State_Init, G4State_Idle);
+
+        fNoTimeCmd = new G4UIcmdWithABool("/prim_gen/time_zero", this);
+        fNoTimeCmd->SetGuidance("Set the neutron time to zero.");
+        fNoTimeCmd->SetParameterName("set_zero", true, false);
+        fNoTimeCmd->SetDefaultValue(false);
+        fNoTimeCmd->AvailableForStates(G4State_PreInit, G4State_Init, G4State_Idle);
 
         fFBFraction = new G4UIcmdWithADouble("/prim_gen/first_fraction", this);
         fFBFraction->SetGuidance("Set the fraction of the first bunch.");
@@ -79,6 +85,8 @@ namespace bl10sim {
         delete fDuctEnterXSizeCmd;
         delete fDuctEnterYSizeCmd;
         delete fFluxFilenameCmd;
+        delete fEnableCmd;
+        delete fNoTimeCmd;
 
         delete fFBFraction;
 
@@ -122,6 +130,9 @@ namespace bl10sim {
         } else if (command == fSBFWHM) {
             double value = fSBFWHM->GetNewDoubleValue(newValue);
             fPrimGenAction->SetSecondBunchFWHM(value / us);
+        } else if (command == fNoTimeCmd) {
+            bool time_zero = fNoTimeCmd->GetNewBoolValue(newValue);
+            fPrimGenAction->EnableNeutronTime(!time_zero);
         }
     }
 } // namespace bl10sim

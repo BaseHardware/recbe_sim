@@ -28,6 +28,7 @@ namespace bl10sim {
         G4UIcmdWithADoubleAndUnit *fDuctEnterYSizeCmd = nullptr;
         G4UIcmdWithAString *fFluxFilenameCmd          = nullptr;
         G4UIcmdWithABool *fEnableCmd                  = nullptr;
+        G4UIcmdWithABool *fNoTimeCmd                  = nullptr;
 
         G4UIcmdWithADouble *fFBFraction = nullptr;
 

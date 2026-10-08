@@ -1,3 +1,4 @@
+#include <limits>
 #include <stdexcept>
 
 #include "bl10sim/NeutronTimeGenerator.h"
@@ -263,7 +264,8 @@ namespace bl10sim {
         }
     }
 
-    ColeWindsorSampler::ColeWindsorSampler(const Config &cfg) : fConfig(cfg) {
+    ColeWindsorSampler::ColeWindsorSampler(const Config &cfg)
+        : fConfig(cfg), fLatest(false), fInitialized(false) {
         if (fConfig.nE < 2) {
             throw std::runtime_error("ColeWindsorSampler: nE must be >= 2");
         }
@@ -276,13 +278,14 @@ namespace bl10sim {
         if (!(fConfig.epsU > 0.0 && fConfig.epsU < 0.5)) {
             throw std::runtime_error("ColeWindsorSampler: epsU must be in (0, 0.5)");
         }
-
-        G4cout << "Building a table for the neutron emission time..." << G4endl;
-        BuildTables();
-        G4cout << "Finished." << G4endl;
     }
 
     double ColeWindsorSampler::Sample(double energy_eV) const {
+        if (!fInitialized) {
+            G4cerr << "ColeWindsorSampler is not initialized!" << G4endl;
+            return std::numeric_limits<double>::quiet_NaN();
+        }
+
         const double logE    = std::log(PrepareEnergy(energy_eV));
         const std::size_t iE = FindEnergyBin(logE);
         const double xE      = (logE - fLogEGrid[iE]) / (fLogEGrid[iE + 1] - fLogEGrid[iE]);
@@ -294,6 +297,16 @@ namespace bl10sim {
         const double t1 = InterpolateQuantile(iE + 1, uEff);
 
         return (1.0 - xE) * t0 + xE * t1;
+    }
+
+    void ColeWindsorSampler::Initialize() {
+        if (!fInitialized || !fLatest) {
+            G4cout << "Building a table for the neutron emission time..." << G4endl;
+            BuildTables();
+            G4cout << "Finished." << G4endl;
+            fInitialized = true;
+            fLatest      = true;
+        }
     }
 
     size_t ColeWindsorSampler::FindEnergyBin(double logE) const {

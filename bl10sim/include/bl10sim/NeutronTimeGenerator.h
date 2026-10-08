@@ -77,6 +77,9 @@ namespace bl10sim {
 
         const ColeWindsor &GetColeWindsor() const { return fCWFunc; }
 
+        void Initialize();
+        void Modified() { fLatest = false; }
+
       private:
         Config fConfig;
         std::vector<double> fLogEGrid;              // size nE
@@ -89,6 +92,8 @@ namespace bl10sim {
         size_t FindEnergyBin(double logE) const;
         double InterpolateQuantile(std::size_t iE, double uEff) const;
 
+        bool fLatest, fInitialized;
+
         ColeWindsor fCWFunc;
     };
 
@@ -97,11 +102,12 @@ namespace bl10sim {
         NeutronTimeGenerator();
         virtual ~NeutronTimeGenerator() = default;
 
-
         double operator()(double energy_eV, double dist_m) const {
             return Generate(energy_eV, dist_m);
         }
         double Generate(double energy_eV, double dist_m) const;
+
+        void Initialize() { fCWSampler.Initialize(); }
 
         double GetTimeOffset() const { return fTimeOffset; }
         double GetFirstBunchOffset() const { return fFirstBunchOffset; }

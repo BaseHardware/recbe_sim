@@ -31,7 +31,7 @@ G4ThreeVector GetPointOnSurface(const G4Box *solid) {
 }
 
 namespace bl10sim {
-    PrimaryGeneratorAction::PrimaryGeneratorAction() : fEnabled(true) {
+    PrimaryGeneratorAction::PrimaryGeneratorAction() : fEnabled(true), fNeutronTimeEnabled(true) {
         G4int nofParticles = 1;
         fParticleGun       = new G4ParticleGun(nofParticles);
 
@@ -59,6 +59,10 @@ namespace bl10sim {
         fEGenerator->SetInputFilename(fFluxFilename);
         fEGenerator->SetTrimLastones(true);
         fEGenerator->Initialize();
+
+        if (fNeutronTimeEnabled) {
+            fTGenerator->Initialize();
+        }
     }
 
     void PrimaryGeneratorAction::GeneratePrimaries(G4Event *event) {
@@ -131,7 +135,9 @@ namespace bl10sim {
         pDir *= 1. / flightDistance;
         fParticleGun->SetParticleMomentumDirection(pDir);
 
-        G4double particleTime = fTGenerator->Generate(particleEnergy / eV, flightDistance / m);
+        G4double particleTime = fNeutronTimeEnabled
+                                    ? fTGenerator->Generate(particleEnergy / eV, flightDistance / m)
+                                    : 0.;
         fParticleGun->SetParticleTime(particleTime * us);
         fParticleGun->GeneratePrimaryVertex(event);
     }
