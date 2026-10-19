@@ -112,7 +112,8 @@ bool comp_s(const StepInfo &lhs, const StepInfo &rhs) {
     }
 }
 
-void test(const char *input_file = "simout.root", const char *output_file = "output.root") {
+void collect_fpga_steps(const char *input_file  = "simout.root",
+                        const char *output_file = "output.root") {
     TFile *pOutput = TFile::Open(output_file, "RECREATE");
 
     if (!pOutput || pOutput->IsZombie()) {
